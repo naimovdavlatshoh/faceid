@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { HiEye, HiEyeOff } from "react-icons/hi";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { PostData } from "@/services/data";
 
 const Login = () => {
@@ -119,7 +119,6 @@ const Login = () => {
                                     >
                                         Пароль
                                     </Label>
-                                 
                                 </div>
                                 <div className="relative">
                                     <Input
