@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { CustomCombobox } from "@/components/ui/custom-form";
 import { Link } from "react-router-dom";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
-import { GetDataSimple, PostDataTokenJson } from "@/services/data";
+import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 
@@ -19,8 +19,10 @@ const CreateUser = () => {
         salaryType: "1",
         shiftId: "",
         objectId: "",
+        positionId: "",
         objects: [],
         shifts: [],
+        positions: [],
     });
 
     const [isCreating, setIsCreating] = useState(false);
@@ -36,10 +38,16 @@ const CreateUser = () => {
                     "api/shift/list?page=1&limit=10&object_id=1"
                 );
 
+                // Fetch positions
+                const positionsRes = await GetDataSimple(
+                    "api/staff/position/list?page=1&limit=100&object_id=1"
+                );
+
                 setFormData((prev) => ({
                     ...prev,
                     objects: objectsRes || [],
                     shifts: shiftsRes?.result || [],
+                    positions: positionsRes?.result || [],
                 }));
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -88,7 +96,8 @@ const CreateUser = () => {
         if (
             !formData.fullName.trim() ||
             !formData.salary.trim() ||
-            !formData.objectId
+            !formData.objectId ||
+            !formData.positionId
         ) {
             toast.error("Пожалуйста, заполните все обязательные поля");
             return;
@@ -103,6 +112,7 @@ const CreateUser = () => {
                 salary: parseInt(parseNumber(formData.salary)),
                 salary_type: parseInt(formData.salaryType),
                 shift_id: parseInt(formData.shiftId),
+                position_id: parseInt(formData.positionId),
             };
 
             console.log("Creating employee:", submitData);
@@ -117,8 +127,10 @@ const CreateUser = () => {
                 salaryType: "1",
                 shiftId: "",
                 objectId: "",
+                positionId: "",
                 objects: formData.objects,
                 shifts: formData.shifts,
+                positions: formData.positions,
             });
         } catch (error: any) {
             console.log(error);
@@ -295,6 +307,31 @@ const CreateUser = () => {
                                                 .map((shift: any) => ({
                                                     value: shift.shift_id.toString(),
                                                     label: shift.shift_name,
+                                                }))}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <CustomCombobox
+                                            label="Должность"
+                                            placeholder="Выберите должность"
+                                            value={formData.positionId}
+                                            onChange={(value) =>
+                                                handleInputChange(
+                                                    "positionId",
+                                                    value
+                                                )
+                                            }
+                                            options={formData.positions
+                                                .filter(
+                                                    (position: any) =>
+                                                        position &&
+                                                        position.position_id &&
+                                                        position.position_name
+                                                )
+                                                .map((position: any) => ({
+                                                    value: position.position_id.toString(),
+                                                    label: position.position_name,
                                                 }))}
                                             required
                                         />

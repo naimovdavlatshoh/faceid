@@ -31,6 +31,10 @@ const Login = () => {
                 });
                 if (localStorage.getItem("token")) {
                     navigate("/");
+                    // Seamless page reload after navigation
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 50);
                 }
             })
             .catch((error) => {

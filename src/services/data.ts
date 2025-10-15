@@ -1,36 +1,35 @@
-// import { handleAuthError } from "@/utils/authUtils";
+import { handleAuthError } from "@/utils/authUtils";
 import axios from "axios";
 
-// Get BASE_URL from environment variables
 export const BASE_URL =
     import.meta.env.VITE_BASE_URL || "https://faceid.afandicloud.uz/";
 
 // Block requests to avtozapchast.netlify.app
-// axios.interceptors.request.use(
-//     (config) => {
-//         if (config.url?.includes("avtozapchast.netlify.app")) {
-//             console.warn(
-//                 "Blocked request to avtozapchast.netlify.app:",
-//                 config.url
-//             );
-//             return Promise.reject(
-//                 new Error("Request blocked: avtozapchast.netlify.app")
-//             );
-//         }
-//         return config;
-//     },
-//     (error) => Promise.reject(error)
-// );
+axios.interceptors.request.use(
+    (config) => {
+        if (config.url?.includes("avtozapchast.netlify.app")) {
+            console.warn(
+                "Blocked request to avtozapchast.netlify.app:",
+                config.url
+            );
+            return Promise.reject(
+                new Error("Request blocked: avtozapchast.netlify.app")
+            );
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
-// axios.interceptors.response.use(
-//     (response) => response,
-//     (error) => {
-//         if (handleAuthError(error)) {
-//             return Promise.resolve({ data: { handled: true } });
-//         }
-//         return Promise.reject(error);
-//     }
-// );
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (handleAuthError(error)) {
+            return Promise.resolve({ data: { handled: true } });
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const GetDataSimpleBlob = async (url: string, config: any = {}) => {
     const token = localStorage.getItem("token"); // yoki sessionStorage
