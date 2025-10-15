@@ -30,7 +30,7 @@ import CustomPagination from "@/components/ui/custom-pagination";
 import SearchInput from "@/components/ui/search-input";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { useEffect, useState, useRef } from "react";
-import EditUser from "./EditUser";
+// import EditUser from "./EditUser";
 import { CiTrash } from "react-icons/ci";
 import { HiDotsVertical } from "react-icons/hi";
 import { Link } from "react-router-dom";
@@ -338,7 +338,7 @@ const Users = () => {
                                         </TableCell>
 
                                         <TableCell className="text-right">
-                                            <EditUser />
+                                            {/* <EditUser /> */}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <button className="rounded-full outline-none focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-0 hover:bg-gray-200 p-2 transition-colors duration-200">

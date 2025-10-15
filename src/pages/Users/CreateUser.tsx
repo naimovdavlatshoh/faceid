@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { CustomCombobox } from "@/components/ui/custom-form";
 import { Link } from "react-router-dom";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
-import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
+import { GetDataSimple, PostDataTokenJson } from "@/services/data";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 
