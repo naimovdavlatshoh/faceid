@@ -26,27 +26,28 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FaUserCog } from "react-icons/fa";
+
 import CustomPagination from "@/components/ui/custom-pagination";
 import SearchInput from "@/components/ui/search-input";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { useEffect, useState, useRef } from "react";
-import EditUser from "./EditUser";
 import { CiTrash } from "react-icons/ci";
 import { HiDotsVertical } from "react-icons/hi";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
 import { IoMdAdd } from "react-icons/io";
-import { GetDataSimple, PostSimple } from "@/services/data";
+import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
+import AddPositionModal from "./AddPositionModal";
+import UpdatePositionModal from "./UpdatePositionModal";
+import { GrEdit } from "react-icons/gr";
 
 // API response types
-interface ApiUser {
-    faceid_user_id: number;
-    name: string;
-    salary: number;
-    image_id: number;
-    image_path: string;
+interface ApiPosition {
+    position_id: number;
+    object_id: number;
+    position_name: string;
     created_at: string;
 }
 
@@ -55,76 +56,80 @@ interface ApiResponse {
     limit: number;
     count: number;
     pages: number;
-    result: ApiUser[];
+    result: ApiPosition[];
 }
 
-const Users = () => {
+const Positions = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+    const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
 
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-    const [userToDelete, setUserToDelete] = useState<{
+    const [positionToDelete, setPositionToDelete] = useState<{
         id: number;
         name: string;
     } | null>(null);
-    const [users, setUsers] = useState<ApiUser[]>([]);
+    const [positions, setPositions] = useState<ApiPosition[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [isSearching, setIsSearching] = useState(false);
     const searchTimeoutRef = useRef<number | null>(null);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [selectedPosition, setSelectedPosition] =
+        useState<ApiPosition | null>(null);
 
-    const fetchUsers = async (page: number = 1, limit: number = 10) => {
+    const fetchPositions = async (page: number = 1, limit: number = 10) => {
         try {
             const data: ApiResponse = await GetDataSimple(
-                `api/faceid/users/list?page=${page}&limit=${limit}&object_id=1`
+                `api/staff/position/list?page=${page}&limit=${limit}&object_id=1`
             );
 
-            setUsers(data.result);
+            setPositions(data.result);
             setTotalPages(data.pages);
         } catch (error) {
-            console.error("Error fetching users:", error);
-            toast.error("Ошибка загрузки сотрудников");
+            console.error("Error fetching positions:", error);
+            toast.error("Ошибка загрузки должностей");
         }
     };
 
-    const searchUsers = async (keyword: string) => {
+    const searchPositions = async (keyword: string) => {
         if (keyword.length < 3) {
-            // If keyword is less than 3 characters, fetch all users
-            fetchUsers(currentPage, itemsPerPage);
+            // If keyword is less than 3 characters, fetch all positions
+            fetchPositions(currentPage, itemsPerPage);
             return;
         }
 
         try {
             setIsSearching(true);
             const response = await PostSimple(
-                `api/faceid/user/search?object_id=1&keyword=${keyword}`,
+                `api/staff/position/search?object_id=1&keyword=${keyword}`,
                 {}
             );
 
-            setUsers(response.data.result || []);
+            setPositions(response.data.result || []);
             setTotalPages(1); // Search results are typically on one page
         } catch (error) {
-            console.error("Error searching users:", error);
-            toast.error("Ошибка поиска сотрудников");
+            console.error("Error searching positions:", error);
+            toast.error("Ошибка поиска должностей");
         } finally {
             setIsSearching(false);
         }
     };
 
-    // Use users directly since we're doing server-side search
-    const currentUsers = users;
+    // Use positions directly since we're doing server-side search
+    const currentPositions = positions;
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
-        fetchUsers(page, itemsPerPage);
+        fetchPositions(page, itemsPerPage);
     };
 
     const handleItemsPerPageChange = (value: string) => {
         const newLimit = Number(value);
         setItemsPerPage(newLimit);
         setCurrentPage(1);
-        fetchUsers(1, newLimit);
+        fetchPositions(1, newLimit);
     };
 
     // Debounced search handler
@@ -138,52 +143,86 @@ const Users = () => {
 
         // Set a new timeout for search
         searchTimeoutRef.current = setTimeout(() => {
-            searchUsers(value);
-        }, 100); // 500ms delay
+            searchPositions(value);
+        }, 100); // 100ms delay
     };
 
-    const handleSelectUser = (userId: number) => {
-        setSelectedUsers((prev) =>
-            prev.includes(userId)
-                ? prev.filter((id) => id !== userId)
-                : [...prev, userId]
+    const handleSelectPosition = (positionId: number) => {
+        setSelectedPositions((prev) =>
+            prev.includes(positionId)
+                ? prev.filter((id) => id !== positionId)
+                : [...prev, positionId]
         );
     };
 
     const handleSelectAll = () => {
-        if (selectedUsers.length === currentUsers.length) {
-            setSelectedUsers([]);
+        if (selectedPositions.length === currentPositions.length) {
+            setSelectedPositions([]);
         } else {
-            setSelectedUsers(currentUsers.map((user) => user.faceid_user_id));
+            setSelectedPositions(
+                currentPositions.map((position) => position.position_id)
+            );
         }
     };
 
-    const openDeleteModal = (user: { id: number; name: string }) => {
-        setUserToDelete({ id: user.id, name: user.name });
+    const openDeleteModal = (position: {
+        position_id: number;
+        position_name: string;
+    }) => {
+        setPositionToDelete({
+            id: position.position_id,
+            name: position.position_name,
+        });
         setIsDeleteOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (userToDelete) {
-            toast.success("Сотрудник удалён", {
-                description: `${userToDelete.name} успешно удалён.`,
-                duration: 2500,
-            });
+    const handleConfirmDelete = async () => {
+        if (positionToDelete) {
+            try {
+                await PostDataTokenJson(
+                    `api/staff/position/delete/${positionToDelete.id}`,
+                    {}
+                );
+                toast.success("Должность удалена", {
+                    description: `${positionToDelete.name} успешно удалена.`,
+                    duration: 2500,
+                });
+                fetchPositions(currentPage, itemsPerPage);
+            } catch (error) {
+                console.error("Error deleting position:", error);
+                toast.error("Ошибка удаления должности");
+            }
         }
         setIsDeleteOpen(false);
-        setUserToDelete(null);
+        setPositionToDelete(null);
     };
 
     const handleCancelDelete = () => {
         setIsDeleteOpen(false);
-        setUserToDelete(null);
+        setPositionToDelete(null);
+    };
+
+    const handleAddPosition = () => {
+        setIsAddModalOpen(true);
+    };
+
+    const handleEditPosition = (position: ApiPosition) => {
+        setSelectedPosition(position);
+        setIsUpdateModalOpen(true);
+    };
+
+    const handleAddSuccess = () => {
+        fetchPositions(currentPage, itemsPerPage);
+    };
+
+    const handleUpdateSuccess = () => {
+        fetchPositions(currentPage, itemsPerPage);
     };
 
     useEffect(() => {
-        fetchUsers(currentPage, itemsPerPage);
+        fetchPositions(currentPage, itemsPerPage);
     }, []);
 
-    // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
             if (searchTimeoutRef.current) {
@@ -197,20 +236,21 @@ const Users = () => {
             <div className="space-y-4 mb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl  font-semibold text-gray-900 dark:text-white">
-                            Все сотрудники
+                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                            Все должности
                         </h1>
                     </div>
-                    <Link to="/users/create">
-                        <Button className="bg-black text-white duration-300 hover:bg-black/70 rounded-xl ">
-                            <IoMdAdd className="w-3 h-3" /> Добавить
-                        </Button>
-                    </Link>
+                    <Button
+                        onClick={handleAddPosition}
+                        className="bg-black text-white duration-300 hover:bg-black/70 rounded-xl"
+                    >
+                        <IoMdAdd className="w-3 h-3" /> Добавить
+                    </Button>
                 </div>
                 <CustomBreadcrumb
                     items={[
                         { label: "Панель управления", href: "/" },
-                        { label: "Сотрудники", isActive: true },
+                        { label: "Должности", isActive: true },
                     ]}
                 />
             </div>
@@ -220,34 +260,29 @@ const Users = () => {
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full">
                             <SearchInput
-                                placeholder="Поиск сотрудников..."
+                                placeholder="Поиск должностей..."
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                             />
                         </div>
-
-                        {/* Tabs */}
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
-                        <TableHeader className="bg-mainbg/10 ">
+                        <TableHeader className="bg-mainbg/10">
                             <TableRow>
                                 <TableHead className="text-maintx dark:text-white w-12">
                                     <Checkbox
                                         checked={
-                                            selectedUsers.length ===
-                                                currentUsers.length &&
-                                            currentUsers.length > 0
+                                            selectedPositions.length ===
+                                                currentPositions.length &&
+                                            currentPositions.length > 0
                                         }
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </TableHead>
                                 <TableHead className="text-maintx dark:text-white">
-                                    Сотрудник
-                                </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
-                                    Зарплата
+                                    Должность
                                 </TableHead>
                                 <TableHead className="text-maintx dark:text-white">
                                     Дата создания
@@ -272,73 +307,55 @@ const Users = () => {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : currentUsers.length === 0 ? (
+                            ) : currentPositions.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={5}
                                         className="text-center py-8 text-gray-500"
                                     >
                                         {searchQuery
-                                            ? "Сотрудники не найдены"
-                                            : "Нет сотрудников"}
+                                            ? "Должности не найдены"
+                                            : "Нет должностей"}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                currentUsers.map((user) => (
+                                currentPositions.map((position) => (
                                     <TableRow
-                                        key={user.faceid_user_id}
+                                        key={position.position_id}
                                         className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
                                     >
                                         <TableCell className="w-12">
                                             <Checkbox
-                                                checked={selectedUsers.includes(
-                                                    user.faceid_user_id
+                                                checked={selectedPositions.includes(
+                                                    position.position_id
                                                 )}
                                                 onCheckedChange={() =>
-                                                    handleSelectUser(
-                                                        user.faceid_user_id
+                                                    handleSelectPosition(
+                                                        position.position_id
                                                     )
                                                 }
                                             />
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
-                                                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-maintx">
-                                                    <img
-                                                        src={
-                                                            user?.image_path
-                                                                ? user?.image_path
-                                                                : "/avatar-1.webp"
-                                                        }
-                                                        alt={""}
-                                                        className="w-full h-full object-cover"
-                                                    />
+                                                <div className="w-12 h-12 rounded-full border-2 border-maintx flex items-center justify-center">
+                                                    <FaUserCog className="w-5 h-5 text-maintx" />
                                                 </div>
                                                 <div>
-                                                    <Link
-                                                        to={`/details/${user.faceid_user_id}`}
-                                                        className="text-sm font-medium text-gray-900 dark:text-white hover:underline cursor-pointer transition-all duration-200"
-                                                    >
-                                                        {user.name}
-                                                    </Link>
-                                                    <p className="text-xs text-gray-400">
-                                                        ID:{" "}
-                                                        {user.faceid_user_id}
+                                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                        {position.position_name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
-                                            {user.salary.toLocaleString()} сум
-                                        </TableCell>
+
                                         <TableCell className="text-gray-600 dark:text-gray-300">
                                             {new Date(
-                                                user.created_at
+                                                position.created_at
                                             ).toLocaleDateString("ru-RU")}
                                         </TableCell>
 
                                         <TableCell className="text-right">
-                                            <EditUser />
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <button className="rounded-full outline-none focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-0 hover:bg-gray-200 p-2 transition-colors duration-200">
@@ -347,11 +364,26 @@ const Users = () => {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
+                                                        className="flex items-center gap-2"
+                                                        onClick={() =>
+                                                            handleEditPosition(
+                                                                position
+                                                            )
+                                                        }
+                                                    >
+                                                        <GrEdit className="w-4 h-4" />{" "}
+                                                        <span>
+                                                            Редактировать
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
                                                         className="flex items-center gap-2 text-red-600 hover:text-red-600"
                                                         onClick={() =>
                                                             openDeleteModal({
-                                                                id: user.faceid_user_id,
-                                                                name: user.name,
+                                                                position_id:
+                                                                    position.position_id,
+                                                                position_name:
+                                                                    position.position_name,
                                                             })
                                                         }
                                                     >
@@ -411,16 +443,29 @@ const Users = () => {
             >
                 <div className="space-y-2">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                        Вы уверены, что хотите удалить сотрудника{" "}
+                        Вы уверены, что хотите удалить должность{" "}
                         <span className="font-semibold text-gray-900 dark:text-white">
-                            {userToDelete?.name}
+                            {positionToDelete?.name}
                         </span>
                         ? Это действие нельзя отменить.
                     </p>
                 </div>
             </CustomModal>
+
+            <AddPositionModal
+                open={isAddModalOpen}
+                onOpenChange={setIsAddModalOpen}
+                onSuccess={handleAddSuccess}
+            />
+
+            <UpdatePositionModal
+                open={isUpdateModalOpen}
+                onOpenChange={setIsUpdateModalOpen}
+                position={selectedPosition}
+                onSuccess={handleUpdateSuccess}
+            />
         </div>
     );
 };
 
-export default Users;
+export default Positions;

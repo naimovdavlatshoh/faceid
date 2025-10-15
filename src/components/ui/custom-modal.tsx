@@ -124,9 +124,11 @@ const CustomModal: React.FC<CustomModalProps> = ({
         return styles;
     };
 
-    const handleConfirm = () => {
-        onConfirm?.();
-        handleOpenChange(false);
+    const handleConfirm = async () => {
+        if (onConfirm) {
+            await onConfirm();
+        }
+        // Don't automatically close - let the onConfirm function handle closing
     };
 
     const handleCancel = () => {

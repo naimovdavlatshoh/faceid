@@ -6,6 +6,7 @@ import {
     SheetTrigger,
     SheetClose,
 } from "@/components/ui/sheet";
+import { useNavigate } from "react-router-dom";
 
 interface NavbarProps {
     className?: string;
@@ -13,8 +14,10 @@ interface NavbarProps {
 }
 
 const Navbar = ({ className }: NavbarProps) => {
+    const navigate = useNavigate();
     const handleLogout = () => {
-        console.log("Logout clicked");
+        localStorage.removeItem("token");
+        navigate("/login");
     };
 
     return (
@@ -91,7 +94,7 @@ const Navbar = ({ className }: NavbarProps) => {
                                 onClick={handleLogout}
                                 className="mt-4 w-full rounded-xl bg-red-100 text-red-600 py-3 font-medium"
                             >
-                                Logout
+                                Выход из системы
                             </button>
                         </SheetClose>
                     </SheetContent>

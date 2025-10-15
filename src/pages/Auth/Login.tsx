@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { PostData } from "@/services/data";
+import { toast } from "sonner";
 
 const Login = () => {
     const [login, setLogin] = useState("");
@@ -15,30 +16,29 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            // Required payload
-            const payload = {
-                login: login,
-                password: password,
-            };
+    const handleSubmit = () => {
+        const payload = {
+            login: login,
+            password: password,
+        };
 
-            const response = await PostData("login", payload);
-
-            const token = response?.data?.token;
-            if (token) {
-                if (rememberMe) {
-                    localStorage.setItem("token", token);
-                } else {
-                    sessionStorage.setItem("token", token);
+        PostData("login", payload)
+            .then((response) => {
+                localStorage.setItem("token", response?.data?.jwt);
+                toast.success("Успешный вход!", {
+                    description: "Добро пожаловать в систему",
+                    duration: 3000,
+                });
+                if (localStorage.getItem("token")) {
+                    navigate("/");
                 }
-            }
-
-            navigate("/");
-        } catch (error) {
-            console.error("Login failed", error);
-        }
+            })
+            .catch((error) => {
+                toast.error("Ошибка входа", {
+                    description: error?.response?.data?.message,
+                    duration: 3000,
+                });
+            });
     };
 
     return (
@@ -90,7 +90,7 @@ const Login = () => {
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-6">
                             {/* Email Field */}
                             <div className="space-y-2">
                                 <Label
@@ -106,7 +106,6 @@ const Login = () => {
                                     value={login}
                                     onChange={(e) => setLogin(e.target.value)}
                                     className="h-12 rounded-xl border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200"
-                                    required
                                 />
                             </div>
 
@@ -132,7 +131,6 @@ const Login = () => {
                                             setPassword(e.target.value)
                                         }
                                         className="h-12 rounded-xl border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200 pr-12"
-                                        required
                                     />
                                     <button
                                         type="button"
@@ -170,12 +168,12 @@ const Login = () => {
 
                             {/* Login Button */}
                             <Button
-                                type="submit"
+                                onClick={handleSubmit}
                                 className="w-full h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200"
                             >
                                 Войти
                             </Button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>

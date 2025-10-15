@@ -2,11 +2,14 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import DashboardLayout from "../layout/DashboardLayout";
 import Dashboard from "../pages/Dashboard";
 import Users from "../pages/Users/Users";
+import Positions from "../pages/Position/Positions";
+import Shifts from "../pages/Shifts/Shifts";
+import ShiftDays from "../pages/Shifts/ShiftDays";
 
-import Details from "@/pages/Users/Details";
 import CreateUser from "@/pages/Users/CreateUser";
 import Login from "../pages/Auth/Login";
 import Account from "@/pages/Users/Account";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const router = createBrowserRouter([
     {
@@ -15,7 +18,11 @@ const router = createBrowserRouter([
     },
     {
         path: "/",
-        element: <DashboardLayout />,
+        element: (
+            <ProtectedRoute>
+                <DashboardLayout />
+            </ProtectedRoute>
+        ),
         children: [
             {
                 index: true,
@@ -26,16 +33,25 @@ const router = createBrowserRouter([
                 element: <Users />,
             },
             {
+                path: "positions",
+                element: <Positions />,
+            },
+            {
+                path: "shifts",
+                element: <Shifts />,
+            },
+            {
+                path: "shifts/days/:id/:name",
+                element: <ShiftDays />,
+            },
+            {
                 path: "users/create",
                 element: <CreateUser />,
             },
-            {
-                path: "users/account",
-                element: <Account />,
-            },
+
             {
                 path: "details/:id",
-                element: <Details />,
+                element: <Account />,
             },
         ],
     },

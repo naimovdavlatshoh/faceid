@@ -4,6 +4,9 @@ import { SiAnalogue } from "react-icons/si";
 import { FaUserFriends } from "react-icons/fa";
 import { IoIosArrowDown } from "react-icons/io";
 import { useEffect, useState } from "react";
+import { IoTimer } from "react-icons/io5";
+import { FaUserCog } from "react-icons/fa";
+
 
 interface SidebarProps {
     className?: string;
@@ -16,14 +19,19 @@ const navigation = [
         icon: <SiAnalogue className="w-5 h-5" />,
     },
     {
-        name: "Пользователи",
+        name: "Сотрудники",
         href: "/users",
         icon: <FaUserFriends className="w-5 h-5" />,
-        children: [
-            { name: "Все пользователи", href: "/users" },
-            { name: "Добавить пользователя", href: "/users/create" },
-            { name: "Аккаунт", href: "/users/account" },
-        ],
+    },
+    {
+        name: "Смены",
+        href: "/shifts",
+        icon: <IoTimer className="w-5 h-5" />,
+    },
+    {
+        name: "Должности",
+        href: "/positions",
+        icon: <FaUserCog className="w-5 h-5" />,
     },
 ];
 
@@ -35,8 +43,13 @@ const Sidebar = ({ className }: SidebarProps) => {
         const isUsersSection =
             location.pathname.startsWith("/users") ||
             location.pathname.startsWith("/details");
+        const isShiftsSection = location.pathname.startsWith("/shifts");
+
         if (isUsersSection) {
             setOpenMenus((prev) => ({ ...prev, Пользователи: true }));
+        }
+        if (isShiftsSection) {
+            setOpenMenus((prev) => ({ ...prev, Смены: true }));
         }
     }, [location.pathname]);
 

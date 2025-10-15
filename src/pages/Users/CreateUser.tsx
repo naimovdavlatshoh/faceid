@@ -1,88 +1,132 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CustomCombobox, CustomDatePicker } from "@/components/ui/custom-form";
-// import { Switch } from "@/components/ui/switch";
+import { CustomCombobox } from "@/components/ui/custom-form";
 
-import { MdCameraAlt } from "react-icons/md";
-import { FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
+import { GetDataSimple, PostDataTokenJson } from "@/services/data";
+import { toast } from "sonner";
+import { formatNumber, parseNumber } from "@/utils/formatters";
 
 const CreateUser = () => {
     const [formData, setFormData] = useState({
         fullName: "",
-        lastName: "",
-        middleName: "",
-        phone: "",
-        country: "",
-        city: "",
-        address: "",
-        company: "",
-        role: "",
-        birthDate: undefined as Date | undefined,
+        salary: "",
+        salaryType: "1",
+        shiftId: "",
+        objectId: "",
+        objects: [],
+        shifts: [],
     });
 
-    const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isCreating, setIsCreating] = useState(false);
 
-    // Options for comboboxes
-    const countryOptions = [
-        { value: "uz", label: "Узбекистан" },
-        { value: "us", label: "США" },
-        { value: "ru", label: "Россия" },
-        { value: "kz", label: "Казахстан" },
-        { value: "kg", label: "Кыргызстан" },
-        { value: "tj", label: "Таджикистан" },
-        { value: "tm", label: "Туркменистан" },
-    ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch objects
+                const objectsRes = await GetDataSimple("api/faceid/info");
 
-    const roleOptions = [
-        { value: "admin", label: "Администратор" },
-        { value: "user", label: "Пользователь" },
-        { value: "moderator", label: "Модератор" },
-        { value: "manager", label: "Менеджер" },
-        { value: "editor", label: "Редактор" },
-    ];
+                // Fetch shifts
+                const shiftsRes = await GetDataSimple(
+                    "api/shift/list?page=1&limit=10&object_id=1"
+                );
 
-    const cityOptions = [
-        { value: "tashkent", label: "Ташкент" },
-        { value: "samarkand", label: "Самарканд" },
-        { value: "bukhara", label: "Бухара" },
-        { value: "namangan", label: "Наманган" },
-        { value: "andijan", label: "Андижан" },
-        { value: "fergana", label: "Фергана" },
-        { value: "karshi", label: "Карши" },
-        { value: "kokand", label: "Коканд" },
-        { value: "margilan", label: "Маргилан" },
-    ];
-    // const [emailVerified, setEmailVerified] = useState(true);
+                setFormData((prev) => ({
+                    ...prev,
+                    objects: objectsRes || [],
+                    shifts: shiftsRes?.result || [],
+                }));
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                toast.error("Ошибка загрузки данных");
+            }
+        };
 
-    const handleAvatarClick = () => {
-        fileInputRef.current?.click();
-    };
+        fetchData();
+    }, []);
 
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const url = URL.createObjectURL(file);
-        setAvatarSrc(url);
-    };
+    const handleInputChange = async (field: string, value: string) => {
+        let processedValue = value;
 
-    const handleInputChange = (field: string, value: string) => {
+        // Special handling for salary field
+        if (field === "salary") {
+            processedValue = formatNumber(value);
+        }
+
         setFormData((prev) => ({
             ...prev,
-            [field]: value,
+            [field]: processedValue,
         }));
+
+        // If object changes, fetch shifts for that object
+        if (field === "objectId" && value) {
+            try {
+                const shiftsRes = await GetDataSimple(
+                    `api/shift/list?page=1&limit=10&object_id=${value}`
+                );
+                setFormData((prev) => ({
+                    ...prev,
+                    shifts: shiftsRes?.result || [],
+                    shiftId: "", // Reset shift selection when object changes
+                }));
+            } catch (error) {
+                console.error("Error fetching shifts:", error);
+                toast.error("Ошибка загрузки смен");
+            }
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Creating user:", formData);
-        // Handle user creation logic here
+
+        // Validate required fields
+        if (
+            !formData.fullName.trim() ||
+            !formData.salary.trim() ||
+            !formData.objectId
+        ) {
+            toast.error("Пожалуйста, заполните все обязательные поля");
+            return;
+        }
+
+        try {
+            setIsCreating(true);
+
+            const submitData = {
+                object_id: parseInt(formData.objectId),
+                name: formData.fullName.trim(),
+                salary: parseInt(parseNumber(formData.salary)),
+                salary_type: parseInt(formData.salaryType),
+                shift_id: parseInt(formData.shiftId),
+            };
+
+            console.log("Creating employee:", submitData);
+
+            await PostDataTokenJson("api/faceid/user/create", submitData);
+
+            toast.success("Сотрудник успешно создан");
+
+            setFormData({
+                fullName: "",
+                salary: "",
+                salaryType: "1",
+                shiftId: "",
+                objectId: "",
+                objects: formData.objects,
+                shifts: formData.shifts,
+            });
+        } catch (error: any) {
+            console.log(error);
+
+            toast.error(error.response.data.error);
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const [loading, setLoading] = useState(true);
@@ -108,11 +152,10 @@ const CreateUser = () => {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        Создать нового пользователя
+                        Создать нового сотрудника
                     </h1>
                 </div>
             </div>
@@ -121,77 +164,22 @@ const CreateUser = () => {
             <CustomBreadcrumb
                 items={[
                     { label: "Панель управления", href: "/" },
-                    { label: "Пользователи", href: "/users" },
+                    { label: "Сотрудники", href: "/users" },
                     { label: "Создать", isActive: true },
                 ]}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="space-y-6 lg:col-span-1">
-                    <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
-                        <CardContent className="space-y-4">
-                            {/* Photo Upload Area */}
-                            <div className="flex flex-col items-center space-y-10 py-10">
-                                <div
-                                    className="group relative w-32 h-32 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden cursor-pointer p-1.5 bg-gray-50 dark:bg-gray-700"
-                                    onClick={handleAvatarClick}
-                                    role="button"
-                                    aria-label="Загрузить фото"
-                                >
-                                    {/* Default user icon or uploaded image */}
-                                    {avatarSrc ? (
-                                        <img
-                                            src={avatarSrc}
-                                            alt="avatar"
-                                            className="w-full h-full object-cover rounded-full transition-transform duration-300 group-hover:scale-105"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
-                                            <FaUser className="w-12 h-12 text-mainbg " />
-                                        </div>
-                                    )}
-                                    {/* Hover overlay */}
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white">
-                                        <MdCameraAlt className="w-6 h-6 mb-1" />
-                                        <span className="text-xs">
-                                            Загрузить фото
-                                        </span>
-                                    </div>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={handleAvatarChange}
-                                    />
-                                </div>
-
-                                {/* File Info */}
-                                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                                    <p>*.jpeg, *.jpg, *.png, *.gif</p>
-                                    <p>макс 3 Мб</p>
-                                </div>
-
-
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Right Section - User Details Form */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border lg:col-span-2 border-gray-100 dark:border-gray-700">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-                            Данные пользователя
+                            Данные сотрудника
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Form Fields */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Left Column */}
                                 <div className="space-y-4">
-                                    {/* First Name */}
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="fullName"
@@ -211,185 +199,104 @@ const CreateUser = () => {
                                                 )
                                             }
                                             className="h-12 rounded-xl border-gray-200 dark:border-gray-600 "
-                                            required
                                         />
                                     </div>
-
-                                    {/* Last Name */}
+                                    {/* Salary Type */}
                                     <div className="space-y-2">
-                                        <Label
-                                            htmlFor="lastName"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                                        >
-                                            Фамилия
-                                        </Label>
-                                        <Input
-                                            id="lastName"
-                                            type="text"
-                                            placeholder="Введите фамилию"
-                                            value={formData.lastName}
-                                            onChange={(e) =>
+                                        <CustomCombobox
+                                            label="Тип зарплаты"
+                                            placeholder="Выберите тип зарплаты"
+                                            value={formData.salaryType}
+                                            onChange={(value) =>
                                                 handleInputChange(
-                                                    "lastName",
-                                                    e.target.value
+                                                    "salaryType",
+                                                    value
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600 focus:ring-0 focus:border-mainbg hover:border-mainbg transition-colors"
+                                            options={[
+                                                { value: "1", label: "Ойлик" },
+                                                {
+                                                    value: "2",
+                                                    label: "Хафталик",
+                                                },
+                                                { value: "3", label: "Кунлик" },
+                                                {
+                                                    value: "4",
+                                                    label: "Соатлик",
+                                                },
+                                            ]}
                                             required
                                         />
                                     </div>
 
-                                    {/* Middle Name */}
+                                    {/* Salary */}
                                     <div className="space-y-2">
                                         <Label
-                                            htmlFor="middleName"
+                                            htmlFor="salary"
                                             className="text-sm font-medium text-gray-700 dark:text-gray-300"
                                         >
-                                            Отчество
+                                            Зарплата
                                         </Label>
                                         <Input
-                                            id="middleName"
+                                            id="salary"
                                             type="text"
-                                            placeholder="Введите отчество"
-                                            value={formData.middleName}
+                                            placeholder="0"
+                                            value={formData.salary}
                                             onChange={(e) =>
                                                 handleInputChange(
-                                                    "middleName",
+                                                    "salary",
                                                     e.target.value
                                                 )
                                             }
                                             className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                        />
-                                    </div>
-
-                                    {/* Phone Number */}
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="phone"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                                        >
-                                            Номер телефона
-                                        </Label>
-
-                                        <Input
-                                            id="phone"
-                                            type="tel"
-                                            placeholder="Введите номер телефона"
-                                            value={formData.phone}
-                                            onChange={(e) =>
-                                                handleInputChange(
-                                                    "phone",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Birth Date */}
-                                    <div className="space-y-2">
-                                        <CustomDatePicker
-                                            label="Дата рождения"
-                                            placeholder="Выберите дату рождения"
-                                            value={formData.birthDate}
-                                            onChange={(date) =>
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    birthDate: date,
-                                                }))
-                                            }
                                         />
                                     </div>
                                 </div>
 
                                 {/* Right Column */}
                                 <div className="space-y-4">
-                                    {/* Country */}
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Страна"
-                                            placeholder="Выберите страну"
-                                            value={formData.country}
+                                            label="Объект"
+                                            placeholder="Выберите объект"
+                                            value={formData.objectId}
                                             onChange={(value) =>
                                                 handleInputChange(
-                                                    "country",
+                                                    "objectId",
                                                     value
                                                 )
                                             }
-                                            options={countryOptions}
+                                            options={formData.objects.map(
+                                                (obj: any) => ({
+                                                    value: obj.object_id.toString(),
+                                                    label: obj.object_name,
+                                                })
+                                            )}
                                         />
                                     </div>
-
-                                    {/* City */}
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Город"
-                                            placeholder="Выберите город"
-                                            value={formData.city}
+                                            label="Смена"
+                                            placeholder="Выберите смену"
+                                            value={formData.shiftId}
                                             onChange={(value) =>
-                                                handleInputChange("city", value)
-                                            }
-                                            options={cityOptions}
-                                        />
-                                    </div>
-
-                                    {/* Address */}
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="address"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                                        >
-                                            Адрес
-                                        </Label>
-                                        <Input
-                                            id="address"
-                                            type="text"
-                                            placeholder="Введите адрес"
-                                            value={formData.address}
-                                            onChange={(e) =>
                                                 handleInputChange(
-                                                    "address",
-                                                    e.target.value
+                                                    "shiftId",
+                                                    value
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                        />
-                                    </div>
-
-                                    {/* Company */}
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="company"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                                        >
-                                            Компания
-                                        </Label>
-                                        <Input
-                                            id="company"
-                                            type="text"
-                                            placeholder="Введите компанию"
-                                            value={formData.company}
-                                            onChange={(e) =>
-                                                handleInputChange(
-                                                    "company",
-                                                    e.target.value
+                                            options={formData.shifts
+                                                .filter(
+                                                    (shift: any) =>
+                                                        shift &&
+                                                        shift.shift_id &&
+                                                        shift.shift_name
                                                 )
-                                            }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                        />
-                                    </div>
-
-                                    {/* Role */}
-                                    <div className="space-y-2">
-                                        <CustomCombobox
-                                            label="Роль"
-                                            placeholder="Выберите роль"
-                                            value={formData.role}
-                                            onChange={(value) =>
-                                                handleInputChange("role", value)
-                                            }
-                                            options={roleOptions}
+                                                .map((shift: any) => ({
+                                                    value: shift.shift_id.toString(),
+                                                    label: shift.shift_name,
+                                                }))}
+                                            required
                                         />
                                     </div>
                                 </div>
@@ -408,9 +315,17 @@ const CreateUser = () => {
                                 </Link>
                                 <Button
                                     type="submit"
-                                    className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200"
+                                    disabled={isCreating}
+                                    className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Создать пользователя
+                                    {isCreating ? (
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            <span>Создание...</span>
+                                        </div>
+                                    ) : (
+                                        "Создать сотрудника"
+                                    )}
                                 </Button>
                             </div>
                         </form>
