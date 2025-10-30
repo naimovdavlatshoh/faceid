@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,52 +29,67 @@ const Account = () => {
         objectId: "",
         objects: [],
         shifts: [],
+        displayShiftName: "",
+        displaySalaryTypeText: "",
+        displayDayOffTypeText: "",
+        dayOffType: "",
     });
 
     const [avatarSrc, setAvatarSrc] = useState<string>("/avatar-1.webp");
     const [isUploading, setIsUploading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const objectId = localStorage.getItem("object");
+    const [dayOffItemsList, setDayOffItemsList] = useState<number[]>([]);
+    const [dayOffItemsRaw, setDayOffItemsRaw] = useState<any[]>([]);
 
-    // Fetch data and populate form
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch objects
                 const objectsRes = await GetDataSimple("api/faceid/info");
-
-                // Fetch shifts
                 const shiftsRes = await GetDataSimple(
-                    "api/shift/list?page=1&limit=10&object_id=1"
+                    `api/shift/list?page=1&limit=10&object_id=${objectId}`
                 );
 
-                // Fetch all employees
-                const employeesRes = await GetDataSimple(
-                    "api/faceid/users/list?page=1&limit=100&object_id=1"
+                const userRes = await GetDataSimple(
+                    `api/faceid/user/read?faceid_user_id=${id}&object_id=${objectId}`
                 );
 
-                // Find the specific employee by faceid_user_id
-                const employee = employeesRes?.result?.find(
-                    (emp: any) => emp.faceid_user_id.toString() === id
-                );
-
-                if (employee) {
+                if (userRes) {
                     setFormData((prev) => ({
                         ...prev,
-                        fullName: employee.name || "",
-                        salary: employee.salary
-                            ? formatNumber(employee.salary.toString())
+                        fullName: userRes.name || "",
+                        salary: userRes.salary
+                            ? formatNumber(String(userRes.salary))
                             : "",
-                        salaryType: employee.salary_type?.toString() || "1",
-                        shiftId: employee.shift_id?.toString() || "",
-                        objectId: employee.object_id?.toString() || "",
+                        salaryType: userRes.salary_type?.toString() || "1",
+                        shiftId: userRes.shift_id?.toString() || "",
+                        objectId: userRes.object_id?.toString() || "",
                         objects: objectsRes || [],
                         shifts: shiftsRes?.result || [],
+                        displayShiftName: userRes.shift_name || "",
+                        displaySalaryTypeText: userRes.salary_type_text || "",
+                        displayDayOffTypeText: userRes.day_off_type_text || "",
+                        dayOffType: userRes.day_off_type?.toString() || "",
                     }));
 
-                    if (employee.image_path) {
-                        setAvatarSrc(employee.image_path);
+                    if (userRes.image_path) {
+                        setAvatarSrc(userRes.image_path);
                     }
+
+                    const mappedDays = Array.isArray(userRes.day_off_items)
+                        ? userRes.day_off_items
+                              .map((d: any) =>
+                                  typeof d === "number" ? d : d?.days_off
+                              )
+                              .filter((v: any) => typeof v === "number")
+                        : [];
+                    setDayOffItemsList(mappedDays);
+                    setDayOffItemsRaw(
+                        Array.isArray(userRes.day_off_items)
+                            ? userRes.day_off_items
+                            : []
+                    );
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -92,13 +113,11 @@ const Account = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file size (max 3MB)
         if (file.size > 3 * 1024 * 1024) {
             toast.error("Размер файла не должен превышать 3 МБ");
             return;
         }
 
-        // Validate file type
         if (!file.type.startsWith("image/")) {
             toast.error("Пожалуйста, выберите изображение");
             return;
@@ -107,23 +126,18 @@ const Account = () => {
         try {
             setIsUploading(true);
 
-            // Create FormData
             const formData = new FormData();
             formData.append("image", file);
 
-            // Upload image to API
             await PostDataToken(`api/faceid/user/uploadimage/${id}`, formData);
 
-            // Update avatar display
             const url = URL.createObjectURL(file);
             setAvatarSrc(url);
 
             toast.success("Изображение успешно загружено");
         } catch (error: any) {
             console.error("Error uploading image:", error);
-            toast.error(
-                error.response?.data?.error || "Ошибка загрузки изображения"
-            );
+            toast.error(error.response?.data?.error);
         } finally {
             setIsUploading(false);
         }
@@ -150,12 +164,9 @@ const Account = () => {
         );
     }
 
-    // const [emailVerified, setEmailVerified] = useState(true);
-
     const handleInputChange = async (field: string, value: string) => {
         let processedValue = value;
 
-        // Special handling for salary field
         if (field === "salary") {
             processedValue = formatNumber(value);
         }
@@ -165,7 +176,6 @@ const Account = () => {
             [field]: processedValue,
         }));
 
-        // If object changes, fetch shifts for that object
         if (field === "objectId" && value) {
             try {
                 const shiftsRes = await GetDataSimple(
@@ -174,7 +184,7 @@ const Account = () => {
                 setFormData((prev) => ({
                     ...prev,
                     shifts: shiftsRes?.result || [],
-                    shiftId: "", // Reset shift selection when object changes
+                    shiftId: "",
                 }));
             } catch (error) {
                 console.error("Error fetching shifts:", error);
@@ -315,23 +325,162 @@ const Account = () => {
                                         Активный пользователь
                                     </Label>
                                 </div> */}
-                                <button disabled={true} className="mt-4 w-3/4 rounded-xl bg-red-100 text-red-600 py-3 font-medium">
+                                <button
+                                    disabled={true}
+                                    className="mt-4 w-3/4 rounded-xl bg-red-100 text-red-600 py-3 font-medium"
+                                >
                                     Удалить пользователя
                                 </button>
                             </div>
                         </CardContent>
                     </Card>
+                    {/* Quick Info */}
+                    <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                        <CardHeader>
+                            <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
+                                Информация
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">Смена</span>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                    {formData.displayShiftName || "—"}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">
+                                    Тип зарплаты
+                                </span>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                    {formData.displaySalaryTypeText || "—"}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-500">
+                                    Тип выходного
+                                </span>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                    {formData.displayDayOffTypeText || "—"}
+                                </span>
+                            </div>
+                            {dayOffItemsList.length > 0 && (
+                                <div className="pt-1">
+                                    <span className="text-xs text-gray-500">
+                                        Выходные
+                                    </span>
+                                    <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                                        {(() => {
+                                            const t = formData.dayOffType;
+                                            const hasMonthly =
+                                                Array.isArray(dayOffItemsRaw) &&
+                                                dayOffItemsRaw.some(
+                                                    (d: any) =>
+                                                        d?.days_off_id === 3
+                                                );
+                                            const hasWeekly =
+                                                Array.isArray(dayOffItemsRaw) &&
+                                                dayOffItemsRaw.some(
+                                                    (d: any) =>
+                                                        d?.days_off_id === 2
+                                                );
+
+                                            const isWeekly =
+                                                String(t) === "1" || hasWeekly;
+
+                                            // Explicit monthly text with ordinals when type is 0
+                                            if (
+                                                String(t) === "0" &&
+                                                dayOffItemsList.length > 0
+                                            ) {
+                                                const parts =
+                                                    dayOffItemsList.map(
+                                                        (n) => `${n}-го`
+                                                    );
+                                                const humanList =
+                                                    parts.length === 1
+                                                        ? parts[0]
+                                                        : parts.length === 2
+                                                        ? `${parts[0]} и ${parts[1]}`
+                                                        : `${parts
+                                                              .slice(0, -1)
+                                                              .join(", ")} и ${
+                                                              parts[
+                                                                  parts.length -
+                                                                      1
+                                                              ]
+                                                          }`;
+                                                return (
+                                                    <span>
+                                                        {humanList} числа
+                                                        каждого месяца
+                                                    </span>
+                                                );
+                                            }
+
+                                            if (hasMonthly) {
+                                                return (
+                                                    <span>
+                                                        Каждого месяца:{" "}
+                                                        {dayOffItemsList.join(
+                                                            ", "
+                                                        )}
+                                                    </span>
+                                                );
+                                            }
+
+                                            if (isWeekly) {
+                                                const map: Record<
+                                                    number,
+                                                    string
+                                                > = {
+                                                    1: "Пн",
+                                                    2: "Вт",
+                                                    3: "Ср",
+                                                    4: "Чт",
+                                                    5: "Пт",
+                                                    6: "Сб",
+                                                    7: "Вс",
+                                                };
+                                                const names =
+                                                    dayOffItemsList.map(
+                                                        (n) =>
+                                                            map[n] || String(n)
+                                                    );
+                                                return (
+                                                    <span>
+                                                        Выходные дни:{" "}
+                                                        {names.join(", ")}
+                                                    </span>
+                                                );
+                                            }
+
+                                            return (
+                                                <span>
+                                                    {dayOffItemsList.join(", ")}
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Right Section - User Details Form */}
-                <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border lg:col-span-2 border-gray-100 dark:border-gray-700">
+                <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border lg:col-span-2 border-gray-100 dark:border-gray-700 flex flex-col">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                             Данные пользователя
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                    <CardContent className="flex-1">
+                        <form
+                            id="accountForm"
+                            onSubmit={handleSubmit}
+                            className="space-y-6"
+                        >
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -383,6 +532,10 @@ const Account = () => {
                                     </div>
 
                                     {/* Salary */}
+                                </div>
+
+                                {/* Right Column */}
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="salary"
@@ -402,29 +555,6 @@ const Account = () => {
                                                 )
                                             }
                                             className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Right Column */}
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <CustomCombobox
-                                            label="Объект"
-                                            placeholder="Выберите объект"
-                                            value={formData.objectId}
-                                            onChange={(value) =>
-                                                handleInputChange(
-                                                    "objectId",
-                                                    value
-                                                )
-                                            }
-                                            options={formData.objects.map(
-                                                (obj: any) => ({
-                                                    value: obj.object_id.toString(),
-                                                    label: obj.object_name,
-                                                })
-                                            )}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -453,36 +583,35 @@ const Account = () => {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex justify-end space-x-4 pt-6">
-                                <Link to="/users">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                                    >
-                                        Отмена
-                                    </Button>
-                                </Link>
-                                <Button
-                                    type="submit"
-                                    // disabled={isSubmitting}
-                                    disabled={true}
-                                    className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isSubmitting ? (
-                                        <div className="flex items-center space-x-2">
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            <span>Обновление...</span>
-                                        </div>
-                                    ) : (
-                                        "Обновить данные"
-                                    )}
-                                </Button>
-                            </div>
                         </form>
                     </CardContent>
+                    <CardFooter className="justify-end space-x-4">
+                        <Link to="/users">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                                Отмена
+                            </Button>
+                        </Link>
+                        <Button
+                            type="submit"
+                            form="accountForm"
+                            // disabled={isSubmitting}
+                            disabled={true}
+                            className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? (
+                                <div className="flex items-center space-x-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Обновление...</span>
+                                </div>
+                            ) : (
+                                "Обновить данные"
+                            )}
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
         </div>

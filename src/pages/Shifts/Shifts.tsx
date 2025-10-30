@@ -38,12 +38,12 @@ import { IoMdAdd } from "react-icons/io";
 
 import { MdTimelapse } from "react-icons/md";
 import { HiDotsVertical } from "react-icons/hi";
-import AddShiftModal from "./AddShiftModal";
 import EditShiftModal from "./EditShiftModal";
 import DeleteShiftModal from "./DeleteShiftModal";
 import { GrEdit } from "react-icons/gr";
 import { CiTrash } from "react-icons/ci";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import ShiftDaysModal from "./ShiftDaysModal";
 
 interface Shift {
     shift_id: number;
@@ -71,10 +71,11 @@ const Shifts = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+    const [isDaysModalOpen, setIsDaysModalOpen] = useState(false);
+    const navigate = useNavigate();
 
     const fetchShifts = async (page: number = 1, limit: number = 10) => {
         try {
@@ -133,10 +134,6 @@ const Shifts = () => {
         searchFilteredShifts.length > 0 &&
         selectedShifts.length === searchFilteredShifts.length;
 
-    const handleShiftCreated = () => {
-        fetchShifts(currentPage, itemsPerPage);
-    };
-
     const handleShiftUpdated = () => {
         fetchShifts(currentPage, itemsPerPage);
     };
@@ -145,10 +142,10 @@ const Shifts = () => {
         fetchShifts(currentPage, itemsPerPage);
     };
 
-    const handleEditShift = (shift: Shift) => {
-        setSelectedShift(shift);
-        setIsEditModalOpen(true);
-    };
+    // const handleEditShift = (shift: Shift) => {
+    //     setSelectedShift(shift);
+    //     setIsEditModalOpen(true);
+    // };
 
     const handleDeleteShift = (shift: Shift) => {
         setSelectedShift(shift);
@@ -181,13 +178,12 @@ const Shifts = () => {
                         </h1>
                     </div>
                     <div className="flex space-x-3">
-                        <Button
-                            className="px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200"
-                            onClick={() => setIsAddModalOpen(true)}
-                        >
-                            <IoMdAdd className="w-4 h-4" />
-                            Добавить
-                        </Button>
+                        <Link to="/shifts/create">
+                            <Button className="px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200">
+                                <IoMdAdd className="w-4 h-4" />
+                                Добавить
+                            </Button>
+                        </Link>
                     </div>
                 </div>
                 <CustomBreadcrumb
@@ -276,14 +272,18 @@ const Shifts = () => {
                                             <div className="flex items-center space-x-3">
                                                 <MdTimelapse className="w-6 h-6 text-maintx" />
 
-                                                <div>
-                                                    <Link
-                                                        to={`/shifts/days/${shift.shift_id}/${shift.shift_name}`}
-                                                        className="text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors duration-200"
-                                                    >
-                                                        {shift.shift_name}
-                                                    </Link>
-                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="text-left text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors duration-200"
+                                                    onClick={() => {
+                                                        setSelectedShift(shift);
+                                                        setIsDaysModalOpen(
+                                                            true
+                                                        );
+                                                    }}
+                                                >
+                                                    {shift.shift_name}
+                                                </button>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-gray-600 dark:text-gray-300">
@@ -323,8 +323,13 @@ const Shifts = () => {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
                                                         onClick={() =>
-                                                            handleEditShift(
-                                                                shift
+                                                            navigate(
+                                                                `/shifts/days/${
+                                                                    shift.shift_id
+                                                                }/${encodeURIComponent(
+                                                                    shift?.shift_name ||
+                                                                        ""
+                                                                )}`
                                                             )
                                                         }
                                                     >
@@ -380,11 +385,6 @@ const Shifts = () => {
             </Card>
 
             {/* Modals */}
-            <AddShiftModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onShiftCreated={handleShiftCreated}
-            />
             <EditShiftModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -396,6 +396,12 @@ const Shifts = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onShiftDeleted={handleShiftDeleted}
                 shift={selectedShift}
+            />
+            <ShiftDaysModal
+                isOpen={isDaysModalOpen}
+                onClose={() => setIsDaysModalOpen(false)}
+                shiftId={selectedShift?.shift_id ?? null}
+                shiftName={selectedShift?.shift_name}
             />
         </div>
     );

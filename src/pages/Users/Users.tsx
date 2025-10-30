@@ -48,6 +48,9 @@ interface ApiUser {
     image_id: number;
     image_path: string;
     created_at: string;
+    position_name: string;
+    shift_name?: string;
+    salary_type_text?: string;
 }
 
 interface ApiResponse {
@@ -250,6 +253,12 @@ const Users = () => {
                                     Зарплата
                                 </TableHead>
                                 <TableHead className="text-maintx dark:text-white">
+                                    Смена
+                                </TableHead>
+                                <TableHead className="text-maintx dark:text-white">
+                                    Тип зарплаты
+                                </TableHead>
+                                <TableHead className="text-maintx dark:text-white">
                                     Дата создания
                                 </TableHead>
                                 <TableHead className="text-right text-maintx dark:text-white">
@@ -322,14 +331,19 @@ const Users = () => {
                                                         {user.name}
                                                     </Link>
                                                     <p className="text-xs text-gray-400">
-                                                        ID:{" "}
-                                                        {user.faceid_user_id}
+                                                        {user.position_name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-gray-600 dark:text-gray-300">
                                             {user.salary.toLocaleString()} сум
+                                        </TableCell>
+                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                            {user.shift_name || "—"}
+                                        </TableCell>
+                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                            {user.salary_type_text || "—"}
                                         </TableCell>
                                         <TableCell className="text-gray-600 dark:text-gray-300">
                                             {new Date(
@@ -347,6 +361,7 @@ const Users = () => {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
+                                                        disabled={true}
                                                         className="flex items-center gap-2 text-red-600 hover:text-red-600"
                                                         onClick={() =>
                                                             openDeleteModal({

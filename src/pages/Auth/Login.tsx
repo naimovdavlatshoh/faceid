@@ -25,6 +25,8 @@ const Login = () => {
         PostData("login", payload)
             .then((response) => {
                 localStorage.setItem("token", response?.data?.jwt);
+                localStorage.setItem("object", response?.data?.object_id);
+                localStorage.setItem("objects", JSON.stringify(response?.data?.all_objects));
                 toast.success("Успешный вход!", {
                     description: "Добро пожаловать в систему",
                     duration: 3000,

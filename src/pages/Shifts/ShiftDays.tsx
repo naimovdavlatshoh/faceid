@@ -1,17 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate, useParams } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
+
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -57,10 +50,10 @@ interface Shift {
     shift_times: ShiftTime[];
 }
 
-interface ShiftDaysData {
-    shift_id: number;
-    items: DaySchedule[];
-}
+// interface ShiftDaysData {
+//     shift_id: number;
+//     items: DaySchedule[];
+// }
 
 interface ShiftsResponse {
     page: number;
@@ -78,13 +71,22 @@ const ShiftDays = () => {
     const [days, setDays] = useState<DaySchedule[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [hasShiftTimes, setHasShiftTimes] = useState(false);
-    // @ts-ignore
-    const [updatingIndex, setUpdatingIndex] = useState<number | null>(null);
-    const [editModalOpen, setEditModalOpen] = useState(false);
-    const [editIndex, setEditIndex] = useState<number | null>(null);
-    const [editStart, setEditStart] = useState<string>("00:00");
-    const [editEnd, setEditEnd] = useState<string>("00:00");
+    // const [hasShiftTimes, setHasShiftTimes] = useState(false);
+    // const [shiftType, setShiftType] = useState<0 | 1>(0); // kept for potential logic branching
+    const [standardStart, setStandardStart] = useState<string>("00:00");
+    const [standardEnd, setStandardEnd] = useState<string>("00:00");
+    const navigate = useNavigate();
+
+    const [form, setForm] = useState({
+        shiftName: "",
+        lateToleranceMinutes: "0",
+        overtimeAfterMinutes: "0",
+        shiftTypeStr: "0",
+    });
+
+    const handleFormChange = (field: string, value: string) => {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    };
 
     // Initialize days with default values (all set to 00:00 as day off)
     const initializeDefaultDays = () => {
@@ -92,7 +94,7 @@ const ShiftDays = () => {
             day_of_week: index + 1,
             start_time: "00:00",
             end_time: "00:00",
-            is_day_off: 1,
+            is_day_off: 0,
         }));
         setDays(initialDays);
     };
@@ -114,7 +116,27 @@ const ShiftDays = () => {
                 selectedShift.shift_times &&
                 selectedShift.shift_times.length > 0
             ) {
-                setHasShiftTimes(true);
+                // setHasShiftTimes(true);
+                // Detect standard vs hybrid by presence of day_of_week === 0
+                const std = selectedShift.shift_times.find(
+                    (st) => st.day_of_week === 0
+                );
+                if (std) {
+                    setStandardStart(std.start_time.substring(0, 5));
+                    setStandardEnd(std.end_time.substring(0, 5));
+                } else {
+                }
+                // Prefill meta form
+                setForm({
+                    shiftName: selectedShift.shift_name || shiftName,
+                    lateToleranceMinutes: String(
+                        selectedShift.late_tolerance_minutes ?? 0
+                    ),
+                    overtimeAfterMinutes: String(
+                        selectedShift.overtime_after_minutes ?? 0
+                    ),
+                    shiftTypeStr: std ? "1" : "0",
+                });
                 const scheduleDays: DaySchedule[] = DAY_NAMES.map(
                     (_, index) => {
                         const dayNumber = index + 1;
@@ -144,8 +166,14 @@ const ShiftDays = () => {
                 );
                 setDays(scheduleDays);
             } else {
-                setHasShiftTimes(false);
+                // setHasShiftTimes(false);
                 initializeDefaultDays();
+                setForm({
+                    shiftName: shiftName,
+                    lateToleranceMinutes: "0",
+                    overtimeAfterMinutes: "0",
+                    shiftTypeStr: "0",
+                });
             }
         } catch (error) {
             console.error("Error fetching shift schedule:", error);
@@ -160,31 +188,6 @@ const ShiftDays = () => {
         fetchShiftSchedule();
     }, [shiftId]);
 
-    const handleDayOffToggle = (dayIndex: number, isDayOff: boolean) => {
-        setDays((prevDays) =>
-            prevDays.map((day, index) =>
-                index === dayIndex
-                    ? {
-                          ...day,
-                          is_day_off: isDayOff ? 1 : 0,
-                          start_time: isDayOff ? "00:00" : "09:00",
-                          end_time: isDayOff ? "00:00" : "18:00",
-                      }
-                    : day
-            )
-        );
-    };
-
-    const isDayOff = (dayIndex: number) => {
-        const day = days[dayIndex];
-        return day && day.is_day_off === 1;
-    };
-
-    const isDayEnabled = (dayIndex: number) => {
-        const day = days[dayIndex];
-        return day && day.is_day_off === 0;
-    };
-
     const handleTimeChange = (
         dayIndex: number,
         field: "start_time" | "end_time",
@@ -197,69 +200,148 @@ const ShiftDays = () => {
         );
     };
 
-    const handleUpdateDay = async (dayIndex: number) => {
-        try {
-            setUpdatingIndex(dayIndex);
-            const day = days[dayIndex];
-            if (!day) return;
+    // === Time formatting & validation (like CreateShift) ===
+    const validateTime = (value: string) => {
+        if (!value) return false;
+        return /^([01]?\d|2[0-3]):([0-5]\d)$/.test(value);
+    };
 
+    const formatNumbersToTime = (previousValue: string, value: string) => {
+        const numbersOnly = value.replace(/[^0-9]/g, "");
+        let formattedValue = "";
+        if (numbersOnly.length === 0) {
+            formattedValue = "";
+        } else if (numbersOnly.length === 1) {
+            formattedValue = numbersOnly;
+        } else if (numbersOnly.length === 2) {
             if (
-                day.is_day_off === 0 &&
-                (day.start_time === "00:00" || day.end_time === "00:00")
+                previousValue &&
+                previousValue.length > value.length &&
+                value.endsWith(":")
             ) {
-                toast.error("Пожалуйста, укажите время для рабочего дня");
-                return;
+                formattedValue = numbersOnly;
+            } else {
+                formattedValue = numbersOnly + ":";
             }
+        } else if (numbersOnly.length <= 4) {
+            formattedValue =
+                numbersOnly.slice(0, 2) + ":" + numbersOnly.slice(2);
+        } else {
+            formattedValue =
+                numbersOnly.slice(0, 2) + ":" + numbersOnly.slice(2, 4);
+        }
+        return formattedValue;
+    };
 
-            const payload = {
-                shift_id: shiftId,
-                id: day.day_of_week, // day id
-                start_time: day.start_time,
-                end_time: day.end_time,
-                is_day_off: day.is_day_off,
-            };
+    const handleStandardFormattedChange = (
+        field: "start" | "end",
+        value: string
+    ) => {
+        const prev = field === "start" ? standardStart : standardEnd;
+        const formatted = formatNumbersToTime(prev, value);
+        if (field === "start") setStandardStart(formatted);
+        else setStandardEnd(formatted);
+    };
 
-            await PostDataTokenJson(`api/shifttime/update/${shiftId}`, payload);
-            toast.success("День успешно обновлен");
-        } catch (error: any) {
-            console.error(error.response?.data?.error);
-            toast.error("Ошибка обновления дня");
-        } finally {
-            setUpdatingIndex(null);
+    const handleStandardBlur = (field: "start" | "end", value: string) => {
+        if (value && !validateTime(value)) {
+            toast.error("Неверный формат времени (например 18:45)");
+            if (field === "start") setStandardStart("");
+            else setStandardEnd("");
         }
     };
+
+    const handleDayFormattedChange = (
+        dayIndex: number,
+        field: "start_time" | "end_time",
+        value: string
+    ) => {
+        const previousValue = days[dayIndex]?.[field] || "";
+        const formatted = formatNumbersToTime(previousValue, value);
+        handleTimeChange(dayIndex, field, formatted);
+    };
+
+    const handleDayBlur = (
+        dayIndex: number,
+        field: "start_time" | "end_time",
+        value: string
+    ) => {
+        if (value && !validateTime(value)) {
+            toast.error("Неверный формат времени (например 09:30)");
+            handleTimeChange(dayIndex, field, "");
+        }
+    };
+
+    // Removed per request: day update via modal
 
     const handleSubmit = async () => {
         try {
             setIsSubmitting(true);
+            const shift_type = form.shiftTypeStr === "1" ? 1 : 0;
 
-            const workingDays = days.filter((day) => day.is_day_off === 0);
-            const invalidDays = workingDays.filter(
-                (day) => day.start_time === "00:00" || day.end_time === "00:00"
-            );
-
-            if (invalidDays.length > 0) {
-                const invalidDayNames = invalidDays
-                    .map((day) => DAY_NAMES[day.day_of_week - 1])
-                    .join(", ");
-
-                toast.error(
-                    `Пожалуйста, укажите время для всех рабочих дней: ${invalidDayNames}`
+            // Basic validation
+            if (shift_type === 1) {
+                if (
+                    !validateTime(standardStart) ||
+                    !validateTime(standardEnd)
+                ) {
+                    toast.error(
+                        "Заполните корректное время для стандартной смены"
+                    );
+                    return;
+                }
+            } else {
+                const invalid = days.filter(
+                    (d) =>
+                        !validateTime(d.start_time) || !validateTime(d.end_time)
                 );
-                return;
+                if (invalid.length > 0) {
+                    const names = invalid
+                        .map((d) => DAY_NAMES[d.day_of_week - 1])
+                        .join(", ");
+                    toast.error(`Пожалуйста, укажите время: ${names}`);
+                    return;
+                }
             }
-            const data: ShiftDaysData = {
-                shift_id: shiftId,
-                items: days,
+
+            let items: Array<{
+                day_of_week: number;
+                start_time: string;
+                end_time: string;
+            }>;
+            if (shift_type === 1) {
+                items = [
+                    {
+                        day_of_week: 0,
+                        start_time: standardStart,
+                        end_time: standardEnd,
+                    },
+                ];
+            } else {
+                items = days.map((d) => ({
+                    day_of_week: d.day_of_week,
+                    start_time: d.start_time || "00:00",
+                    end_time: d.end_time || "00:00",
+                }));
+            }
+
+            const payload = {
+                object_id: localStorage.getItem("object"),
+                shift_name: form.shiftName || shiftName,
+                late_tolerance_minutes:
+                    parseInt(form.lateToleranceMinutes) || 0,
+                overtime_after_minutes:
+                    parseInt(form.overtimeAfterMinutes) || 0,
+                shift_type,
+                items,
             };
 
-            await PostDataTokenJson(`api/shifttime/create`, data);
-
-            console.log("Submitting data:", data);
-            toast.success("Расписание смен успешно сохранено!");
+            await PostDataTokenJson(`api/shift/update/${shiftId}`, payload);
+            toast.success("Сохранено");
+            navigate("/shifts");
         } catch (error: any) {
-            console.error(error.response?.data?.error);
-            toast.error("Ошибка сохранения расписания");
+            console.error(error?.response?.data?.error || error);
+            toast.error(error?.response?.data?.error);
         } finally {
             setIsSubmitting(false);
         }
@@ -280,7 +362,7 @@ const ShiftDays = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 mb-5">
             <div className="space-y-4 mb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -298,238 +380,239 @@ const ShiftDays = () => {
                 />
             </div>
 
-            <Card>
-                <CardContent className="space-y-3 p-0 pb-10">
-                    {DAY_NAMES.map((dayName, index) => (
-                        <div
-                            key={index}
-                            className={`p-4 rounded-3xl border transition-all duration-200 ${
-                                isDayOff(index)
-                                    ? "border-red-200 bg-red-50 dark:bg-red-900/10"
-                                    : isDayEnabled(index)
-                                    ? "border-maintx bg-mainbg/10 dark:bg-green-900/10"
-                                    : "border-gray-200 bg-gray-50 dark:bg-gray-700"
-                            }`}
-                        >
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <Label
-                                        className={`font-medium ${
-                                            isDayOff(index)
-                                                ? "text-gray-400 dark:text-gray-500"
-                                                : "text-gray-900 dark:text-white"
-                                        }`}
-                                    >
-                                        {dayName}
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Label
-                                            htmlFor={`day-off-${index}`}
-                                            className="text-sm text-gray-600 dark:text-gray-400"
-                                        >
-                                            Выходной
-                                        </Label>
-                                        <Switch
-                                            id={`day-off-${index}`}
-                                            checked={isDayOff(index)}
-                                            onCheckedChange={(checked) =>
-                                                handleDayOffToggle(
-                                                    index,
-                                                    checked
-                                                )
-                                            }
-                                        />
-                                    </div>
-                                    {hasShiftTimes && !isDayOff(index) && (
-                                        <Button
-                                            variant="outline"
-                                            className="rounded-xl"
-                                            onClick={() => {
-                                                setEditIndex(index);
-                                                setEditStart(
-                                                    days[index]?.start_time ||
-                                                        "00:00"
-                                                );
-                                                setEditEnd(
-                                                    days[index]?.end_time ||
-                                                        "00:00"
-                                                );
-                                                setEditModalOpen(true);
-                                            }}
-                                        >
-                                            Изменить
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {!hasShiftTimes && !isDayOff(index) && (
-                                <div className="mt-3 flex items-center space-x-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Label
-                                            htmlFor={`start-${index}`}
-                                            className="text-sm text-gray-600 dark:text-gray-400"
-                                        >
-                                            Начало:
-                                        </Label>
-
-                                        <Input
-                                            type="time"
-                                            id={`start-${index}`}
-                                            value={
-                                                days[index]?.start_time ||
-                                                "00:00"
-                                            }
-                                            onChange={(e) =>
-                                                handleTimeChange(
-                                                    index,
-                                                    "start_time",
-                                                    e.target.value
-                                                )
-                                            }
-                                            disabled={!isDayEnabled(index)}
-                                            className="w-32 h-10 px-3 py-2 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center space-x-2">
-                                        <Label
-                                            htmlFor={`end-${index}`}
-                                            className="text-sm text-gray-600 dark:text-gray-400"
-                                        >
-                                            Конец:
-                                        </Label>
-
-                                        <Input
-                                            type="time"
-                                            id={`end-${index}`}
-                                            value={
-                                                days[index]?.end_time || "00:00"
-                                            }
-                                            onChange={(e) =>
-                                                handleTimeChange(
-                                                    index,
-                                                    "end_time",
-                                                    e.target.value
-                                                )
-                                            }
-                                            disabled={!isDayEnabled(index)}
-                                            className="w-32 h-10 px-3 py-2 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {hasShiftTimes && !isDayOff(index) && (
-                                <div className="mt-3 inline-flex items-center gap-3 rounded-2xl  px-3 py-2  bg-maintx/60">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-white">
-                                            Начало
-                                        </span>
-                                        <span className="rounded-xl bg-white dark:bg-gray-900 px-3 py-1 font-mono text-sm text-gray-900 dark:text-gray-100 ">
-                                            {days[index]?.start_time || "--:--"}
-                                        </span>
-                                    </div>
-                                    <span className="h-5 w-px text-white" />
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-white">
-                                            Конец
-                                        </span>
-                                        <span className="rounded-xl bg-white dark:bg-gray-900 px-3 py-1 font-mono text-sm text-gray-900 dark:text-gray-100 ">
-                                            {days[index]?.end_time || "--:--"}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {isDayOff(index) && (
-                                <div className="mt-3 text-sm text-red-600 dark:text-red-400">
-                                    Выходной день
-                                </div>
-                            )}
-                        </div>
-                    ))}
-
-                    {!hasShiftTimes && (
-                        <div className="flex justify-end ">
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isSubmitting}
-                                className="bg-maintx hover:bg-maintx/80 rounded-xl  text-white px-6 py-2"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                        Сохранение...
-                                    </>
-                                ) : (
-                                    "Создать"
-                                )}
-                            </Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-            <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editIndex !== null
-                                ? DAY_NAMES[editIndex]
-                                : "Изменить"}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <Label className="text-sm text-gray-600 dark:text-gray-400">
-                                    Начало:
-                                </Label>
+            <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                <CardHeader>
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Данные смены
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Название смены</Label>
                                 <Input
-                                    type="time"
-                                    value={editStart}
+                                    placeholder="Например: Стандарт смена"
+                                    value={form.shiftName}
                                     onChange={(e) =>
-                                        setEditStart(e.target.value)
+                                        handleFormChange(
+                                            "shiftName",
+                                            e.target.value
+                                        )
                                     }
-                                    className="w-40 h-10 px-3 py-2 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="h-12 rounded-xl"
                                 />
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Label className="text-sm text-gray-600 dark:text-gray-400">
-                                    Конец:
-                                </Label>
+
+                            <div className="space-y-2">
+                                <Label>Сверхурочные после (минуты)</Label>
                                 <Input
-                                    type="time"
-                                    value={editEnd}
-                                    onChange={(e) => setEditEnd(e.target.value)}
-                                    className="w-40 h-10 px-3 py-2 border border-gray-300 rounded-xl bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    type="number"
+                                    placeholder="0"
+                                    value={form.overtimeAfterMinutes}
+                                    onChange={(e) =>
+                                        handleFormChange(
+                                            "overtimeAfterMinutes",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="h-12 rounded-xl"
                                 />
                             </div>
+
+                            <div className="space-y-2">
+                                <Label>Тип смены</Label>
+                                <div className="flex gap-3">
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            form.shiftTypeStr === "1"
+                                                ? "default"
+                                                : "outline"
+                                        }
+                                        className="rounded-xl"
+                                        onClick={() =>
+                                            handleFormChange(
+                                                "shiftTypeStr",
+                                                "1"
+                                            )
+                                        }
+                                    >
+                                        Стандарт
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={
+                                            form.shiftTypeStr === "0"
+                                                ? "default"
+                                                : "outline"
+                                        }
+                                        className="rounded-xl"
+                                        onClick={() =>
+                                            handleFormChange(
+                                                "shiftTypeStr",
+                                                "0"
+                                            )
+                                        }
+                                    >
+                                        Гибридный
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Опоздание (минуты)</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    value={form.lateToleranceMinutes}
+                                    onChange={(e) =>
+                                        handleFormChange(
+                                            "lateToleranceMinutes",
+                                            e.target.value
+                                        )
+                                    }
+                                    className="h-12 rounded-xl"
+                                />
+                            </div>
+
+                            {form.shiftTypeStr === "1" && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Начало</Label>
+                                        <Input
+                                            type="text"
+                                            placeholder="00:00"
+                                            value={standardStart}
+                                            onChange={(e) =>
+                                                handleStandardFormattedChange(
+                                                    "start",
+                                                    e.target.value
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                handleStandardBlur(
+                                                    "start",
+                                                    e.target.value
+                                                )
+                                            }
+                                            maxLength={5}
+                                            className="h-12 rounded-xl"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Конец</Label>
+                                        <Input
+                                            type="text"
+                                            placeholder="00:00"
+                                            value={standardEnd}
+                                            onChange={(e) =>
+                                                handleStandardFormattedChange(
+                                                    "end",
+                                                    e.target.value
+                                                )
+                                            }
+                                            onBlur={(e) =>
+                                                handleStandardBlur(
+                                                    "end",
+                                                    e.target.value
+                                                )
+                                            }
+                                            maxLength={5}
+                                            className="h-12 rounded-xl"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <DialogFooter>
+
+                    {form.shiftTypeStr === "0" && (
+                        <div className="space-y-4 pt-4 border-t">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                                Расписание по дням недели
+                            </h3>
+                            <div className="space-y-3">
+                                {DAY_NAMES.map((dayName, index) => (
+                                    <div
+                                        key={index}
+                                        className="p-4 rounded-xl border bg-gray-50 dark:bg-gray-800/50"
+                                    >
+                                        <Label>{dayName}</Label>
+                                        <div className="grid grid-cols-2 gap-4 mt-2">
+                                            <Input
+                                                type="text"
+                                                placeholder="00:00"
+                                                value={
+                                                    days[index]?.start_time ||
+                                                    ""
+                                                }
+                                                onChange={(e) =>
+                                                    handleDayFormattedChange(
+                                                        index,
+                                                        "start_time",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                onBlur={(e) =>
+                                                    handleDayBlur(
+                                                        index,
+                                                        "start_time",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                maxLength={5}
+                                            />
+                                            <Input
+                                                type="text"
+                                                placeholder="00:00"
+                                                value={
+                                                    days[index]?.end_time || ""
+                                                }
+                                                onChange={(e) =>
+                                                    handleDayFormattedChange(
+                                                        index,
+                                                        "end_time",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                onBlur={(e) =>
+                                                    handleDayBlur(
+                                                        index,
+                                                        "end_time",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                maxLength={5}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
                         <Button
-                            className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6"
-                            onClick={async () => {
-                                if (editIndex === null) return;
-                                const updated = [...days];
-                                updated[editIndex] = {
-                                    ...updated[editIndex],
-                                    start_time: editStart,
-                                    end_time: editEnd,
-                                };
-                                setDays(updated);
-                                await handleUpdateDay(editIndex);
-                                setEditModalOpen(false);
-                            }}
+                            type="button"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => navigate("/shifts")}
                         >
-                            Сохранить
+                            Назад
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6"
+                        >
+                            {isSubmitting ? "Сохранение..." : "Сохранить"}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 };

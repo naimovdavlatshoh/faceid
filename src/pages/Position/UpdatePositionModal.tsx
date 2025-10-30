@@ -1,19 +1,14 @@
 import CustomModal from "@/components/ui/custom-modal";
-import { CustomInput, CustomCombobox } from "@/components/ui/custom-form";
+import { CustomInput } from "@/components/ui/custom-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { PostDataTokenJson, GetDataSimple } from "@/services/data";
+import { PostDataTokenJson } from "@/services/data";
 
 interface ApiPosition {
     position_id: number;
     object_id: number;
     position_name: string;
     created_at: string;
-}
-
-interface Object {
-    object_id: number;
-    object_name: string;
 }
 
 interface UpdatePositionModalProps {
@@ -30,42 +25,19 @@ const UpdatePositionModal = ({
     onSuccess,
 }: UpdatePositionModalProps) => {
     const [positionName, setPositionName] = useState("");
-    const [selectedObjectId, setSelectedObjectId] = useState<string>("");
-    const [objects, setObjects] = useState<Object[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Fetch objects when modal opens
-    useEffect(() => {
-        if (open) {
-            fetchObjects();
-        }
-    }, [open]);
 
     useEffect(() => {
         if (position) {
             setPositionName(position.position_name);
-            setSelectedObjectId(position?.object_id?.toString());
         }
     }, [position]);
-
-    const fetchObjects = async () => {
-        try {
-            const data = await GetDataSimple("api/faceid/info");
-            setObjects(data || []);
-        } catch (error: any) {
-            console.error("Error fetching objects:", error);
-            toast.error(error.response.data.error);
-        }
-    };
 
     const handleUpdatePosition = async () => {
         if (!positionName.trim()) {
             toast.error("Пожалуйста, введите название должности");
-            return;
-        }
-
-        if (!selectedObjectId) {
-            toast.error("Пожалуйста, выберите объект");
             return;
         }
 
@@ -76,8 +48,8 @@ const UpdatePositionModal = ({
             await PostDataTokenJson(
                 `api/staff/position/update/${position.position_id}`,
                 {
-                    object_id: parseInt(selectedObjectId),
-                    roles_name: positionName.trim(),
+                    object_id: localStorage.getItem("object"),
+                    position_name: positionName.trim(),
                 }
             );
 
@@ -88,7 +60,6 @@ const UpdatePositionModal = ({
 
             onSuccess();
             setPositionName("");
-            setSelectedObjectId("");
             onOpenChange(false);
         } catch (error: any) {
             console.error("Error updating position:", error);
@@ -99,13 +70,7 @@ const UpdatePositionModal = ({
     };
 
     const handleCancel = () => {
-        toast.info("Редактирование должности отменено", {
-            description: "Изменения не были сохранены.",
-            duration: 2000,
-        });
-
         setPositionName("");
-        setSelectedObjectId("");
         onOpenChange(false);
     };
 
@@ -130,22 +95,6 @@ const UpdatePositionModal = ({
                     placeholder="Введите название должности"
                     value={positionName}
                     onChange={(value) => setPositionName(value)}
-                    required
-                />
-                <CustomCombobox
-                    label="Объект"
-                    placeholder="Выберите объект"
-                    value={selectedObjectId}
-                    onChange={(value) => setSelectedObjectId(value)}
-                    options={objects
-                        .filter(
-                            (object) =>
-                                object && object.object_id && object.object_name
-                        )
-                        .map((object) => ({
-                            value: object.object_id.toString(),
-                            label: object.object_name,
-                        }))}
                     required
                 />
             </div>

@@ -4,6 +4,7 @@ import Dashboard from "../pages/Dashboard";
 import Users from "../pages/Users/Users";
 import Positions from "../pages/Position/Positions";
 import Shifts from "../pages/Shifts/Shifts";
+import CreateShift from "../pages/Shifts/CreateShift";
 import ShiftDays from "../pages/Shifts/ShiftDays";
 
 import CreateUser from "@/pages/Users/CreateUser";
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
             {
                 path: "shifts",
                 element: <Shifts />,
+            },
+            {
+                path: "shifts/create",
+                element: <CreateShift />,
             },
             {
                 path: "shifts/days/:id/:name",

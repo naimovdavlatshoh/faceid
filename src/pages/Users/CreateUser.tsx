@@ -23,29 +23,30 @@ const CreateUser = () => {
         objects: [],
         shifts: [],
         positions: [],
+        dayOffType: "0",
+        dayOffItems: [] as string[],
+        dayOffWeekdays: [] as string[], // 1-7, for standard (multiple)
     });
 
     const [isCreating, setIsCreating] = useState(false);
+    const objectId = localStorage.getItem("object");
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch objects
-                const objectsRes = await GetDataSimple("api/faceid/info");
-
                 // Fetch shifts
                 const shiftsRes = await GetDataSimple(
-                    "api/shift/list?page=1&limit=10&object_id=1"
+                    `api/shift/list?page=1&limit=10&object_id=${objectId}`
                 );
 
                 // Fetch positions
                 const positionsRes = await GetDataSimple(
-                    "api/staff/position/list?page=1&limit=100&object_id=1"
+                    `api/staff/position/list?page=1&limit=100&object_id=${objectId}`
                 );
 
                 setFormData((prev) => ({
                     ...prev,
-                    objects: objectsRes || [],
+
                     shifts: shiftsRes?.result || [],
                     positions: positionsRes?.result || [],
                 }));
@@ -96,7 +97,6 @@ const CreateUser = () => {
         if (
             !formData.fullName.trim() ||
             !formData.salary.trim() ||
-            !formData.objectId ||
             !formData.positionId
         ) {
             toast.error("Пожалуйста, заполните все обязательные поля");
@@ -107,12 +107,29 @@ const CreateUser = () => {
             setIsCreating(true);
 
             const submitData = {
-                object_id: parseInt(formData.objectId),
+                object_id: objectId,
                 name: formData.fullName.trim(),
                 salary: parseInt(parseNumber(formData.salary)),
                 salary_type: parseInt(formData.salaryType),
                 shift_id: parseInt(formData.shiftId),
                 position_id: parseInt(formData.positionId),
+                day_off_type: parseInt(formData.dayOffType),
+                day_off_items:
+                    formData.dayOffType === "1"
+                        ? // standard: multiple weekdays
+                          (formData.dayOffWeekdays || [])
+                              .map((v) => v.trim())
+                              .filter(
+                                  (v) => v !== "" && !Number.isNaN(Number(v))
+                              )
+                              .map((v) => ({ days_off: parseInt(v) }))
+                        : // hybrid: multiple month days
+                          (formData.dayOffItems || [])
+                              .map((v) => v.trim())
+                              .filter(
+                                  (v) => v !== "" && !Number.isNaN(Number(v))
+                              )
+                              .map((v) => ({ days_off: parseInt(v) })),
             };
 
             console.log("Creating employee:", submitData);
@@ -131,6 +148,9 @@ const CreateUser = () => {
                 objects: formData.objects,
                 shifts: formData.shifts,
                 positions: formData.positions,
+                dayOffType: "0",
+                dayOffItems: [],
+                dayOffWeekdays: [],
             });
         } catch (error: any) {
             console.log(error);
@@ -241,51 +261,219 @@ const CreateUser = () => {
                                         />
                                     </div>
 
-                                    {/* Salary */}
+                                    {/* day off type */}
                                     <div className="space-y-2">
-                                        <Label
-                                            htmlFor="salary"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-                                        >
-                                            Зарплата
+                                        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Тип выходного
                                         </Label>
-                                        <Input
-                                            id="salary"
-                                            type="text"
-                                            placeholder="0"
-                                            value={formData.salary}
-                                            onChange={(e) =>
-                                                handleInputChange(
-                                                    "salary",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
-                                        />
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant={
+                                                    formData.dayOffType === "0"
+                                                        ? "default"
+                                                        : "outline"
+                                                }
+                                                className="rounded-xl"
+                                                onClick={() => {
+                                                    handleInputChange(
+                                                        "dayOffType",
+                                                        "0"
+                                                    );
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        dayOffWeekday: "",
+                                                    }));
+                                                }}
+                                            >
+                                                Гибридный (по датам)
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant={
+                                                    formData.dayOffType === "1"
+                                                        ? "default"
+                                                        : "outline"
+                                                }
+                                                className="rounded-xl"
+                                                onClick={() => {
+                                                    handleInputChange(
+                                                        "dayOffType",
+                                                        "1"
+                                                    );
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        dayOffItems: [],
+                                                    }));
+                                                }}
+                                            >
+                                                Стандарт (по дням недели)
+                                            </Button>
+                                        </div>
                                     </div>
+
+                                    {formData.dayOffType === "1" ? (
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Дни недели выходных (можно
+                                                несколько)
+                                            </Label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {[
+                                                    { v: "1", l: "Пн" },
+                                                    { v: "2", l: "Вт" },
+                                                    { v: "3", l: "Ср" },
+                                                    { v: "4", l: "Чт" },
+                                                    { v: "5", l: "Пт" },
+                                                    { v: "6", l: "Сб" },
+                                                    { v: "7", l: "Вс" },
+                                                ].map((d) => {
+                                                    const active =
+                                                        formData.dayOffWeekdays.includes(
+                                                            d.v
+                                                        );
+                                                    return (
+                                                        <Button
+                                                            key={d.v}
+                                                            type="button"
+                                                            variant={
+                                                                active
+                                                                    ? "default"
+                                                                    : "outline"
+                                                            }
+                                                            className="rounded-xl"
+                                                            onClick={() =>
+                                                                setFormData(
+                                                                    (prev) => ({
+                                                                        ...prev,
+                                                                        dayOffWeekdays:
+                                                                            active
+                                                                                ? prev.dayOffWeekdays.filter(
+                                                                                      (
+                                                                                          x
+                                                                                      ) =>
+                                                                                          x !==
+                                                                                          d.v
+                                                                                  )
+                                                                                : [
+                                                                                      ...prev.dayOffWeekdays,
+                                                                                      d.v,
+                                                                                  ],
+                                                                    })
+                                                                )
+                                                            }
+                                                        >
+                                                            {d.l}
+                                                        </Button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Даты выходных (1-27)
+                                            </Label>
+                                            <div className="flex gap-2 items-center">
+                                                <Input
+                                                    id="dayoff-input"
+                                                    type="number"
+                                                    placeholder="напр. 6"
+                                                    className="h-10 rounded-xl w-32"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    className="rounded-xl"
+                                                    onClick={() => {
+                                                        const input =
+                                                            document.getElementById(
+                                                                "dayoff-input"
+                                                            ) as HTMLInputElement | null;
+                                                        if (!input) return;
+                                                        const val =
+                                                            input.value.trim();
+                                                        if (!val) return;
+                                                        const num =
+                                                            parseInt(val);
+                                                        const max = 27;
+                                                        if (
+                                                            Number.isNaN(num) ||
+                                                            num < 1 ||
+                                                            num > max
+                                                        ) {
+                                                            toast.error(
+                                                                `Недопустимое значение (1-${max})`
+                                                            );
+                                                            return;
+                                                        }
+                                                        if (
+                                                            !formData.dayOffItems.includes(
+                                                                val
+                                                            )
+                                                        ) {
+                                                            setFormData(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    dayOffItems:
+                                                                        [
+                                                                            ...prev.dayOffItems,
+                                                                            val,
+                                                                        ],
+                                                                })
+                                                            );
+                                                        }
+                                                        input.value = "";
+                                                    }}
+                                                >
+                                                    Добавить
+                                                </Button>
+                                                {formData.dayOffItems.length >
+                                                    0 && (
+                                                    <div className="flex flex-wrap gap-2 ">
+                                                        {formData.dayOffItems.map(
+                                                            (v, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-sm"
+                                                                >
+                                                                    <span>
+                                                                        {v}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="text-red-500 hover:text-red-600 text-lg"
+                                                                        onClick={() =>
+                                                                            setFormData(
+                                                                                (
+                                                                                    prev
+                                                                                ) => ({
+                                                                                    ...prev,
+                                                                                    dayOffItems:
+                                                                                        prev.dayOffItems.filter(
+                                                                                            (
+                                                                                                x
+                                                                                            ) =>
+                                                                                                x !==
+                                                                                                v
+                                                                                        ),
+                                                                                })
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right Column */}
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <CustomCombobox
-                                            label="Объект"
-                                            placeholder="Выберите объект"
-                                            value={formData.objectId}
-                                            onChange={(value) =>
-                                                handleInputChange(
-                                                    "objectId",
-                                                    value
-                                                )
-                                            }
-                                            options={formData.objects.map(
-                                                (obj: any) => ({
-                                                    value: obj.object_id.toString(),
-                                                    label: obj.object_name,
-                                                })
-                                            )}
-                                        />
-                                    </div>
                                     <div className="space-y-2">
                                         <CustomCombobox
                                             label="Смена"
@@ -334,6 +522,29 @@ const CreateUser = () => {
                                                     label: position.position_name,
                                                 }))}
                                             required
+                                        />
+                                    </div>
+
+                                    {/* Salary */}
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="salary"
+                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                        >
+                                            Зарплата
+                                        </Label>
+                                        <Input
+                                            id="salary"
+                                            type="text"
+                                            placeholder="0"
+                                            value={formData.salary}
+                                            onChange={(e) =>
+                                                handleInputChange(
+                                                    "salary",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
                                         />
                                     </div>
                                 </div>
