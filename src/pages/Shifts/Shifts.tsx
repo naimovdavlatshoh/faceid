@@ -53,6 +53,7 @@ interface Shift {
     is_active: number;
     created_at: string;
     updated_at: string;
+    shift_type_name: string;
 }
 
 interface ApiResponse {
@@ -221,6 +222,9 @@ const Shifts = () => {
                                     Смена
                                 </TableHead>
                                 <TableHead className="text-maintx dark:text-white">
+                                    Тип смены
+                                </TableHead>
+                                <TableHead className="text-maintx dark:text-white">
                                     Переработка (мин)
                                 </TableHead>
                                 <TableHead className="text-maintx dark:text-white">
@@ -285,6 +289,9 @@ const Shifts = () => {
                                                     {shift.shift_name}
                                                 </button>
                                             </div>
+                                        </TableCell>
+                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                            {shift.shift_type_name}
                                         </TableCell>
                                         <TableCell className="text-gray-600 dark:text-gray-300">
                                             {shift.overtime_after_minutes} мин

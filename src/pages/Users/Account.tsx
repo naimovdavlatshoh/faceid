@@ -316,8 +316,8 @@ const Account = () => {
 
                                 {/* File Info */}
                                 <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                                    <p>*.jpeg, *.jpg, *.png, *.gif</p>
-                                    <p>макс 3 Мб</p>
+                                    <p>*.jpeg, *.jpg макс 3 Мб</p>
+
                                 </div>
                                 {/* <div className="flex items-center space-x-2">
                                     <Switch id="airplane-mode" />
@@ -592,7 +592,7 @@ const Account = () => {
                                 variant="outline"
                                 className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                             >
-                                Отмена
+                                Назад
                             </Button>
                         </Link>
                         <Button

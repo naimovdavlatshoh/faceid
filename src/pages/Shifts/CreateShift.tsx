@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { PostDataTokenJson } from "@/services/data";
 import { toast } from "sonner";
+import { Link, useNavigate } from "react-router-dom";
 
 const DAY_NAMES = [
     "Понедельник",
@@ -35,6 +36,7 @@ const CreateShift = () => {
         startTime: "",
         endTime: "",
     });
+    const navigate = useNavigate();
 
     const [daySchedules, setDaySchedules] = useState<DaySchedule[]>(
         Array.from({ length: 7 }, (_, i) => ({
@@ -209,6 +211,7 @@ const CreateShift = () => {
 
             await PostDataTokenJson("api/shift/create", payload);
             toast.success("Смена успешно создана");
+            navigate("/shifts");
 
             setForm({
                 objectId: "",
@@ -499,11 +502,20 @@ const CreateShift = () => {
                             </div>
                         )}
 
-                        <div className="flex justify-end">
+                        <div className="flex justify-end items-center gap-3">
+                            <Link to="/users">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                >
+                                    Назад
+                                </Button>
+                            </Link>
                             <Button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6"
+                                className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6 py-2 h-12"
                             >
                                 {isSubmitting ? "Создание..." : "Создать смену"}
                             </Button>

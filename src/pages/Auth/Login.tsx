@@ -8,6 +8,7 @@ import { HiEye, HiEyeOff } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { PostData } from "@/services/data";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
     const [login, setLogin] = useState("");
@@ -15,8 +16,10 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const [statusbtn, setStatusbtn] = useState(false);
 
     const handleSubmit = () => {
+        setStatusbtn(true);
         const payload = {
             login: login,
             password: password,
@@ -24,19 +27,24 @@ const Login = () => {
 
         PostData("login", payload)
             .then((response) => {
-                localStorage.setItem("token", response?.data?.jwt);
-                localStorage.setItem("object", response?.data?.object_id);
-                localStorage.setItem("objects", JSON.stringify(response?.data?.all_objects));
-                toast.success("Успешный вход!", {
-                    description: "Добро пожаловать в систему",
-                    duration: 3000,
-                });
-                if (localStorage.getItem("token")) {
-                    navigate("/");
-                    // Seamless page reload after navigation
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 50);
+                if (response?.data?.jwt) {
+                    localStorage.setItem("token", response?.data?.jwt);
+                    localStorage.setItem("object", response?.data?.object_id);
+                    localStorage.setItem(
+                        "objects",
+                        JSON.stringify(response?.data?.all_objects)
+                    );
+                    toast.success("Успешный вход!", {
+                        description: "Добро пожаловать в систему",
+                        duration: 3000,
+                    });
+                    setStatusbtn(false);
+                    if (localStorage.getItem("token")) {
+                        navigate("/");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 50);
+                    }
                 }
             })
             .catch((error) => {
@@ -84,7 +92,6 @@ const Login = () => {
                             </h2>
                         </div>
 
-                        {/* Demo Info Banner */}
                         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-start space-x-3">
                             <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                 <span className="text-white text-xs font-bold">
@@ -92,7 +99,7 @@ const Login = () => {
                                 </span>
                             </div>
                             <p className="text-sm text-blue-800 dark:text-blue-300">
-                                Используйте aziz с паролем 123123
+                                Введите логин и пароль
                             </p>
                         </div>
 
@@ -175,9 +182,16 @@ const Login = () => {
                             {/* Login Button */}
                             <Button
                                 onClick={handleSubmit}
+                                disabled={
+                                    login.length <= 2 || password.length <= 2
+                                }
                                 className="w-full h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200"
                             >
-                                Войти
+                                {statusbtn ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    "Войти"
+                                )}
                             </Button>
                         </div>
                     </div>

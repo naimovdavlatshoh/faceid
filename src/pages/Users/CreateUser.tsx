@@ -11,6 +11,7 @@ import { ProgressAuto } from "@/components/ui/progress";
 import { GetDataSimple, PostDataTokenJson } from "@/services/data";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
+import { useNavigate } from "react-router-dom";
 
 const CreateUser = () => {
     const [formData, setFormData] = useState({
@@ -30,6 +31,7 @@ const CreateUser = () => {
 
     const [isCreating, setIsCreating] = useState(false);
     const objectId = localStorage.getItem("object");
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -138,6 +140,8 @@ const CreateUser = () => {
 
             toast.success("Сотрудник успешно создан");
 
+            navigate("/users");
+
             setFormData({
                 fullName: "",
                 salary: "",
@@ -153,8 +157,6 @@ const CreateUser = () => {
                 dayOffWeekdays: [],
             });
         } catch (error: any) {
-            console.log(error);
-
             toast.error(error.response.data.error);
         } finally {
             setIsCreating(false);
@@ -558,13 +560,13 @@ const CreateUser = () => {
                                         variant="outline"
                                         className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                                     >
-                                        Отмена
+                                        Назад
                                     </Button>
                                 </Link>
                                 <Button
                                     type="submit"
                                     disabled={isCreating}
-                                    className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="px-6 py-2 h-12 bg-maintx hover:bg-maintx/80 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isCreating ? (
                                         <div className="flex items-center space-x-2">
