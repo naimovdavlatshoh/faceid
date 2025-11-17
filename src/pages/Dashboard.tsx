@@ -1,5 +1,6 @@
 import { ProgressAuto } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
+import { VscDebugDisconnect } from "react-icons/vsc";
 
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
@@ -24,8 +25,12 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="h-[80vh] w-full flex justify-center items-center">
-            <h1 className="text-2xl font-medium text-gray-600"> Временно недоступно</h1>
+        <div className="h-[80vh] w-full flex flex-col justify-center items-center">
+            <VscDebugDisconnect size={200} className="text-maintx mb-10" />
+
+            <h1 className="text-lg font-medium text-gray-600">
+                <span className="text-maintx">(Посещаемость) - </span> Временно недоступно
+            </h1>
         </div>
     );
 };
