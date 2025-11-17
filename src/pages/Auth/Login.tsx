@@ -118,7 +118,7 @@ const Login = () => {
                                     placeholder="demo@admin.com"
                                     value={login}
                                     onChange={(e) => setLogin(e.target.value)}
-                                    className="h-12 rounded-xl border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200"
+                                    className="h-12 rounded-xl border-gray-200 bg-white dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200"
                                 />
                             </div>
 
@@ -132,7 +132,7 @@ const Login = () => {
                                         Пароль
                                     </Label>
                                 </div>
-                                <div className="relative">
+                                <div className="relative bg-white">
                                     <Input
                                         id="password"
                                         type={
@@ -143,7 +143,7 @@ const Login = () => {
                                         onChange={(e) =>
                                             setPassword(e.target.value)
                                         }
-                                        className="h-12 rounded-xl border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200 pr-12"
+                                        className="h-12 bg-white rounded-xl border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200 pr-12"
                                     />
                                     <button
                                         type="button"

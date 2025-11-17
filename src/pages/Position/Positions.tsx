@@ -307,7 +307,7 @@ const Positions = () => {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : currentPositions.length === 0 ? (
+                            ) : currentPositions?.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={5}
@@ -319,7 +319,7 @@ const Positions = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                currentPositions.map((position) => (
+                                currentPositions?.map((position) => (
                                     <TableRow
                                         key={position.position_id}
                                         className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"

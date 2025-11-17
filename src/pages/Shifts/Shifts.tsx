@@ -242,7 +242,7 @@ const Shifts = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {searchFilteredShifts.length === 0 ? (
+                            {searchFilteredShifts?.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={7}
@@ -254,7 +254,7 @@ const Shifts = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                searchFilteredShifts.map((shift) => (
+                                searchFilteredShifts?.map((shift) => (
                                     <TableRow
                                         key={shift.shift_id}
                                         className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"

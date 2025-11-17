@@ -29,9 +29,15 @@ export const handleAuthError = (error: any): boolean => {
             console.log("Session expired. Redirecting to login page...");
         }
 
-        // Reload the page after a short delay to ensure storage is cleared
+        // Redirect to login after a short delay to ensure storage is cleared
         setTimeout(() => {
-            window.location.reload();
+            if (typeof window !== "undefined") {
+                if (window.location.pathname === "/login") {
+                    window.location.reload();
+                } else {
+                    window.location.replace("/login");
+                }
+            }
         }, 100);
 
         return true; // Error was handled

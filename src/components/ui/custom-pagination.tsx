@@ -61,7 +61,6 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
                         />
                     </PaginationItem>
 
-                    {/* Show page numbers */}
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         let pageNumber;
                         if (totalPages <= 5) {

@@ -281,7 +281,7 @@ const Users = () => {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : currentUsers.length === 0 ? (
+                            ) : currentUsers?.length === 0 ? (
                                 <TableRow>
                                     <TableCell
                                         colSpan={5}
@@ -293,7 +293,7 @@ const Users = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                currentUsers.map((user) => (
+                                currentUsers?.map((user) => (
                                     <TableRow
                                         key={user.faceid_user_id}
                                         className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"

@@ -7,14 +7,13 @@ import { useEffect, useState } from "react";
 import { IoTimer } from "react-icons/io5";
 import { FaUserCog } from "react-icons/fa";
 
-
 interface SidebarProps {
     className?: string;
 }
 
 const navigation = [
     {
-        name: "Аналитика",
+        name: "Посещаемость",
         href: "/",
         icon: <SiAnalogue className="w-5 h-5" />,
     },

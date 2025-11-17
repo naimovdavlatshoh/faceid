@@ -4,7 +4,6 @@ import axios from "axios";
 export const BASE_URL =
     import.meta.env.VITE_BASE_URL || "https://faceid.afandicloud.uz/";
 
-// Block requests to avtozapchast.netlify.app
 axios.interceptors.request.use(
     (config) => {
         if (config.url?.includes("avtozapchast.netlify.app")) {
@@ -46,8 +45,17 @@ export const GetDataSimpleBlob = async (url: string, config: any = {}) => {
     return response.data;
 };
 
-export const Token = localStorage.getItem("token");
+const getToken = () => localStorage.getItem("token");
 export const Role = localStorage.getItem("role");
+
+const withAuthHeaders = (headers: Record<string, string> = {}) => {
+    const token = getToken();
+    if (!token) return headers;
+    return {
+        Authorization: `Bearer ${token}`,
+        ...headers,
+    };
+};
 
 export const PostData = async (url: string, data: any) => {
     const response = await axios.post(BASE_URL + url, data);
@@ -58,7 +66,7 @@ export const PostDataToken = async (url: string, data: any) => {
     const response = await axios.post(BASE_URL + url, data, {
         headers: {
             "Content-Type": "multipart/formData",
-            Authorization: `Bearer ${Token}`,
+            ...withAuthHeaders(),
         },
     });
     return response;
@@ -76,7 +84,7 @@ export const PostDocxContract = async (
     const response = await axios.post(BASE_URL + url, formData, {
         headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${Token}`,
+            ...withAuthHeaders(),
         },
     });
     return response;
@@ -85,7 +93,7 @@ export const PostDocxContract = async (
 export const PostDataTokenJson = async (url: string, data: any) => {
     const response = await axios.post(BASE_URL + url, data, {
         headers: {
-            Authorization: `Bearer ${Token}`,
+            ...withAuthHeaders(),
         },
     });
     return response;
@@ -94,43 +102,28 @@ export const PostDataTokenJson = async (url: string, data: any) => {
 export const PostSimple = async (url: string, data: any = {}) => {
     const response = await axios.post(BASE_URL + url, data, {
         headers: {
-            Authorization: `Bearer ${Token}`,
+            ...withAuthHeaders(),
         },
     });
     return response;
 };
 
 export const GetDataSimple = async (url: string) => {
-    if (Token) {
-        const response = await axios.get(BASE_URL + url, {
-            headers: {
-                Authorization: `Bearer ${Token}`,
-            },
-        });
-        return response.data;
-    } else {
-        const response = await axios.get(BASE_URL + url);
-        return response.data;
-    }
+    const headers = withAuthHeaders();
+    const response = await axios.get(BASE_URL + url, { headers });
+    return response.data;
 };
 export const GetDataSimpleUrl = async (url: string) => {
-    if (Token) {
-        const response = await axios.get(url, {
-            headers: {
-                Authorization: `Bearer ${Token}`,
-            },
-        });
-        return response.data;
-    } else {
-        const response = await axios.get(BASE_URL + url);
-        return response.data;
-    }
+    const headers = withAuthHeaders();
+    const targetUrl = url.startsWith("http") ? url : BASE_URL + url;
+    const response = await axios.get(targetUrl, { headers });
+    return response.data;
 };
 
 export const DeleteData = async (url: string) => {
     const response = await axios.delete(BASE_URL + url, {
         headers: {
-            Authorization: `Bearer ${Token}`,
+            ...withAuthHeaders(),
         },
     });
     return response;
