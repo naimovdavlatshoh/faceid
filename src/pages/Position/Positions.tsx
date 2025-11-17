@@ -236,7 +236,7 @@ const Positions = () => {
             <div className="space-y-4 mb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                        <h1 className="text-2xl font-semibold text-gray-900 ">
                             Все должности
                         </h1>
                     </div>
@@ -255,7 +255,7 @@ const Positions = () => {
                 />
             </div>
 
-            <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
                 <CardHeader className="pb-4">
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full">
@@ -271,7 +271,7 @@ const Positions = () => {
                     <Table>
                         <TableHeader className="bg-mainbg/10">
                             <TableRow>
-                                <TableHead className="text-maintx dark:text-white w-12">
+                                <TableHead className="text-maintx  w-12">
                                     <Checkbox
                                         checked={
                                             selectedPositions.length ===
@@ -281,13 +281,13 @@ const Positions = () => {
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Должность
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Дата создания
                                 </TableHead>
-                                <TableHead className="text-right text-maintx dark:text-white">
+                                <TableHead className="text-right text-maintx ">
                                     Действия
                                 </TableHead>
                             </TableRow>
@@ -322,7 +322,7 @@ const Positions = () => {
                                 currentPositions?.map((position) => (
                                     <TableRow
                                         key={position.position_id}
-                                        className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        className="border-dashed border-gray-200  hover:bg-gray-100 "
                                     >
                                         <TableCell className="w-12">
                                             <Checkbox
@@ -342,14 +342,14 @@ const Positions = () => {
                                                     <FaUserCog className="w-5 h-5 text-maintx" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                    <p className="text-sm font-medium text-gray-900 ">
                                                         {position.position_name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </TableCell>
 
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                        <TableCell className="text-gray-600 ">
                                             {new Date(
                                                 position.created_at
                                             ).toLocaleDateString("ru-RU")}
@@ -399,7 +399,7 @@ const Positions = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4">
+                <CardFooter className="flex justify-between items-center border-t border-gray-200  pt-4">
                     <div className="flex items-center gap-2">
                         <label htmlFor="" className="text-gray-500 text-sm">
                             Строк на странице:
@@ -442,9 +442,9 @@ const Positions = () => {
                 showCloseButton={false}
             >
                 <div className="space-y-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                    <p className="text-sm text-gray-600 ">
                         Вы уверены, что хотите удалить должность{" "}
-                        <span className="font-semibold text-gray-900 dark:text-white">
+                        <span className="font-semibold text-gray-900">
                             {positionToDelete?.name}
                         </span>
                         ? Это действие нельзя отменить.

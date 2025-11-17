@@ -81,7 +81,7 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
 
     return (
         <div className={`space-y-2 ${className}`}>
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
+            <label className="text-sm font-medium text-gray-900 ">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>

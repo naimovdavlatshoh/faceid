@@ -30,13 +30,13 @@ const CustomBreadcrumb: React.FC<CustomBreadcrumbProps> = ({
                     <React.Fragment key={index}>
                         <BreadcrumbItem>
                             {item.isActive ? (
-                                <BreadcrumbPage className="text-maintx dark:text-white font-normal">
+                                <BreadcrumbPage className="text-maintx  font-normal">
                                     {item.label}
                                 </BreadcrumbPage>
                             ) : (
                                 <BreadcrumbLink
                                     href={item.href || "#"}
-                                    className="text-gray-500 font-light hover:underline dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                                    className="text-gray-500 font-light hover:underline  hover:text-gray-900 "
                                 >
                                     {item.label}
                                 </BreadcrumbLink>

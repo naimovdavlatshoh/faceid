@@ -151,7 +151,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
                 hideClose={!showCloseButton}
             >
                 <DialogHeader>
-                    <DialogTitle className="text-gray-900 dark:text-white">
+                    <DialogTitle className="text-gray-900 ">
                         {title}
                     </DialogTitle>
                 </DialogHeader>
@@ -165,7 +165,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
                                 <Button
                                     variant="outline"
                                     onClick={handleCancel}
-                                    className="text-gray-600 dark:text-gray-300 rounded-xl"
+                                    className="text-gray-600  rounded-xl"
                                 >
                                     {cancelText}
                                 </Button>

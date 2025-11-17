@@ -23,7 +23,7 @@ const Navbar = ({ className }: NavbarProps) => {
     return (
         <header
             className={cn(
-                "fixed top-0 left-72 right-0 z-40 bg-white/5 dark:bg-gray-900/30 backdrop-blur-xl px-6 py-4 flex items-center justify-between",
+                "fixed top-0 left-72 right-0 z-40 bg-white/5  backdrop-blur-xl px-6 py-4 flex items-center justify-between",
                 className
             )}
         >
@@ -35,7 +35,7 @@ const Navbar = ({ className }: NavbarProps) => {
             <div className="flex justify-end items-center">
                 <Sheet>
                     <SheetTrigger asChild>
-                        <button className="flex items-center space-x-3 text-sm rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 px-2 py-1 transition-colors">
+                        <button className="flex items-center space-x-3 text-sm rounded-full hover:bg-gray-50  px-2 py-1 transition-colors">
                             <div className="w-10 h-10 bg-mainbg rounded-full flex items-center justify-center p-[2px]">
                                 <div className="">
                                     <img
@@ -49,7 +49,7 @@ const Navbar = ({ className }: NavbarProps) => {
                     </SheetTrigger>
                     <SheetContent
                         side="right"
-                        className="bg-white dark:bg-gray-900/90 backdrop-blur-xl border-l flex flex-col justify-between border-gray-100 dark:border-gray-800 p-6"
+                        className="bg-white  backdrop-blur-xl border-l flex flex-col justify-between border-gray-100  p-6"
                     >
                         <div className="flex flex-col items-center text-center">
                             <div className="relative">
@@ -63,7 +63,7 @@ const Navbar = ({ className }: NavbarProps) => {
                                     </div>
                                 </div>
                             </div>
-                            <h3 className="mt-4 text-xl font-semibold text-gray-900 dark:text-white">
+                            <h3 className="mt-4 text-xl font-semibold text-gray-900 ">
                                 Jaydon Frankie
                             </h3>
                             <p className="text-sm text-gray-500">

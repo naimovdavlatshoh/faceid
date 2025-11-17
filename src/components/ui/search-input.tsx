@@ -50,7 +50,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
             <div className="relative w-full ">
                 {/* Search Icon */}
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MdSearch className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+                    <MdSearch className="h-6 w-6 text-gray-400 " />
                 </div>
 
                 {/* Input Field */}
@@ -61,10 +61,10 @@ const SearchInput: React.FC<SearchInputProps> = ({
                     onKeyPress={handleKeyPress}
                     placeholder={placeholder}
                     className={cn(
-                        "w-full pl-12 pr-10 py-4 border border-gray-200 dark:border-gray-600",
-                        "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
+                        "w-full pl-12 pr-10 py-4 border border-gray-200 ",
+                        "bg-white  text-gray-900 ",
                         "rounded-xl outline-none focus:outline-none focus:ring-0 focus:ring-offset-0",
-                        "placeholder-gray-500 dark:placeholder-gray-400",
+                        "placeholder-gray-500 ",
                         "transition-colors duration-200"
                     )}
                 />
@@ -76,7 +76,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
                         onClick={handleClear}
                         className="absolute inset-y-0 right-0 pr-3 flex items-center rounded-r-2xl transition-colors"
                     >
-                        <MdClose className="h-4 w-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" />
+                        <MdClose className="h-4 w-4 text-gray-400  hover:text-gray-600 " />
                     </button>
                 )}
             </div>

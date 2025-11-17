@@ -366,7 +366,7 @@ const ShiftDays = () => {
             <div className="space-y-4 mb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                        <h1 className="text-2xl font-semibold text-gray-900 ">
                             Расписание: {shiftName}
                         </h1>
                     </div>
@@ -380,9 +380,9 @@ const ShiftDays = () => {
                 />
             </div>
 
-            <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
                 <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <CardTitle className="text-lg font-semibold text-gray-900 ">
                         Данные смены
                     </CardTitle>
                 </CardHeader>
@@ -531,14 +531,14 @@ const ShiftDays = () => {
 
                     {form.shiftTypeStr === "0" && (
                         <div className="space-y-4 pt-4 border-t">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            <h3 className="text-lg font-semibold text-gray-900 ">
                                 Расписание по дням недели
                             </h3>
                             <div className="space-y-3">
                                 {DAY_NAMES.map((dayName, index) => (
                                     <div
                                         key={index}
-                                        className="p-4 rounded-xl border bg-gray-50 dark:bg-gray-800/50"
+                                        className="p-4 rounded-xl border bg-gray-50 0"
                                     >
                                         <Label>{dayName}</Label>
                                         <div className="grid grid-cols-2 gap-4 mt-2">

@@ -40,7 +40,7 @@ export const CustomInput: React.FC<CustomInputProps> = ({
 }) => {
     return (
         <div className={`space-y-2 ${className}`}>
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
+            <label className="text-sm font-medium text-gray-900 ">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -86,7 +86,7 @@ export const CustomCombobox: React.FC<CustomComboboxProps> = ({
 
     return (
         <div className={`space-y-2 ${className}`}>
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
+            <label className="text-sm font-medium text-gray-900 ">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -161,7 +161,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 }) => {
     return (
         <div className={`space-y-2 ${className}`}>
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
+            <label className="text-sm font-medium text-gray-900 ">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -197,7 +197,7 @@ export const CustomTextarea: React.FC<CustomTextareaProps> = ({
 }) => {
     return (
         <div className={`space-y-2 ${className}`}>
-            <label className="text-sm font-medium text-gray-900 dark:text-white">
+            <label className="text-sm font-medium text-gray-900 ">
                 {label}
                 {required && <span className="text-red-500 ml-1">*</span>}
             </label>

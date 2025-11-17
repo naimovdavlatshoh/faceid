@@ -174,13 +174,13 @@ const Shifts = () => {
             <div className="space-y-4 mb-10">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl  font-semibold text-gray-900 dark:text-white">
+                        <h1 className="text-2xl  font-semibold text-gray-900">
                             Смены
                         </h1>
                     </div>
                     <div className="flex space-x-3">
                         <Link to="/shifts/create">
-                            <Button className="px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200">
+                            <Button className="px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800  text-white  rounded-xl font-medium transition-all duration-200">
                                 <IoMdAdd className="w-4 h-4" />
                                 Добавить
                             </Button>
@@ -196,7 +196,7 @@ const Shifts = () => {
             </div>
 
             {/* Main Content */}
-            <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
                 <CardHeader>
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full">
@@ -212,31 +212,31 @@ const Shifts = () => {
                     <Table>
                         <TableHeader className="bg-mainbg/10">
                             <TableRow>
-                                <TableHead className="text-maintx dark:text-white w-12">
+                                <TableHead className="text-maintx ">
                                     <Checkbox
                                         checked={isAllSelected}
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Смена
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Тип смены
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx">
                                     Переработка (мин)
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Допуск опоздания (мин)
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Статус
                                 </TableHead>
-                                <TableHead className="text-maintx dark:text-white">
+                                <TableHead className="text-maintx ">
                                     Дата создания
                                 </TableHead>
-                                <TableHead className=" text-maintx dark:text-white">
+                                <TableHead className=" text-maintx ">
                                     Действия
                                 </TableHead>
                             </TableRow>
@@ -246,7 +246,7 @@ const Shifts = () => {
                                 <TableRow>
                                     <TableCell
                                         colSpan={7}
-                                        className="text-center py-8 text-gray-500 dark:text-gray-400"
+                                        className="text-center py-8 text-gray-500 "
                                     >
                                         {searchTerm
                                             ? "Смены не найдены"
@@ -257,7 +257,7 @@ const Shifts = () => {
                                 searchFilteredShifts?.map((shift) => (
                                     <TableRow
                                         key={shift.shift_id}
-                                        className="border-dashed border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                        className="border-dashed border-gray-200  hover:bg-gray-100 "
                                     >
                                         <TableCell>
                                             <Checkbox
@@ -278,7 +278,7 @@ const Shifts = () => {
 
                                                 <button
                                                     type="button"
-                                                    className="text-left text-sm font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline cursor-pointer transition-colors duration-200"
+                                                    className="text-left text-sm font-medium text-blue-600 hover:text-blue-800  hover:underline cursor-pointer transition-colors duration-200"
                                                     onClick={() => {
                                                         setSelectedShift(shift);
                                                         setIsDaysModalOpen(
@@ -290,21 +290,21 @@ const Shifts = () => {
                                                 </button>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                        <TableCell className="text-gray-600 ">
                                             {shift.shift_type_name}
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                        <TableCell className="text-gray-600 ">
                                             {shift.overtime_after_minutes} мин
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                        <TableCell className="text-gray-600 ">
                                             {shift.late_tolerance_minutes} мин
                                         </TableCell>
                                         <TableCell>
                                             <span
                                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                     shift.is_active === 1
-                                                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                                        ? "bg-green-100 text-green-800 "
+                                                        : "bg-red-100 text-red-800 "
                                                 }`}
                                             >
                                                 {shift.is_active === 1
@@ -312,7 +312,7 @@ const Shifts = () => {
                                                     : "Неактивна"}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 dark:text-gray-300">
+                                        <TableCell className="text-gray-600 ">
                                             {new Date(
                                                 shift.created_at
                                             ).toLocaleDateString("ru-RU")}
@@ -363,7 +363,7 @@ const Shifts = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4">
+                <CardFooter className="flex justify-between items-center border-t border-gray-200  pt-4">
                     <div className="flex items-center gap-2">
                         <label htmlFor="" className="text-gray-500 text-sm">
                             Строк на странице:

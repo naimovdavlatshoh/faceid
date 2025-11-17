@@ -158,7 +158,7 @@ const EditShiftModal = ({
                 <div className="space-y-2">
                     <Label
                         htmlFor="shiftName"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                        className="text-sm font-medium text-gray-700 "
                     >
                         Название смены *
                     </Label>
@@ -170,7 +170,7 @@ const EditShiftModal = ({
                         onChange={(e) =>
                             handleInputChange("shiftName", e.target.value)
                         }
-                        className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
+                        className="h-12 rounded-xl border-gray-200 "
                         required
                     />
                 </div>
@@ -202,7 +202,7 @@ const EditShiftModal = ({
                 <div className="space-y-2">
                     <Label
                         htmlFor="lateToleranceMinutes"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                        className="text-sm font-medium text-gray-700 "
                     >
                         Допустимое опоздание (минуты)
                     </Label>
@@ -217,9 +217,9 @@ const EditShiftModal = ({
                                 e.target.value
                             )
                         }
-                        className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
+                        className="h-12 rounded-xl border-gray-200 "
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 ">
                         0 - если не нужно считать опоздания
                     </p>
                 </div>
@@ -228,7 +228,7 @@ const EditShiftModal = ({
                 <div className="space-y-2">
                     <Label
                         htmlFor="overtimeAfterMinutes"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                        className="text-sm font-medium text-gray-700"
                     >
                         Переработка (минуты)
                     </Label>
@@ -243,9 +243,9 @@ const EditShiftModal = ({
                                 e.target.value
                             )
                         }
-                        className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
+                        className="h-12 rounded-xl border-gray-200 "
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 ">
                         0 - если не нужно считать переработку
                     </p>
                 </div>

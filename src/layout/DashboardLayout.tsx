@@ -17,9 +17,7 @@ const DashboardLayout = ({ className }: DashboardLayoutProps) => {
     };
 
     return (
-        <div
-            className={cn("flex h-screen bg-white dark:bg-gray-900", className)}
-        >
+        <div className={cn("flex h-screen bg-white ", className)}>
             {/* Sidebar */}
             <Sidebar />
 

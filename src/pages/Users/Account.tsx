@@ -246,7 +246,7 @@ const Account = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                    <h1 className="text-2xl font-semibold text-gray-900 ">
                         Аккаунт
                     </h1>
                 </div>
@@ -263,12 +263,12 @@ const Account = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="space-y-6 lg:col-span-1">
-                    <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
                         <CardContent className="space-y-4 py-14">
                             {/* Photo Upload Area */}
                             <div className="flex flex-col items-center space-y-8">
                                 <div
-                                    className={`group relative w-32 h-32 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden p-1.5 bg-gray-50 dark:bg-gray-700 ${
+                                    className={`group relative w-32 h-32 rounded-full border-2 border-dashed border-gray-300 overflow-hidden p-1.5 bg-gray-50 ${
                                         isUploading
                                             ? "cursor-not-allowed opacity-75"
                                             : "cursor-pointer"
@@ -278,7 +278,7 @@ const Account = () => {
                                     aria-label="Загрузить фото"
                                 >
                                     {isUploading ? (
-                                        <div className="w-full h-full rounded-full bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-gray-100  flex items-center justify-center">
                                             <div className="relative">
                                                 {/* Spinning Circle */}
                                                 <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
@@ -315,9 +315,8 @@ const Account = () => {
                                 </div>
 
                                 {/* File Info */}
-                                <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+                                <div className="text-center text-sm text-gray-500 ">
                                     <p>*.jpeg, *.jpg макс 3 Мб</p>
-
                                 </div>
                                 {/* <div className="flex items-center space-x-2">
                                     <Switch id="airplane-mode" />
@@ -335,16 +334,16 @@ const Account = () => {
                         </CardContent>
                     </Card>
                     {/* Quick Info */}
-                    <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+                    <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
                         <CardHeader>
-                            <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">
+                            <CardTitle className="text-base font-semibold text-gray-900 ">
                                 Информация
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-gray-500">Смена</span>
-                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                <span className="text-gray-900  font-medium">
                                     {formData.displayShiftName || "—"}
                                 </span>
                             </div>
@@ -352,7 +351,7 @@ const Account = () => {
                                 <span className="text-gray-500">
                                     Тип зарплаты
                                 </span>
-                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                <span className="text-gray-900  font-medium">
                                     {formData.displaySalaryTypeText || "—"}
                                 </span>
                             </div>
@@ -360,7 +359,7 @@ const Account = () => {
                                 <span className="text-gray-500">
                                     Тип выходного
                                 </span>
-                                <span className="text-gray-900 dark:text-gray-100 font-medium">
+                                <span className="text-gray-900  font-medium">
                                     {formData.displayDayOffTypeText || "—"}
                                 </span>
                             </div>
@@ -369,7 +368,7 @@ const Account = () => {
                                     <span className="text-xs text-gray-500">
                                         Выходные
                                     </span>
-                                    <div className="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                                    <div className="mt-2 text-sm text-gray-900 ">
                                         {(() => {
                                             const t = formData.dayOffType;
                                             const hasMonthly =
@@ -469,9 +468,9 @@ const Account = () => {
                 </div>
 
                 {/* Right Section - User Details Form */}
-                <Card className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border lg:col-span-2 border-gray-100 dark:border-gray-700 flex flex-col">
+                <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-gray-100  flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <CardTitle className="text-lg font-semibold text-gray-900 ">
                             Данные пользователя
                         </CardTitle>
                     </CardHeader>
@@ -486,7 +485,7 @@ const Account = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="fullName"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                            className="text-sm font-medium text-gray-700 "
                                         >
                                             Имя
                                         </Label>
@@ -501,7 +500,7 @@ const Account = () => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
+                                            className="h-12 rounded-xl border-gray-200 "
                                         />
                                     </div>
                                     {/* Salary Type */}
@@ -539,7 +538,7 @@ const Account = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="salary"
-                                            className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                                            className="text-sm font-medium text-gray-700 "
                                         >
                                             Зарплата
                                         </Label>
@@ -554,7 +553,7 @@ const Account = () => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 dark:border-gray-600"
+                                            className="h-12 rounded-xl border-gray-200 "
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -590,7 +589,7 @@ const Account = () => {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="px-6 py-2 h-12 rounded-xl border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                className="px-6 py-2 h-12 rounded-xl border-gray-300  text-gray-700  hover:bg-gray-50 "
                             >
                                 Назад
                             </Button>
@@ -600,7 +599,7 @@ const Account = () => {
                             form="accountForm"
                             // disabled={isSubmitting}
                             disabled={true}
-                            className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800  text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <div className="flex items-center space-x-2">

@@ -228,18 +228,18 @@ const ShiftDaysModal = ({
                 ) : (
                     <div className="space-y-4 mt-5">
                         {hasShiftTimes && shiftType === 1 ? (
-                            <div className="p-4 rounded-2xl border border-maintx bg-mainbg/10 dark:bg-green-900/10">
+                            <div className="p-4 rounded-2xl border border-maintx bg-mainbg/10 ">
                                 <h3 className="text-base font-semibold">
                                     Стандартная смена
                                 </h3>
                                 <p className="text-sm mt-1">
                                     Каждый день:{" "}
                                     <span className="inline-flex items-center gap-2">
-                                        <span className="rounded-xl bg-white dark:bg-gray-900 px-3 py-1 font-mono text-sm">
+                                        <span className="rounded-xl bg-white  px-3 py-1 font-mono text-sm">
                                             {standardStart}
                                         </span>
                                         —
-                                        <span className="rounded-xl bg-white dark:bg-gray-900 px-3 py-1 font-mono text-sm">
+                                        <span className="rounded-xl bg-white  px-3 py-1 font-mono text-sm">
                                             {standardEnd}
                                         </span>
                                     </span>
@@ -250,21 +250,21 @@ const ShiftDaysModal = ({
                                 {DAY_NAMES.map((dayName, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center justify-between py-3 px-2 p-4 rounded-2xl border border-maintx bg-mainbg/10 dark:bg-green-900/10"
+                                        className="flex items-center justify-between py-3 px-2 p-4 rounded-2xl border border-maintx bg-mainbg/10 "
                                     >
                                         <Label className="text-sm font-medium">
                                             {dayName}
                                         </Label>
 
                                         {hasShiftTimes ? (
-                                            <span className="text-md text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                            <span className="text-md text-gray-700  whitespace-nowrap">
                                                 от
-                                                <span className="mx-1 rounded-md bg-white dark:bg-gray-900 px-2 py-1 font-mono text-md">
+                                                <span className="mx-1 rounded-md bg-white px-2 py-1 font-mono text-md">
                                                     {days[index]?.start_time ||
                                                         "--:--"}
                                                 </span>
                                                 до
-                                                <span className="ml-1 rounded-md bg-white dark:bg-gray-900 px-2 py-1 font-mono text-md">
+                                                <span className="ml-1 rounded-md bg-white  px-2 py-1 font-mono text-md">
                                                     {days[index]?.end_time ||
                                                         "--:--"}
                                                 </span>

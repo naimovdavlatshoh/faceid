@@ -74,9 +74,9 @@ const DeleteShiftModal = ({
             showCloseButton={false}
         >
             <div className="space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-sm text-gray-600 ">
                     Вы уверены, что хотите удалить смену{" "}
-                    <span className="font-semibold text-gray-900 dark:text-white">
+                    <span className="font-semibold text-gray-900 ">
                         {shift?.shift_name}
                     </span>
                     ? Это действие нельзя отменить.
