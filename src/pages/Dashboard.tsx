@@ -397,7 +397,7 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500">
                             Самые частые опоздания или отсутствие
                         </p>
-                        <div className="mt-4 space-y-3">
+                        {/* <div className="mt-4 space-y-3">
                             {attendanceData.attendance
                                 .filter(
                                     (item) =>
@@ -430,6 +430,9 @@ const Dashboard = () => {
                                         </span>
                                     </div>
                                 ))}
+                        </div> */}
+                        <div className="h-20 w-full flex justify-center items-center">
+                            <h1>Скоро...</h1>
                         </div>
                     </div>
                 </div>
