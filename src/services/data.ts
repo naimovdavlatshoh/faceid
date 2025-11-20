@@ -243,3 +243,9 @@ export const UpdateProductPrice = async (
     });
     return response;
 };
+
+// Attendance API functions
+export const GetDailyAttendance = async (date: string) => {
+    const response = await GetDataSimple(`api/attendance/daily?date=${date}`);
+    return response;
+};
