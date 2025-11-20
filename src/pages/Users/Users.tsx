@@ -154,10 +154,10 @@ const Users = () => {
     };
 
     const handleSelectAll = () => {
-        if (selectedUsers.length === currentUsers.length) {
+        if (selectedUsers?.length === currentUsers?.length) {
             setSelectedUsers([]);
         } else {
-            setSelectedUsers(currentUsers.map((user) => user.faceid_user_id));
+            setSelectedUsers(currentUsers?.map((user) => user.faceid_user_id));
         }
     };
 
@@ -239,9 +239,9 @@ const Users = () => {
                                 <TableHead className="text-maintx ">
                                     <Checkbox
                                         checked={
-                                            selectedUsers.length ===
-                                                currentUsers.length &&
-                                            currentUsers.length > 0
+                                            selectedUsers?.length ===
+                                                currentUsers?.length &&
+                                            currentUsers?.length > 0
                                         }
                                         onCheckedChange={handleSelectAll}
                                     />

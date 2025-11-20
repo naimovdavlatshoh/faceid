@@ -30,6 +30,7 @@ const Login = () => {
                 if (response?.data?.jwt) {
                     localStorage.setItem("token", response?.data?.jwt);
                     localStorage.setItem("object", response?.data?.object_id);
+                    localStorage.setItem("company", response?.data?.firstname);
                     localStorage.setItem(
                         "objects",
                         JSON.stringify(response?.data?.all_objects)

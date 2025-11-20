@@ -64,11 +64,11 @@ const Navbar = ({ className }: NavbarProps) => {
                                 </div>
                             </div>
                             <h3 className="mt-4 text-xl font-semibold text-gray-900 ">
-                                Jaydon Frankie
+                                {localStorage.getItem("company")}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            {/* <p className="text-sm text-gray-500">
                                 demo@minimals.cc
-                            </p>
+                            </p> */}
 
                             <div className="flex items-center gap-3 mt-4">
                                 {[

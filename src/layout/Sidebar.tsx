@@ -65,7 +65,7 @@ const Sidebar = ({ className }: SidebarProps) => {
         >
             {/* Logo Section */}
             <div className="p-6">
-                <h2 className="text-xl font-bold text-maintx ">D Admin</h2>
+                <h2 className="text-xl font-bold text-maintx ">{localStorage.getItem("company")}</h2>
             </div>
 
             {/* Navigation Menu */}

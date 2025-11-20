@@ -109,14 +109,14 @@ const Shifts = () => {
         setCurrentPage(1); // Reset to first page when changing items per page
     };
 
-    const searchFilteredShifts = shifts.filter((shift) =>
+    const searchFilteredShifts = shifts?.filter((shift) =>
         shift.shift_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             setSelectedShifts(
-                searchFilteredShifts.map((shift) => shift.shift_id)
+                searchFilteredShifts?.map((shift) => shift.shift_id)
             );
         } else {
             setSelectedShifts([]);
@@ -127,13 +127,13 @@ const Shifts = () => {
         if (checked) {
             setSelectedShifts((prev) => [...prev, shiftId]);
         } else {
-            setSelectedShifts((prev) => prev.filter((id) => id !== shiftId));
+            setSelectedShifts((prev) => prev?.filter((id) => id !== shiftId));
         }
     };
 
     const isAllSelected =
-        searchFilteredShifts.length > 0 &&
-        selectedShifts.length === searchFilteredShifts.length;
+        searchFilteredShifts?.length > 0 &&
+        selectedShifts.length === searchFilteredShifts?.length;
 
     const handleShiftUpdated = () => {
         fetchShifts(currentPage, itemsPerPage);

@@ -85,8 +85,8 @@ const Positions = () => {
                 `api/staff/position/list?page=${page}&limit=${limit}&object_id=1`
             );
 
-            setPositions(data.result);
-            setTotalPages(data.pages);
+            setPositions(data?.result);
+            setTotalPages(data?.pages);
         } catch (error) {
             console.error("Error fetching positions:", error);
             toast.error("Ошибка загрузки должностей");
@@ -94,7 +94,7 @@ const Positions = () => {
     };
 
     const searchPositions = async (keyword: string) => {
-        if (keyword.length < 3) {
+        if (keyword?.length < 3) {
             // If keyword is less than 3 characters, fetch all positions
             fetchPositions(currentPage, itemsPerPage);
             return;
@@ -107,11 +107,13 @@ const Positions = () => {
                 {}
             );
 
-            setPositions(response.data.result || []);
+            setPositions(response?.data?.result || []);
             setTotalPages(1); // Search results are typically on one page
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error searching positions:", error);
-            toast.error("Ошибка поиска должностей");
+            toast.error(
+                error?.response?.data?.message || "Ошибка поиска должностей"
+            );
         } finally {
             setIsSearching(false);
         }
@@ -156,11 +158,11 @@ const Positions = () => {
     };
 
     const handleSelectAll = () => {
-        if (selectedPositions.length === currentPositions.length) {
+        if (selectedPositions?.length === currentPositions?.length) {
             setSelectedPositions([]);
         } else {
             setSelectedPositions(
-                currentPositions.map((position) => position.position_id)
+                currentPositions?.map((position) => position?.position_id)
             );
         }
     };
@@ -274,9 +276,9 @@ const Positions = () => {
                                 <TableHead className="text-maintx  w-12">
                                     <Checkbox
                                         checked={
-                                            selectedPositions.length ===
-                                                currentPositions.length &&
-                                            currentPositions.length > 0
+                                            selectedPositions?.length ===
+                                                currentPositions?.length &&
+                                            currentPositions?.length > 0
                                         }
                                         onCheckedChange={handleSelectAll}
                                     />
@@ -326,12 +328,12 @@ const Positions = () => {
                                     >
                                         <TableCell className="w-12">
                                             <Checkbox
-                                                checked={selectedPositions.includes(
-                                                    position.position_id
+                                                checked={selectedPositions?.includes(
+                                                    position?.position_id
                                                 )}
                                                 onCheckedChange={() =>
                                                     handleSelectPosition(
-                                                        position.position_id
+                                                        position?.position_id
                                                     )
                                                 }
                                             />
@@ -343,7 +345,9 @@ const Positions = () => {
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-medium text-gray-900 ">
-                                                        {position.position_name}
+                                                        {
+                                                            position?.position_name
+                                                        }
                                                     </p>
                                                 </div>
                                             </div>
@@ -351,7 +355,7 @@ const Positions = () => {
 
                                         <TableCell className="text-gray-600 ">
                                             {new Date(
-                                                position.created_at
+                                                position?.created_at
                                             ).toLocaleDateString("ru-RU")}
                                         </TableCell>
 
@@ -381,9 +385,9 @@ const Positions = () => {
                                                         onClick={() =>
                                                             openDeleteModal({
                                                                 position_id:
-                                                                    position.position_id,
+                                                                    position?.position_id,
                                                                 position_name:
-                                                                    position.position_name,
+                                                                    position?.position_name,
                                                             })
                                                         }
                                                     >

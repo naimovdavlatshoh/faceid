@@ -35,6 +35,7 @@ type AttendanceData = {
         status: "present" | "late" | "absent";
         is_day_off: boolean;
         late_tolerance_minutes: number;
+        image_path?: string | null;
     }>;
 };
 
@@ -88,8 +89,10 @@ const Dashboard = () => {
     );
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(getCurrentDate());
+    const [modalImage, setModalImage] = useState<string | null>(null);
 
     const selectedDateValue = useMemo(() => {
+        if (!selectedDate) return undefined;
         const parsed = new Date(selectedDate);
         return Number.isNaN(parsed.getTime()) ? undefined : parsed;
     }, [selectedDate]);
@@ -120,10 +123,38 @@ const Dashboard = () => {
         fetchData();
     }, [selectedDate]);
 
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && modalImage) {
+                setModalImage(null);
+            }
+        };
+
+        if (modalImage) {
+            document.addEventListener("keydown", handleEscape);
+            document.body.style.overflow = "hidden";
+        }
+
+        return () => {
+            document.removeEventListener("keydown", handleEscape);
+            document.body.style.overflow = "unset";
+        };
+    }, [modalImage]);
+
     const summary = useMemo(() => {
         if (!attendanceData) return [];
-        const total = attendanceData.total_employees;
-        const stats = attendanceData.statistics;
+        const total = attendanceData.total_employees ?? 0;
+        const stats = attendanceData.statistics ?? {
+            on_time: 0,
+            late: 0,
+            absent: 0,
+            day_off: 0,
+            present: 0,
+        };
+
+        const pct = (n: number) =>
+            total > 0 ? `${Math.round((n / total) * 100)}%` : "0%";
+
         return [
             {
                 label: "Все сотрудники",
@@ -134,43 +165,48 @@ const Dashboard = () => {
             },
             {
                 label: "Пришли вовремя",
-                value: stats.on_time,
+                value: stats.on_time ?? 0,
                 icon: FiUserCheck,
-                helper: `${Math.round((stats.on_time / total) * 100)}%`,
+                helper: pct(stats.on_time ?? 0),
                 accent: "from-green-100 via-white to-white text-green-600",
             },
             {
                 label: "Опоздавшие",
-                value: stats.late,
+                value: stats.late ?? 0,
                 icon: FiClock,
-                helper: `${Math.round((stats.late / total) * 100)}%`,
+                helper: pct(stats.late ?? 0),
                 accent: "from-amber-100 via-white to-white text-amber-600",
             },
             {
                 label: "Не пришли",
-                value: stats.absent,
+                value: stats.absent ?? 0,
                 icon: FiUserX,
-                helper: `${Math.round((stats.absent / total) * 100)}%`,
+                helper: pct(stats.absent ?? 0),
                 accent: "from-rose-100 via-white to-white text-rose-600",
             },
             {
                 label: "На выходном",
-                value: stats.day_off,
+                value: stats.day_off ?? 0,
                 icon: MdOutlineEventAvailable,
-                helper: `${Math.round((stats.day_off / total) * 100)}%`,
+                helper: pct(stats.day_off ?? 0),
                 accent: "from-slate-100 via-white to-white text-slate-600",
             },
         ];
     }, [attendanceData]);
 
     const formattedDate = useMemo(() => {
-        if (!attendanceData) return "";
-        const date = new Date(attendanceData.date);
-        return new Intl.DateTimeFormat("ru-RU", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        }).format(date);
+        if (!attendanceData || !attendanceData.date) return "";
+        const parsed = new Date(attendanceData.date);
+        if (Number.isNaN(parsed.getTime())) return "";
+        try {
+            return new Intl.DateTimeFormat("ru-RU", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+            }).format(parsed);
+        } catch {
+            return "";
+        }
     }, [attendanceData]);
 
     if (loading) {
@@ -213,6 +249,17 @@ const Dashboard = () => {
         );
     }
 
+    // Safe local vars
+    const statsSafe = attendanceData.statistics ?? {
+        on_time: 0,
+        late: 0,
+        absent: 0,
+        day_off: 0,
+        present: 0,
+    };
+    const totalEmployeesSafe = attendanceData.total_employees ?? 0;
+    const attendanceListSafe = attendanceData.attendance ?? [];
+
     return (
         <div className="space-y-6 pb-10">
             <div className="rounded-3xl border border-mainbg/30 bg-gradient-to-br from-white via-blue-50 to-white p-6 shadow-sm">
@@ -227,7 +274,7 @@ const Dashboard = () => {
                         <p className="text-gray-500">
                             Всего сотрудников:{" "}
                             <span className="font-semibold text-maintx">
-                                {attendanceData.total_employees}
+                                {attendanceData.total_employees ?? 0}
                             </span>
                         </p>
                     </div>
@@ -248,7 +295,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-                {summary.map((stat) => (
+                {summary?.map((stat) => (
                     <div
                         key={stat.label}
                         className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm"
@@ -262,14 +309,14 @@ const Dashboard = () => {
                             <stat.icon className="h-6 w-6" />
                         </div>
                         <p className="mt-4 text-sm uppercase tracking-wide text-gray-400">
-                            {stat.label}
+                            {stat?.label}
                         </p>
                         <div className="mt-2 flex items-end gap-2">
                             <span className="text-3xl font-semibold text-gray-900">
-                                {stat.value}
+                                {stat?.value}
                             </span>
                             <span className="text-sm text-gray-500">
-                                {stat.helper}
+                                {stat?.helper}
                             </span>
                         </div>
                     </div>
@@ -288,53 +335,94 @@ const Dashboard = () => {
                             </p>
                         </div>
                         <Badge className="bg-mainbg/10 text-maintx hover:bg-mainbg/20 hover:text-maintx">
-                            {attendanceData.attendance.length} записей
+                            {attendanceListSafe.length} записей
                         </Badge>
                     </div>
 
                     <div className="mt-6 divide-y divide-gray-100">
-                        {attendanceData.attendance.map((item) => (
+                        {attendanceListSafe.map((item) => (
                             <div
-                                key={item.faceid_user_id}
+                                key={item?.faceid_user_id ?? Math.random()}
                                 className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
                             >
-                                <div>
-                                    <p className="text-base font-semibold text-gray-900">
-                                        {item.name}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        {item.position} • {item.shift_name}
-                                    </p>
+                                <div className="flex items-center gap-4">
+                                    <div
+                                        className="w-14 h-14 rounded-full overflow-hidden border-2 border-mainbg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                        onClick={() => {
+                                            const imageSrc =
+                                                item?.image_path ||
+                                                "/avatar-1.webp";
+                                            setModalImage(imageSrc);
+                                        }}
+                                    >
+                                        <img
+                                            src={
+                                                item?.image_path
+                                                    ? item.image_path
+                                                    : "/avatar-1.webp"
+                                            }
+                                            alt={item?.name ?? "Сотрудник"}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                const target =
+                                                    e.target as HTMLImageElement;
+                                                target.src = "/avatar-1.webp";
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <p className="text-base font-semibold text-gray-900">
+                                            {item?.name ?? "—"}
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                            {item?.position ?? "—"} •{" "}
+                                            {item?.shift_name ?? "—"}
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-10">
-                                    <div className="flex flex-col text-sm text-gray-500 w-44">
+                                    <div className="flex flex-col text-sm text-gray-500 w-48">
                                         <span className="text-green-500">
                                             Вход:{" "}
                                             <span className="font-medium">
-                                                {item.check_in_time ?? "— —"}
+                                                {item?.check_in_time ??
+                                                    "Вход отсутствует"}
                                             </span>
                                         </span>
                                         <span className="text-blue-500">
                                             Выход:{" "}
                                             <span className="font-medium">
-                                                {item.check_out_time ?? "— —"}
+                                                {item?.check_out_time ??
+                                                    "Выход отсутствует"}
                                             </span>
                                         </span>
-                                        {item.late_minutes > 0 && (
+                                        {(item?.late_minutes ?? 0) > 0 && (
                                             <span className="text-sm font-semibold text-red-500">
                                                 Опоздание:{" "}
-                                                {item.late_minutes_text}
+                                                {item?.late_minutes_text ??
+                                                    `${
+                                                        item?.late_minutes ?? 0
+                                                    } мин`}
                                             </span>
                                         )}
                                     </div>
                                     <Badge
                                         className={cn(
                                             "border text-xs font-medium w-32 flex justify-center",
-                                            statusStyles[item.status].badge
+                                            // fallback to 'absent' style if status missing
+                                            statusStyles[
+                                                (item?.status as AttendanceItem["status"]) ??
+                                                    "absent"
+                                            ].badge
                                         )}
                                     >
-                                        {statusStyles[item.status].text}
+                                        {
+                                            statusStyles[
+                                                (item?.status as AttendanceItem["status"]) ??
+                                                    "absent"
+                                            ].text
+                                        }
                                     </Badge>
                                 </div>
                             </div>
@@ -348,45 +436,43 @@ const Dashboard = () => {
                             По статусам
                         </h3>
                         <div className="mt-4 space-y-4">
-                            {Object.entries(attendanceData.statistics).map(
-                                ([key, value]) => {
-                                    const typedKey =
-                                        key as keyof typeof attendanceData.statistics;
-                                    const percentage = Math.round(
-                                        (value /
-                                            attendanceData.total_employees) *
-                                            100
-                                    );
-                                    return (
-                                        <div key={key}>
-                                            <div className="flex items-center justify-between text-sm text-gray-500">
-                                                <span>
-                                                    {statLabels[typedKey]}
-                                                </span>
-                                                <span>{percentage}%</span>
-                                            </div>
-                                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
-                                                <div
-                                                    className={cn(
-                                                        "h-full rounded-full transition-all",
-                                                        key === "late"
-                                                            ? "bg-amber-400"
-                                                            : key === "absent"
-                                                            ? "bg-red-400"
-                                                            : "bg-maintx"
-                                                    )}
-                                                    style={{
-                                                        width: `${percentage}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                            <p className="mt-1 text-sm text-gray-500">
-                                                {value} сотрудников
-                                            </p>
+                            {Object.entries(statsSafe).map(([key, value]) => {
+                                const typedKey = key as keyof typeof statsSafe;
+                                const percentage =
+                                    totalEmployeesSafe > 0
+                                        ? Math.round(
+                                              (Number(value) /
+                                                  totalEmployeesSafe) *
+                                                  100
+                                          )
+                                        : 0;
+                                return (
+                                    <div key={key}>
+                                        <div className="flex items-center justify-between text-sm text-gray-500">
+                                            <span>{statLabels[typedKey]}</span>
+                                            <span>{percentage}%</span>
                                         </div>
-                                    );
-                                }
-                            )}
+                                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100">
+                                            <div
+                                                className={cn(
+                                                    "h-full rounded-full transition-all",
+                                                    key === "late"
+                                                        ? "bg-amber-400"
+                                                        : key === "absent"
+                                                        ? "bg-red-400"
+                                                        : "bg-maintx"
+                                                )}
+                                                style={{
+                                                    width: `${percentage}%`,
+                                                }}
+                                            />
+                                        </div>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {value} сотрудников
+                                        </p>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -397,46 +483,35 @@ const Dashboard = () => {
                         <p className="text-sm text-gray-500">
                             Самые частые опоздания или отсутствие
                         </p>
-                        {/* <div className="mt-4 space-y-3">
-                            {attendanceData.attendance
-                                .filter(
-                                    (item) =>
-                                        item.status === "late" ||
-                                        item.status === "absent"
-                                )
-                                .slice(0, 4)
-                                .map((item) => (
-                                    <div
-                                        key={item.faceid_user_id}
-                                        className="flex items-center justify-between rounded-2xl border border-mainbg/10 bg-white px-4 py-3"
-                                    >
-                                        <div>
-                                            <p className="text-sm font-semibold text-gray-900">
-                                                {item.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500">
-                                                {item.status === "late"
-                                                    ? item.late_minutes_text
-                                                    : "весь день отсутствует"}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className={cn(
-                                                "rounded-full px-3 py-1 text-xs font-medium",
-                                                statusStyles[item.status].chip
-                                            )}
-                                        >
-                                            {statusStyles[item.status].text}
-                                        </span>
-                                    </div>
-                                ))}
-                        </div> */}
+                        {/* Placeholder content preserved */}
                         <div className="h-20 w-full flex justify-center items-center">
                             <h1>Скоро...</h1>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {modalImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center top-0 bg-black/80 backdrop-blur-sm"
+                    onClick={() => setModalImage(null)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                            setModalImage(null);
+                        }
+                    }}
+                    tabIndex={0}
+                >
+                    <div className="relative max-w-[500px] max-h-[500px] p-4">
+                        <img
+                            src={modalImage}
+                            alt="Увеличенное изображение"
+                            className="w-[500px] h-[500px] object-cover rounded-full shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
