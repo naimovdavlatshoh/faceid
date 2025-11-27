@@ -18,7 +18,13 @@ const Login = () => {
     const navigate = useNavigate();
     const [statusbtn, setStatusbtn] = useState(false);
 
-    const handleSubmit = () => {
+    const handleSubmit = (e?: React.FormEvent) => {
+        e?.preventDefault();
+
+        if (login.length <= 2 || password.length <= 2 || statusbtn) {
+            return;
+        }
+
         setStatusbtn(true);
         const payload = {
             login: login,
@@ -35,20 +41,24 @@ const Login = () => {
                         "objects",
                         JSON.stringify(response?.data?.all_objects)
                     );
-                    toast.success("Успешный вход!", {
-                        description: "Добро пожаловать в систему",
-                        duration: 3000,
-                    });
+
                     setStatusbtn(false);
                     if (localStorage.getItem("token")) {
                         navigate("/");
                         setTimeout(() => {
                             window.location.reload();
+                        }, 20);
+                        setTimeout(() => {
+                            toast.success("Успешный вход!", {
+                                description: "Добро пожаловать в систему",
+                                duration: 3000,
+                            });
                         }, 50);
                     }
                 }
             })
             .catch((error) => {
+                setStatusbtn(false);
                 toast.error("Ошибка входа", {
                     description: error?.response?.data?.message,
                     duration: 3000,
@@ -104,7 +114,7 @@ const Login = () => {
                             </p>
                         </div>
 
-                        <div className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Email Field */}
                             <div className="space-y-2">
                                 <Label
@@ -119,6 +129,12 @@ const Login = () => {
                                     placeholder="demo@admin.com"
                                     value={login}
                                     onChange={(e) => setLogin(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            handleSubmit();
+                                        }
+                                    }}
                                     className="h-12 text-gray-700 rounded-xl border-gray-200 bg-white  focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200"
                                 />
                             </div>
@@ -144,6 +160,12 @@ const Login = () => {
                                         onChange={(e) =>
                                             setPassword(e.target.value)
                                         }
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                handleSubmit();
+                                            }
+                                        }}
                                         className="h-12 bg-white text-gray-700 rounded-xl border-gray-200  focus:ring-2 focus:ring-mainbg focus:border-mainbg transition-all duration-200 pr-12"
                                     />
                                     <button
@@ -182,7 +204,7 @@ const Login = () => {
 
                             {/* Login Button */}
                             <Button
-                                onClick={handleSubmit}
+                                type="submit"
                                 disabled={
                                     login.length <= 2 || password.length <= 2
                                 }
@@ -194,7 +216,7 @@ const Login = () => {
                                     "Войти"
                                 )}
                             </Button>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>

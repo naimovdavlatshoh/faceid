@@ -374,8 +374,15 @@ const Dashboard = () => {
                                         <p className="text-base font-semibold text-gray-900">
                                             {item?.name ?? "—"}
                                         </p>
-                                        <p className="text-sm text-gray-500">
-                                            {item?.position ?? "—"} •{" "}
+                                        <div className="relative group w-[200px]">
+                                            <p className="text-sm text-gray-500 line-clamp-1">
+                                                {item?.position ?? "—"}
+                                            </p>
+                                            <span className="hidden group-hover:block absolute left-0 top-full z-10 mt-1 w-max max-w-xs rounded-md bg-gray-900 px-3 py-1 text-xs text-white shadow-lg">
+                                                {item?.position ?? "—"}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 font-semibold">
                                             {item?.shift_name ?? "—"}
                                         </p>
                                     </div>
