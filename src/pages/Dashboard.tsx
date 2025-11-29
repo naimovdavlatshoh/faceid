@@ -414,23 +414,24 @@ const Dashboard = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <Badge
-                                        className={cn(
-                                            "border text-xs font-medium w-32 flex justify-center",
-                                            // fallback to 'absent' style if status missing
-                                            statusStyles[
-                                                (item?.status as AttendanceItem["status"]) ??
-                                                    "absent"
-                                            ].badge
-                                        )}
-                                    >
-                                        {
-                                            statusStyles[
-                                                (item?.status as AttendanceItem["status"]) ??
-                                                    "absent"
-                                            ].text
-                                        }
-                                    </Badge>
+                                    {(() => {
+                                        const status =
+                                            (item?.status as AttendanceItem["status"]) ??
+                                            "absent";
+                                        const statusStyle =
+                                            statusStyles[status] ??
+                                            statusStyles["absent"];
+                                        return (
+                                            <Badge
+                                                className={cn(
+                                                    "border text-xs font-medium w-32 flex justify-center",
+                                                    statusStyle.badge
+                                                )}
+                                            >
+                                                {statusStyle.text}
+                                            </Badge>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         ))}
