@@ -249,3 +249,17 @@ export const GetDailyAttendance = async (date: string) => {
     const response = await GetDataSimple(`api/attendance/daily?date=${date}`);
     return response;
 };
+
+export const DownloadAttendanceExcel = async (month: string) => {
+    const token = getToken();
+    const response = await axios.get(
+        BASE_URL + `api/excel/attendance?month=${month}`,
+        {
+            responseType: "blob",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        }
+    );
+    return response.data;
+};

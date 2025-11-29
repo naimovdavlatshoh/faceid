@@ -1,11 +1,26 @@
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useMemo, useState, useEffect } from "react";
-import { FiClock, FiUserCheck, FiUsers, FiUserX } from "react-icons/fi";
+import {
+    FiClock,
+    FiUserCheck,
+    FiUsers,
+    FiUserX,
+    FiDownload,
+} from "react-icons/fi";
 import { MdOutlineEventAvailable } from "react-icons/md";
-import { GetDailyAttendance } from "@/services/data";
+import { GetDailyAttendance, DownloadAttendanceExcel } from "@/services/data";
 import { ProgressAuto } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import CustomModal from "@/components/ui/custom-modal";
 
 type AttendanceData = {
     date: string;
@@ -40,6 +55,21 @@ type AttendanceData = {
 };
 
 type AttendanceItem = AttendanceData["attendance"][number];
+
+const months = [
+    { name: "январь", value: "2025-01" },
+    { name: "февраль", value: "2025-02" },
+    { name: "март", value: "2025-03" },
+    { name: "апрель", value: "2025-04" },
+    { name: "май", value: "2025-05" },
+    { name: "июнь", value: "2025-06" },
+    { name: "июль", value: "2025-07" },
+    { name: "август", value: "2025-08" },
+    { name: "сентябрь", value: "2025-09" },
+    { name: "октябрь", value: "2025-10" },
+    { name: "ноябрь", value: "2025-11" },
+    { name: "декабрь", value: "2025-12" },
+];
 
 const statusStyles: Record<
     AttendanceItem["status"],
@@ -82,6 +112,13 @@ const getCurrentDate = (): string => {
     return formatDateForApi(today);
 };
 
+const getCurrentMonth = (): string => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+};
+
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(
@@ -90,6 +127,11 @@ const Dashboard = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(getCurrentDate());
     const [modalImage, setModalImage] = useState<string | null>(null);
+    const [selectedMonth, setSelectedMonth] = useState<string>(
+        getCurrentMonth()
+    );
+    const [downloading, setDownloading] = useState(false);
+    const [excelModalOpen, setExcelModalOpen] = useState(false);
 
     const selectedDateValue = useMemo(() => {
         if (!selectedDate) return undefined;
@@ -100,6 +142,32 @@ const Dashboard = () => {
     const handleDateChange = (date: Date | undefined) => {
         if (!date) return;
         setSelectedDate(formatDateForApi(date));
+    };
+
+    const handleDownloadExcel = async () => {
+        if (!selectedMonth) return;
+        try {
+            setDownloading(true);
+            const blob = await DownloadAttendanceExcel(selectedMonth);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `attendance_${selectedMonth}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            setExcelModalOpen(false);
+        } catch (err: any) {
+            setExcelModalOpen(false);
+            console.error(err.response.data.message);
+            setError(
+                err?.response?.data?.message ||
+                    "Не удалось загрузить Excel файл"
+            );
+        } finally {
+            setDownloading(false);
+        }
     };
 
     useEffect(() => {
@@ -292,6 +360,67 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+            <div className="w-full flex justify-end">
+                <CustomModal
+                    trigger={
+                        <Button
+                            onClick={() => setExcelModalOpen(true)}
+                            className="bg-mainbg rounded-xl hover:bg-mainbg/90 text-white"
+                        >
+                            <FiDownload className="h-4 w-4 mr-2" />
+                            Скачать Excel
+                        </Button>
+                    }
+                    open={excelModalOpen}
+                    onOpenChange={setExcelModalOpen}
+                    title="Скачать Excel отчет"
+                    showFooter={false}
+                    size="md"
+                >
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-gray-700">
+                                Выберите месяц
+                            </label>
+                            <Select
+                                value={selectedMonth}
+                                onValueChange={setSelectedMonth}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Выберите месяц" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {months.map((month) => (
+                                        <SelectItem
+                                            key={month.value}
+                                            value={month.value}
+                                        >
+                                            {month.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex gap-2 justify-end pt-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setExcelModalOpen(false)}
+                                disabled={downloading}
+                            >
+                                Отмена
+                            </Button>
+                            <Button
+                                onClick={handleDownloadExcel}
+                                disabled={downloading || !selectedMonth}
+                                className="bg-mainbg hover:bg-mainbg/90 text-white"
+                            >
+                                <FiDownload className="h-4 w-4 mr-2" />
+                                {downloading ? "Загрузка..." : "Скачать"}
+                            </Button>
+                        </div>
+                    </div>
+                </CustomModal>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
