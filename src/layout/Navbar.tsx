@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-
+import { useState, useEffect } from "react";
 import {
     Sheet,
     SheetContent,
@@ -7,17 +7,67 @@ import {
     SheetClose,
 } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
+import { PostSimple } from "@/services/data";
+import { toast } from "sonner";
 
 interface NavbarProps {
     className?: string;
     onToggleSidebar?: () => void;
 }
 
+interface ObjectItem {
+    object_id?: number;
+    object_name?: string;
+    id?: number;
+    name?: string;
+}
+
 const Navbar = ({ className }: NavbarProps) => {
     const navigate = useNavigate();
+    const [objects, setObjects] = useState<ObjectItem[]>([]);
+
+    useEffect(() => {
+        try {
+            const objectsStr = localStorage.getItem("objects");
+            if (objectsStr) {
+                const parsed = JSON.parse(objectsStr);
+                setObjects(Array.isArray(parsed) ? parsed : []);
+            }
+        } catch (error) {
+            console.error("Error parsing objects from localStorage:", error);
+            setObjects([]);
+        }
+    }, []);
+
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/login");
+    };
+
+    const handleObjectChange = async (objectId: number) => {
+        const currentObjectId = localStorage.getItem("object");
+        if (currentObjectId === objectId.toString()) {
+            return; // Already selected
+        }
+
+        try {
+            await PostSimple(`api/user/changeobject/${objectId}`, {}).then(
+                (res) => {
+                    console.log(res);
+                    localStorage.setItem("object", objectId.toString());
+                    localStorage.setItem("token", res?.data?.jwt);
+                    toast.success(res?.data?.message);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 100);
+                }
+            );
+        } catch (error: any) {
+            console.error("Error changing object:", error);
+            toast.error(
+                error?.response?.data?.message || "Не удалось изменить объект"
+            );
+        }
     };
 
     return (
@@ -70,22 +120,61 @@ const Navbar = ({ className }: NavbarProps) => {
                                 demo@minimals.cc
                             </p> */}
 
-                            <div className="flex items-center gap-3 mt-4">
-                                {[
-                                    "/avatar-1.webp",
-                                    "/avatar-2.webp",
-                                    "/avatar-3.webp",
-                                ].map((a) => (
-                                    <img
-                                        key={a}
-                                        src={a}
-                                        alt="a"
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-                                ))}
-                                <button className="w-10 h-10 rounded-full border border-dashed text-gray-400">
-                                    +
-                                </button>
+                            <div className="w-full mt-6">
+                                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                    Объекты
+                                </h4>
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {objects.length > 0 ? (
+                                        objects.map((obj, index) => (
+                                            <div
+                                                key={
+                                                    obj.object_id ||
+                                                    obj.id ||
+                                                    index
+                                                }
+                                                onClick={() => {
+                                                    const objectId =
+                                                        obj.object_id || obj.id;
+                                                    if (objectId) {
+                                                        handleObjectChange(
+                                                            objectId
+                                                        );
+                                                    }
+                                                }}
+                                                className={`flex cursor-pointer items-center justify-start gap-2 p-2 ${
+                                                    localStorage.getItem(
+                                                        "object"
+                                                    ) ===
+                                                    (
+                                                        obj.object_id || obj.id
+                                                    )?.toString()
+                                                        ? "bg-mainbg/15"
+                                                        : ""
+                                                } rounded-lg hover:bg-gray-50 transition-colors`}
+                                            >
+                                                <div className="w-8 h-8 bg-mainbg/30 rounded-full flex items-center justify-center text-xs font-medium text-maintx">
+                                                    {(
+                                                        obj.object_name ||
+                                                        obj.name ||
+                                                        "?"
+                                                    )
+                                                        .charAt(0)
+                                                        .toUpperCase()}
+                                                </div>
+                                                <span className="text-sm text-start text-gray-700 flex-1">
+                                                    {obj.object_name ||
+                                                        obj.name ||
+                                                        "Неизвестный объект"}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-gray-500 text-center py-4">
+                                            Нет объектов
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

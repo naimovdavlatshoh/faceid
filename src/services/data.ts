@@ -250,6 +250,12 @@ export const GetDailyAttendance = async (date: string) => {
     return response;
 };
 
+// FaceID User API functions
+export const DeleteFaceIdUser = async (userId: number) => {
+    const response = await PostSimple(`api/faceid/delete/user/${userId}`, {});
+    return response;
+};
+
 export const DownloadAttendanceExcel = async (month: string) => {
     const token = getToken();
     const response = await axios.get(

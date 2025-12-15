@@ -38,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
 import { IoMdAdd } from "react-icons/io";
-import { GetDataSimple, PostSimple } from "@/services/data";
+import { GetDataSimple, PostSimple, DeleteFaceIdUser } from "@/services/data";
 
 // API response types
 interface ApiUser {
@@ -75,6 +75,7 @@ const Users = () => {
     const [users, setUsers] = useState<ApiUser[]>([]);
     const [totalPages, setTotalPages] = useState(1);
     const [isSearching, setIsSearching] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const searchTimeoutRef = useRef<number | null>(null);
 
     const fetchUsers = async (page: number = 1, limit: number = 10) => {
@@ -166,15 +167,39 @@ const Users = () => {
         setIsDeleteOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (userToDelete) {
+    const handleConfirmDelete = async () => {
+        if (!userToDelete) return;
+
+        try {
+            setIsDeleting(true);
+            await DeleteFaceIdUser(userToDelete.id);
             toast.success("Сотрудник удалён", {
                 description: `${userToDelete.name} успешно удалён.`,
                 duration: 2500,
             });
+            // Refresh users list
+            if (searchQuery.length >= 3) {
+                await searchUsers(searchQuery);
+            } else {
+                await fetchUsers(currentPage, itemsPerPage);
+            }
+            // Remove from selected users if was selected
+            setSelectedUsers((prev) =>
+                prev.filter((id) => id !== userToDelete.id)
+            );
+        } catch (error: any) {
+            console.error("Error deleting user:", error);
+            toast.error("Ошибка удаления", {
+                description:
+                    error?.response?.data?.message ||
+                    "Не удалось удалить сотрудника",
+                duration: 3000,
+            });
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteOpen(false);
+            setUserToDelete(null);
         }
-        setIsDeleteOpen(false);
-        setUserToDelete(null);
     };
 
     const handleCancelDelete = () => {
@@ -361,7 +386,6 @@ const Users = () => {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem
-                                                        disabled={true}
                                                         className="flex items-center gap-2 text-red-600 hover:text-red-600"
                                                         onClick={() =>
                                                             openDeleteModal({
@@ -415,7 +439,7 @@ const Users = () => {
                 open={isDeleteOpen}
                 onOpenChange={setIsDeleteOpen}
                 title="Подтверждение удаления"
-                confirmText="Удалить"
+                confirmText={isDeleting ? "Удаление..." : "Удалить"}
                 cancelText="Отмена"
                 confirmBg="bg-red-500"
                 confirmBgHover="bg-red-500/70"
@@ -423,6 +447,24 @@ const Users = () => {
                 onCancel={handleCancelDelete}
                 size="md"
                 showCloseButton={false}
+                footerContent={
+                    <div className="flex gap-2 justify-end w-full">
+                        <Button
+                            variant="outline"
+                            onClick={handleCancelDelete}
+                            disabled={isDeleting}
+                        >
+                            Отмена
+                        </Button>
+                        <Button
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleting}
+                            className="bg-red-500 hover:bg-red-500/70 text-white"
+                        >
+                            {isDeleting ? "Удаление..." : "Удалить"}
+                        </Button>
+                    </div>
+                }
             >
                 <div className="space-y-2">
                     <p className="text-sm text-gray-600 ">

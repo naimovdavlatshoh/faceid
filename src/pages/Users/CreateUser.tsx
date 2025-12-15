@@ -249,11 +249,11 @@ const CreateUser = () => {
                                             }
                                             options={[
                                                 { value: "1", label: "Ойлик" },
-                                                {
-                                                    value: "2",
-                                                    label: "Хафталик",
-                                                },
-                                                { value: "3", label: "Кунлик" },
+                                                // {
+                                                //     value: "2",
+                                                //     label: "Хафталик",
+                                                // },
+                                                // { value: "3", label: "Кунлик" },
                                                 {
                                                     value: "4",
                                                     label: "Соатлик",
