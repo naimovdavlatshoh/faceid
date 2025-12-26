@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomCombobox } from "@/components/ui/custom-form";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 import { MdCameraAlt } from "react-icons/md";
 import { Link, useParams, useNavigate } from "react-router-dom";
@@ -294,7 +301,10 @@ const Account = () => {
                 shift_id: parseInt(formData.shiftId),
                 day_off_type: parseInt(formData.dayOffType),
                 day_off_items:
-                    formData.dayOffType === "1"
+                    formData.dayOffType === "2"
+                        ? // без выходных: пустой массив
+                          []
+                        : formData.dayOffType === "1"
                         ? // standard: multiple weekdays
                           (formData.dayOffWeekdays || [])
                               .map((v) => v.trim())
@@ -647,53 +657,51 @@ const Account = () => {
                                         <Label className="text-sm font-medium text-gray-700 ">
                                             Тип выходного
                                         </Label>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                type="button"
-                                                variant={
-                                                    formData.dayOffType === "0"
-                                                        ? "default"
-                                                        : "outline"
-                                                }
-                                                className="rounded-xl"
-                                                onClick={() => {
-                                                    handleInputChange(
-                                                        "dayOffType",
-                                                        "0"
-                                                    );
+                                        <Select
+                                            value={formData.dayOffType}
+                                            onValueChange={(value) => {
+                                                handleInputChange(
+                                                    "dayOffType",
+                                                    value
+                                                );
+                                                if (value === "0") {
                                                     setFormData((prev) => ({
                                                         ...prev,
                                                         dayOffWeekdays: [],
                                                     }));
-                                                }}
-                                            >
-                                                Гибридный (по датам)
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant={
-                                                    formData.dayOffType === "1"
-                                                        ? "default"
-                                                        : "outline"
-                                                }
-                                                className="rounded-xl"
-                                                onClick={() => {
-                                                    handleInputChange(
-                                                        "dayOffType",
-                                                        "1"
-                                                    );
+                                                } else if (value === "1") {
                                                     setFormData((prev) => ({
                                                         ...prev,
                                                         dayOffItems: [],
                                                     }));
-                                                }}
-                                            >
-                                                Стандарт
-                                            </Button>
-                                        </div>
+                                                } else if (value === "2") {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        dayOffItems: [],
+                                                        dayOffWeekdays: [],
+                                                    }));
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-12 rounded-xl">
+                                                <SelectValue placeholder="Выберите тип выходного" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="0">
+                                                    Гибридный (по датам)
+                                                </SelectItem>
+                                                <SelectItem value="1">
+                                                    Стандарт (по дням недели)
+                                                </SelectItem>
+                                                <SelectItem value="2">
+                                                    Без выходных
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
 
-                                    {formData.dayOffType === "1" ? (
+                                    {formData.dayOffType ===
+                                    "2" ? null : formData.dayOffType === "1" ? (
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium text-gray-700 ">
                                                 Дни недели выходных (можно
@@ -760,7 +768,7 @@ const Account = () => {
                                                     id="dayoff-input"
                                                     type="number"
                                                     placeholder="напр. 6"
-                                                    className="h-10 rounded-xl w-32"
+                                                    className="h-10 rounded-xl w-24"
                                                 />
                                                 <Button
                                                     type="button"
@@ -806,7 +814,7 @@ const Account = () => {
                                                         input.value = "";
                                                     }}
                                                 >
-                                                    Добавить
+                                                    +
                                                 </Button>
                                                 {formData.dayOffItems.length >
                                                     0 && (

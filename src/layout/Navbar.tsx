@@ -47,7 +47,7 @@ const Navbar = ({ className }: NavbarProps) => {
     const handleObjectChange = async (objectId: number) => {
         const currentObjectId = localStorage.getItem("object");
         if (currentObjectId === objectId.toString()) {
-            return; // Already selected
+            return;
         }
 
         try {

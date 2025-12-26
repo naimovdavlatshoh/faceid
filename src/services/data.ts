@@ -245,8 +245,10 @@ export const UpdateProductPrice = async (
 };
 
 // Attendance API functions
-export const GetDailyAttendance = async (date: string) => {
-    const response = await GetDataSimple(`api/attendance/daily?date=${date}`);
+export const GetDailyAttendance = async (date: string, page: number = 1) => {
+    const response = await GetDataSimple(
+        `api/attendance/daily?date=${date}&page=${page}`
+    );
     return response;
 };
 

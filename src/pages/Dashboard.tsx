@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
+import CustomPagination from "@/components/ui/custom-pagination";
 
 type AttendanceData = {
     date: string;
@@ -52,6 +53,38 @@ type AttendanceData = {
         late_tolerance_minutes: number;
         image_path?: string | null;
     }>;
+    pagination?: {
+        current_page: number;
+        total_pages: number;
+        total_items: number;
+        items_per_page: number;
+        has_next: boolean;
+        has_prev: boolean;
+    };
+    monthly_top?: {
+        frequently_late: Array<{
+            faceid_user_id: number;
+            name: string;
+            position: string;
+            late_count: number;
+            total_late_minutes: number;
+        }>;
+        frequently_absent: Array<{
+            faceid_user_id: number;
+            name: string;
+            position: string;
+            absent_count: number;
+        }>;
+        analysis_period?: {
+            start_date: string;
+            end_date: string;
+            actual_start_date: string;
+            actual_end_date: string;
+            first_record_date: string;
+            days_analyzed: number;
+            note: string;
+        };
+    };
 };
 
 type AttendanceItem = AttendanceData["attendance"][number];
@@ -132,6 +165,7 @@ const Dashboard = () => {
     );
     const [downloading, setDownloading] = useState(false);
     const [excelModalOpen, setExcelModalOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const selectedDateValue = useMemo(() => {
         if (!selectedDate) return undefined;
@@ -175,7 +209,10 @@ const Dashboard = () => {
             try {
                 setLoading(true);
                 setError(null);
-                const data = await GetDailyAttendance(selectedDate);
+                const data = await GetDailyAttendance(
+                    selectedDate,
+                    currentPage
+                );
                 setAttendanceData(data);
             } catch (err: any) {
                 setError(
@@ -189,6 +226,11 @@ const Dashboard = () => {
         };
 
         fetchData();
+    }, [selectedDate, currentPage]);
+
+    // Reset to page 1 when date changes
+    useEffect(() => {
+        setCurrentPage(1);
     }, [selectedDate]);
 
     useEffect(() => {
@@ -469,102 +511,126 @@ const Dashboard = () => {
                     </div>
 
                     <div className="mt-6 divide-y divide-gray-100">
-                        {attendanceListSafe.map((item) => (
-                            <div
-                                key={item?.faceid_user_id ?? Math.random()}
-                                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div
-                                        className="w-14 h-14 rounded-full overflow-hidden border-2 border-mainbg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                                        onClick={() => {
-                                            const imageSrc =
-                                                item?.image_path ||
-                                                "/avatar-1.webp";
-                                            setModalImage(imageSrc);
-                                        }}
-                                    >
-                                        <img
-                                            src={
-                                                item?.image_path
-                                                    ? item.image_path
-                                                    : "/avatar-1.webp"
-                                            }
-                                            alt={item?.name ?? "Сотрудник"}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                const target =
-                                                    e.target as HTMLImageElement;
-                                                target.src = "/avatar-1.webp";
-                                            }}
-                                        />
-                                    </div>
-                                    <div>
-                                        <p className="text-base font-semibold text-gray-900">
-                                            {item?.name ?? "—"}
-                                        </p>
-                                        <div className="relative group w-[200px]">
-                                            <p className="text-sm text-gray-500 line-clamp-1">
-                                                {item?.position ?? "—"}
-                                            </p>
-                                            <span className="hidden group-hover:block absolute left-0 top-full z-10 mt-1 w-max max-w-xs rounded-md bg-gray-900 px-3 py-1 text-xs text-white shadow-lg">
-                                                {item?.position ?? "—"}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-700 font-semibold">
-                                            {item?.shift_name ?? "—"}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-10">
-                                    <div className="flex flex-col text-sm text-gray-500 w-48">
-                                        <span className="text-green-500">
-                                            Вход:{" "}
-                                            <span className="font-medium">
-                                                {item?.check_in_time ??
-                                                    "Вход отсутствует"}
-                                            </span>
-                                        </span>
-                                        <span className="text-blue-500">
-                                            Выход:{" "}
-                                            <span className="font-medium">
-                                                {item?.check_out_time ??
-                                                    "Выход отсутствует"}
-                                            </span>
-                                        </span>
-                                        {(item?.late_minutes ?? 0) > 0 && (
-                                            <span className="text-sm font-semibold text-red-500">
-                                                Опоздание:{" "}
-                                                {item?.late_minutes_text ??
-                                                    `${
-                                                        item?.late_minutes ?? 0
-                                                    } мин`}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {(() => {
-                                        const status =
-                                            (item?.status as AttendanceItem["status"]) ??
-                                            "absent";
-                                        const statusStyle =
-                                            statusStyles[status] ??
-                                            statusStyles["absent"];
-                                        return (
-                                            <Badge
-                                                className={cn(
-                                                    "border text-xs font-medium w-32 flex justify-center",
-                                                    statusStyle.badge
-                                                )}
-                                            >
-                                                {statusStyle.text}
-                                            </Badge>
-                                        );
-                                    })()}
-                                </div>
+                        {attendanceListSafe.length === 0 ? (
+                            <div className="py-8 text-center text-gray-500">
+                                Нет данных для отображения
                             </div>
-                        ))}
+                        ) : (
+                            attendanceListSafe.map((item) => (
+                                <div
+                                    key={item?.faceid_user_id ?? Math.random()}
+                                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div
+                                            className="w-14 h-14 rounded-full overflow-hidden border-2 border-mainbg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                            onClick={() => {
+                                                const imageSrc =
+                                                    item?.image_path ||
+                                                    "/avatar-1.webp";
+                                                setModalImage(imageSrc);
+                                            }}
+                                        >
+                                            <img
+                                                src={
+                                                    item?.image_path
+                                                        ? item.image_path
+                                                        : "/avatar-1.webp"
+                                                }
+                                                alt={item?.name ?? "Сотрудник"}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    const target =
+                                                        e.target as HTMLImageElement;
+                                                    target.src =
+                                                        "/avatar-1.webp";
+                                                }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <p className="text-base font-semibold text-gray-900">
+                                                {item?.name ?? "—"}
+                                            </p>
+                                            <div className="relative group w-[200px]">
+                                                <p className="text-sm text-gray-500 line-clamp-1">
+                                                    {item?.position ?? "—"}
+                                                </p>
+                                                <span className="hidden group-hover:block absolute left-0 top-full z-10 mt-1 w-max max-w-xs rounded-md bg-gray-900 px-3 py-1 text-xs text-white shadow-lg">
+                                                    {item?.position ?? "—"}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-700 font-semibold">
+                                                {item?.shift_name ?? "—"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-10">
+                                        <div className="flex flex-col text-sm text-gray-500 w-48">
+                                            <span className="text-green-500">
+                                                Вход:{" "}
+                                                <span className="font-medium">
+                                                    {item?.check_in_time ??
+                                                        "Вход отсутствует"}
+                                                </span>
+                                            </span>
+                                            <span className="text-blue-500">
+                                                Выход:{" "}
+                                                <span className="font-medium">
+                                                    {item?.check_out_time ??
+                                                        "Выход отсутствует"}
+                                                </span>
+                                            </span>
+                                            {(item?.late_minutes ?? 0) > 0 && (
+                                                <span className="text-sm font-semibold text-red-500">
+                                                    Опоздание:{" "}
+                                                    {item?.late_minutes_text ??
+                                                        `${
+                                                            item?.late_minutes ??
+                                                            0
+                                                        } мин`}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {(() => {
+                                            const status =
+                                                (item?.status as AttendanceItem["status"]) ??
+                                                "absent";
+                                            const statusStyle =
+                                                statusStyles[status] ??
+                                                statusStyles["absent"];
+                                            return (
+                                                <Badge
+                                                    className={cn(
+                                                        "border text-xs font-medium w-32 flex justify-center",
+                                                        statusStyle.badge
+                                                    )}
+                                                >
+                                                    {statusStyle.text}
+                                                </Badge>
+                                            );
+                                        })()}
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
+                    {attendanceData?.pagination &&
+                        attendanceData.pagination.total_pages > 1 && (
+                            <div className="mt-6 pt-4 border-t border-gray-200">
+                                <CustomPagination
+                                    currentPage={
+                                        attendanceData.pagination.current_page
+                                    }
+                                    totalPages={
+                                        attendanceData.pagination.total_pages
+                                    }
+                                    onPageChange={(page) =>
+                                        setCurrentPage(page)
+                                    }
+                                />
+                            </div>
+                        )}
                 </div>
 
                 <div className="space-y-4">
