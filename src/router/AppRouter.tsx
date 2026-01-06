@@ -10,6 +10,7 @@ import ShiftDays from "../pages/Shifts/ShiftDays";
 import CreateUser from "@/pages/Users/CreateUser";
 import Login from "../pages/Auth/Login";
 import Account from "@/pages/Users/Account";
+import EmployeeReport from "@/pages/Users/EmployeeReport";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const router = createBrowserRouter([
@@ -57,6 +58,10 @@ const router = createBrowserRouter([
             {
                 path: "details/:id",
                 element: <Account />,
+            },
+            {
+                path: "users/report/:id",
+                element: <EmployeeReport />,
             },
         ],
     },

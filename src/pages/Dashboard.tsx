@@ -10,8 +10,8 @@ import {
 } from "react-icons/fi";
 import { MdOutlineEventAvailable } from "react-icons/md";
 import { GetDailyAttendance, DownloadAttendanceExcel } from "@/services/data";
-import { ProgressAuto } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Loader2 } from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import EmployeeReport from "@/pages/Users/EmployeeReport";
 import CustomPagination from "@/components/ui/custom-pagination";
 
 type AttendanceData = {
@@ -90,18 +92,18 @@ type AttendanceData = {
 type AttendanceItem = AttendanceData["attendance"][number];
 
 const months = [
-    { name: "январь", value: "2025-01" },
-    { name: "февраль", value: "2025-02" },
-    { name: "март", value: "2025-03" },
-    { name: "апрель", value: "2025-04" },
-    { name: "май", value: "2025-05" },
-    { name: "июнь", value: "2025-06" },
-    { name: "июль", value: "2025-07" },
-    { name: "август", value: "2025-08" },
-    { name: "сентябрь", value: "2025-09" },
-    { name: "октябрь", value: "2025-10" },
-    { name: "ноябрь", value: "2025-11" },
-    { name: "декабрь", value: "2025-12" },
+    { name: "Январь", value: "01" },
+    { name: "Февраль", value: "02" },
+    { name: "Март", value: "03" },
+    { name: "Апрель", value: "04" },
+    { name: "Май", value: "05" },
+    { name: "Июнь", value: "06" },
+    { name: "Июль", value: "07" },
+    { name: "Август", value: "08" },
+    { name: "Сентябрь", value: "09" },
+    { name: "Октябрь", value: "10" },
+    { name: "Ноябрь", value: "11" },
+    { name: "Декабрь", value: "12" },
 ];
 
 const statusStyles: Record<
@@ -145,13 +147,6 @@ const getCurrentDate = (): string => {
     return formatDateForApi(today);
 };
 
-const getCurrentMonth = (): string => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    return `${year}-${month}`;
-};
-
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(
@@ -160,11 +155,16 @@ const Dashboard = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>(getCurrentDate());
     const [modalImage, setModalImage] = useState<string | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number>(
+        new Date().getFullYear()
+    );
     const [selectedMonth, setSelectedMonth] = useState<string>(
-        getCurrentMonth()
+        String(new Date().getMonth() + 1).padStart(2, "0")
     );
     const [downloading, setDownloading] = useState(false);
     const [excelModalOpen, setExcelModalOpen] = useState(false);
+    const [isReportOpen, setIsReportOpen] = useState(false);
+    const [reportUserId, setReportUserId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
 
     const selectedDateValue = useMemo(() => {
@@ -179,14 +179,15 @@ const Dashboard = () => {
     };
 
     const handleDownloadExcel = async () => {
-        if (!selectedMonth) return;
+        if (!selectedMonth || !selectedYear) return;
+        const monthYear = `${selectedYear}-${selectedMonth}`;
         try {
             setDownloading(true);
-            const blob = await DownloadAttendanceExcel(selectedMonth);
+            const blob = await DownloadAttendanceExcel(monthYear);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `attendance_${selectedMonth}.xlsx`;
+            link.download = `attendance_${monthYear}.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -204,6 +205,11 @@ const Dashboard = () => {
         }
     };
 
+    // Reset to page 1 when date changes, but before fetching
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedDate]);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -214,24 +220,24 @@ const Dashboard = () => {
                     currentPage
                 );
                 setAttendanceData(data);
+                setLoading(false);
             } catch (err: any) {
                 setError(
                     err?.response?.data?.message ||
                         "Не удалось загрузить данные посещаемости"
                 );
-                console.error("Error fetching attendance data:", err);
-            } finally {
                 setLoading(false);
+                console.error("Error fetching attendance data:", err);
             }
         };
 
-        fetchData();
-    }, [selectedDate, currentPage]);
+        // Small delay to avoid double requests when date changes
+        const timeoutId = setTimeout(() => {
+            fetchData();
+        }, 100);
 
-    // Reset to page 1 when date changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedDate]);
+        return () => clearTimeout(timeoutId);
+    }, [selectedDate, currentPage]);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -322,12 +328,9 @@ const Dashboard = () => {
     if (loading) {
         return (
             <div className="h-[80vh] w-full flex justify-center items-center">
-                <div className="w-[400px]">
-                    <ProgressAuto
-                        durationMs={500}
-                        startDelayMs={10}
-                        className="h-1 rounded-full"
-                    />
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-mainbg" />
+                    <p className="text-gray-500 text-sm">Загрузка данных...</p>
                 </div>
             </div>
         );
@@ -421,28 +424,61 @@ const Dashboard = () => {
                     size="md"
                 >
                     <div className="space-y-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm font-medium text-gray-700">
-                                Выберите месяц
-                            </label>
-                            <Select
-                                value={selectedMonth}
-                                onValueChange={setSelectedMonth}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Выберите месяц" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {months.map((month) => (
-                                        <SelectItem
-                                            key={month.value}
-                                            value={month.value}
-                                        >
-                                            {month.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Выберите год
+                                </label>
+                                <Select
+                                    value={selectedYear.toString()}
+                                    onValueChange={(value) =>
+                                        setSelectedYear(parseInt(value))
+                                    }
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Выберите год" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: 5 }, (_, i) => {
+                                            const year =
+                                                new Date().getFullYear() -
+                                                1 +
+                                                i;
+                                            return (
+                                                <SelectItem
+                                                    key={year}
+                                                    value={year.toString()}
+                                                >
+                                                    {year}
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-medium text-gray-700">
+                                    Выберите месяц
+                                </label>
+                                <Select
+                                    value={selectedMonth}
+                                    onValueChange={setSelectedMonth}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Выберите месяц" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {months.map((month) => (
+                                            <SelectItem
+                                                key={month.value}
+                                                value={month.value}
+                                            >
+                                                {month.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="flex gap-2 justify-end pt-2">
                             <Button
@@ -454,7 +490,11 @@ const Dashboard = () => {
                             </Button>
                             <Button
                                 onClick={handleDownloadExcel}
-                                disabled={downloading || !selectedMonth}
+                                disabled={
+                                    downloading ||
+                                    !selectedMonth ||
+                                    !selectedYear
+                                }
                                 className="bg-mainbg hover:bg-mainbg/90 text-white"
                             >
                                 <FiDownload className="h-4 w-4 mr-2" />
@@ -548,9 +588,20 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <p className="text-base font-semibold text-gray-900">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (item?.faceid_user_id) {
+                                                        setReportUserId(
+                                                            item.faceid_user_id
+                                                        );
+                                                        setIsReportOpen(true);
+                                                    }
+                                                }}
+                                                className="text-left bg-transparent border-none p-0 text-base font-semibold text-gray-900 hover:underline cursor-pointer transition-all duration-200"
+                                            >
                                                 {item?.name ?? "—"}
-                                            </p>
+                                            </button>
                                             <div className="relative group w-[200px]">
                                                 <p className="text-sm text-gray-500 line-clamp-1">
                                                     {item?.position ?? "—"}
@@ -715,6 +766,19 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
+            <Sheet open={isReportOpen} onOpenChange={setIsReportOpen}>
+                <SheetContent
+                    side="right"
+                    className="!w-[60vw] !max-w-[60vw] sm:!max-w-[80vw] p-0 overflow-hidden"
+                    style={{ width: "60vw", maxWidth: "60vw" }}
+                >
+                    <div className="h-full overflow-y-auto px-10 pb-6">
+                        {reportUserId && (
+                            <EmployeeReport userId={String(reportUserId)} />
+                        )}
+                    </div>
+                </SheetContent>
+            </Sheet>
         </div>
     );
 };

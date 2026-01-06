@@ -252,6 +252,17 @@ export const GetDailyAttendance = async (date: string, page: number = 1) => {
     return response;
 };
 
+export const GetEmployeeReport = async (
+    year: number,
+    month: number,
+    faceid_user_id: number
+) => {
+    const response = await GetDataSimple(
+        `api/payroll/employee-report-by-id?year=${year}&month=${month}&faceid_user_id=${faceid_user_id}`
+    );
+    return response;
+};
+
 // FaceID User API functions
 export const DeleteFaceIdUser = async (userId: number) => {
     const response = await PostSimple(`api/faceid/delete/user/${userId}`, {});
