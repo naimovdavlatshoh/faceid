@@ -6,6 +6,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { useEffect, useState } from "react";
 import { IoTimer } from "react-icons/io5";
 import { FaUserCog } from "react-icons/fa";
+import { MdBarChart } from "react-icons/md";
 
 interface SidebarProps {
     className?: string;
@@ -21,6 +22,11 @@ const navigation = [
         name: "Сотрудники",
         href: "/users",
         icon: <FaUserFriends className="w-5 h-5" />,
+    },
+    {
+        name: "Статистика сотрудников",
+        href: "/users/report",
+        icon: <MdBarChart className="w-5 h-5" />,
     },
     {
         name: "Смены",
@@ -43,8 +49,9 @@ const Sidebar = ({ className }: SidebarProps) => {
             location.pathname.startsWith("/users") ||
             location.pathname.startsWith("/details");
         const isShiftsSection = location.pathname.startsWith("/shifts");
+        const isReportSection = location.pathname.startsWith("/users/report");
 
-        if (isUsersSection) {
+        if (isUsersSection && !isReportSection) {
             setOpenMenus((prev) => ({ ...prev, Пользователи: true }));
         }
         if (isShiftsSection) {
@@ -65,14 +72,19 @@ const Sidebar = ({ className }: SidebarProps) => {
         >
             {/* Logo Section */}
             <div className="p-6">
-                <h2 className="text-xl font-bold text-maintx ">{localStorage.getItem("company")}</h2>
+                <h2 className="text-xl font-bold text-maintx ">
+                    {localStorage.getItem("company")}
+                </h2>
             </div>
 
             {/* Navigation Menu */}
             <nav className="flex-1 py-4">
                 <ul className="space-y-1">
                     {navigation.map((item) => {
-                        const isActive = location.pathname === item.href;
+                        const isActive =
+                            item.href === "/users/report"
+                                ? location.pathname.startsWith("/users/report")
+                                : location.pathname === item.href;
                         const hasChildren = (item as any).children?.length > 0;
 
                         if (!hasChildren) {

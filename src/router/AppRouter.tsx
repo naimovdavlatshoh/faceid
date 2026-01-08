@@ -60,6 +60,10 @@ const router = createBrowserRouter([
                 element: <Account />,
             },
             {
+                path: "users/report",
+                element: <EmployeeReport />,
+            },
+            {
                 path: "users/report/:id",
                 element: <EmployeeReport />,
             },

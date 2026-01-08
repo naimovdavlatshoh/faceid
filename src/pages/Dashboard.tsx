@@ -21,9 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
-import EmployeeReport from "@/pages/Users/EmployeeReport";
 import CustomPagination from "@/components/ui/custom-pagination";
+import { Link } from "react-router-dom";
 
 type AttendanceData = {
     date: string;
@@ -163,8 +162,6 @@ const Dashboard = () => {
     );
     const [downloading, setDownloading] = useState(false);
     const [excelModalOpen, setExcelModalOpen] = useState(false);
-    const [isReportOpen, setIsReportOpen] = useState(false);
-    const [reportUserId, setReportUserId] = useState<number | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
 
     const selectedDateValue = useMemo(() => {
@@ -588,20 +585,12 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    if (item?.faceid_user_id) {
-                                                        setReportUserId(
-                                                            item.faceid_user_id
-                                                        );
-                                                        setIsReportOpen(true);
-                                                    }
-                                                }}
-                                                className="text-left bg-transparent border-none p-0 text-base font-semibold text-gray-900 hover:underline cursor-pointer transition-all duration-200"
+                                            <Link
+                                                to={`/users/report/${item?.faceid_user_id}`}
+                                                className="text-base font-semibold text-gray-900 hover:underline cursor-pointer transition-all duration-200"
                                             >
                                                 {item?.name ?? "—"}
-                                            </button>
+                                            </Link>
                                             <div className="relative group w-[200px]">
                                                 <p className="text-sm text-gray-500 line-clamp-1">
                                                     {item?.position ?? "—"}
@@ -766,19 +755,6 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
-            <Sheet open={isReportOpen} onOpenChange={setIsReportOpen}>
-                <SheetContent
-                    side="right"
-                    className="!w-[60vw] !max-w-[60vw] sm:!max-w-[80vw] p-0 overflow-hidden"
-                    style={{ width: "60vw", maxWidth: "60vw" }}
-                >
-                    <div className="h-full overflow-y-auto px-10 pb-6">
-                        {reportUserId && (
-                            <EmployeeReport userId={String(reportUserId)} />
-                        )}
-                    </div>
-                </SheetContent>
-            </Sheet>
         </div>
     );
 };
