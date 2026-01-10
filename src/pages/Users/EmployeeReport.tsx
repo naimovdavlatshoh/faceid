@@ -14,6 +14,8 @@ import { toast } from "sonner";
 type DayStatus = "complete" | "partial_in" | "partial_out" | "absent";
 type ArrivalStatus = "on_time" | "late" | "unknown";
 type DepartureStatus = "on_time" | "early" | "overtime" | "unknown";
+import { ru } from "date-fns/locale";
+
 
 type DayData = {
     day_date: string;
@@ -580,8 +582,7 @@ const EmployeeReport = () => {
                                 </p>
                                 <p className="text-sm font-bold text-purple-600 leading-tight">
                                     {formatCurrency(
-                                        reportData?.statistics
-                                            ?.final_salary_by_hours || 0
+                                        reportData?.statistics?.salary_amount
                                     )}
                                 </p>
                             </div>
@@ -602,6 +603,7 @@ const EmployeeReport = () => {
                                         selected={selectedDay}
                                         onSelect={setSelectedDay}
                                         month={currentDate}
+                                        locale={ru}   // 👈 MUHIM QATOR
                                         onMonthChange={(date) => {
                                             setSelectedYear(date.getFullYear());
                                             setSelectedMonth(
