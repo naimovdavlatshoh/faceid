@@ -31,7 +31,7 @@ const DashboardLayout = ({ className }: DashboardLayoutProps) => {
                         className={cn(
                             location.pathname === "/"
                                 ? "max-w-7xl mx-auto"
-                                : "max-w-6xl mx-auto"
+                                : "max-w-7xl mx-auto"
                         )}
                     >
                         <Outlet />

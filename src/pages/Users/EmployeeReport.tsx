@@ -14,8 +14,6 @@ import { toast } from "sonner";
 type DayStatus = "complete" | "partial_in" | "partial_out" | "absent";
 type ArrivalStatus = "on_time" | "late" | "unknown";
 type DepartureStatus = "on_time" | "early" | "overtime" | "unknown";
-import { ru } from "date-fns/locale";
-
 
 type DayData = {
     day_date: string;
@@ -519,7 +517,7 @@ const EmployeeReport = () => {
                         </div>
 
                         {/* Statistics Cards */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2 flex-shrink-0">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-2 flex-shrink-0">
                             <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow">
                                 <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
                                     Всего дней
@@ -570,20 +568,60 @@ const EmployeeReport = () => {
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 p-3 shadow-sm hover:shadow-md transition-shadow">
                                 <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
-                                    Часов
+                                    Отработано
                                 </p>
                                 <p className="text-lg font-bold text-blue-600">
-                                    {reportData.statistics.total_worked_hours}
+                                    {(() => {
+                                        const totalMinutes =
+                                            reportData.statistics
+                                                .total_worked_minutes || 0;
+                                        const hours = Math.floor(
+                                            totalMinutes / 60
+                                        );
+                                        const minutes =
+                                            totalMinutes % 60;
+                                        return `${hours} ч ${minutes} м`;
+                                    })()}
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-200 p-3 shadow-sm hover:shadow-md transition-shadow">
                                 <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
                                     Зарплата
                                 </p>
-                                <p className="text-sm font-bold text-purple-600 leading-tight">
+                                <p className="text-lg font-bold text-purple-600 leading-tight">
                                     {formatCurrency(
-                                        reportData?.statistics?.salary_amount
+                                        reportData?.statistics?.salary_amount ||
+                                            0
                                     )}
+                                </p>
+                            </div>
+                            <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl border border-indigo-200 p-3 shadow-sm hover:shadow-md transition-shadow">
+                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                    Ставка за час
+                                </p>
+                                <p className="text-lg font-bold text-indigo-600 leading-tight">
+                                    {formatCurrency(
+                                        reportData.statistics
+                                            .final_salary_by_hours || 0
+                                    )}
+                                </p>
+                            </div>
+                            <div className="bg-gradient-to-br from-pink-50 to-white rounded-xl border border-pink-200 p-3 shadow-sm hover:shadow-md transition-shadow">
+                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                    Заработано
+                                </p>
+                                <p className="text-lg font-bold text-pink-600 leading-tight">
+                                    {(() => {
+                                        const minutes =
+                                            reportData.statistics
+                                                .total_worked_minutes || 0;
+                                        const ratePerMinute =
+                                            reportData.statistics
+                                                .final_salary_by_minutes || 0;
+                                        const total =
+                                            minutes * ratePerMinute;
+                                        return formatCurrency(total);
+                                    })()}
                                 </p>
                             </div>
                         </div>
@@ -603,7 +641,6 @@ const EmployeeReport = () => {
                                         selected={selectedDay}
                                         onSelect={setSelectedDay}
                                         month={currentDate}
-                                        locale={ru}   // 👈 MUHIM QATOR
                                         onMonthChange={(date) => {
                                             setSelectedYear(date.getFullYear());
                                             setSelectedMonth(
