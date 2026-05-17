@@ -24,6 +24,8 @@ interface ComboboxOption {
 interface SearchableComboboxProps {
     label: string;
     placeholder?: string;
+    searchPlaceholder?: string;
+    emptyMessage?: string;
     value: string;
     onChange: (value: string) => void;
     onSearch: (searchTerm: string) => void;
@@ -36,6 +38,8 @@ interface SearchableComboboxProps {
 export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
     label,
     placeholder = "Select option...",
+    searchPlaceholder = "Поиск...",
+    emptyMessage = "Ничего не найдено",
     value,
     onChange,
     onSearch,
@@ -47,10 +51,17 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const searchTimeoutRef = useRef<number | null>(null);
+    const prevSearchTermRef = useRef<string>("");
+    const onSearchRef = useRef(onSearch);
+
+    // keep latest onSearch callback in ref to avoid re-running effect
+    useEffect(() => {
+        onSearchRef.current = onSearch;
+    }, [onSearch]);
 
     const selectedOption = options.find((option) => option.value === value);
 
-    // Debounced search
+    // Debounced search; call onSearch("") only when user cleared (was typing before)
     useEffect(() => {
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
@@ -58,24 +69,22 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
 
         if (searchTerm.length >= 3) {
             searchTimeoutRef.current = window.setTimeout(() => {
-                console.log("Calling onSearch with:", searchTerm);
-                onSearch(searchTerm);
-            }, 500); // Increased delay to 500ms
-        } else if (searchTerm.length === 0) {
-            // When search is cleared, fetch all positions
-            console.log("Calling onSearch with empty string");
-            onSearch("");
+                onSearchRef.current(searchTerm);
+            }, 400);
+        } else if (searchTerm.length === 0 && prevSearchTermRef.current.length > 0) {
+            onSearchRef.current("");
         }
+
+        prevSearchTermRef.current = searchTerm;
 
         return () => {
             if (searchTimeoutRef.current) {
                 clearTimeout(searchTimeoutRef.current);
             }
         };
-    }, [searchTerm, onSearch]);
+    }, [searchTerm]);
 
     const handleSearchChange = (newSearchTerm: string) => {
-        console.log("⌨️ Search input changed:", newSearchTerm);
         setSearchTerm(newSearchTerm);
     };
 
@@ -106,9 +115,9 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl">
-                    <Command className="rounded-xl">
+                    <Command className="rounded-xl" shouldFilter={false}>
                         <CommandInput
-                            placeholder="Поиск должностей..."
+                            placeholder={searchPlaceholder}
                             value={searchTerm}
                             onValueChange={handleSearchChange}
                         />
@@ -124,7 +133,7 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                                 <CommandEmpty>
                                     {searchTerm.length < 3
                                         ? "Введите минимум 3 символа для поиска"
-                                        : "Должности не найдены"}
+                                        : emptyMessage}
                                 </CommandEmpty>
                             ) : (
                                 <CommandGroup>

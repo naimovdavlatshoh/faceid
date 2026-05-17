@@ -9,10 +9,21 @@
  * @returns true if it was a 401 error and was handled, false otherwise
  */
 export const handleAuthError = (error: any): boolean => {
-    // Check if it's a 401 Unauthorized error
-    if (error?.response?.status === 401 || error?.status === 401) {
+    const status = error?.response?.status ?? error?.status;
+    const message: string | undefined =
+        error?.response?.data?.message ?? error?.message;
+
+    // Check if it's an auth-related error:
+    // - 401 Unauthorized
+    // - or backend message like "Expired token"
+    const isAuthError =
+        status === 401 ||
+        (typeof message === "string" &&
+            message.toLowerCase().includes("expired token"));
+
+    if (isAuthError) {
         console.log(
-            "401 Unauthorized error detected. Clearing local storage and reloading page..."
+            "Auth error detected (401 / Expired token). Clearing storage and redirecting to login..."
         );
 
         // Clear all data from local storage

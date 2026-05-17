@@ -50,7 +50,8 @@ interface Shift {
     shift_name: string;
     overtime_after_minutes: number;
     late_tolerance_minutes: number;
-    is_active: number;
+
+    is_active: string;
     created_at: string;
     updated_at: string;
     shift_type_name: string;
@@ -168,19 +169,19 @@ const Shifts = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             {/* Header */}
 
-            <div className="space-y-4 mb-10">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl  font-semibold text-gray-900">
+            <div className="space-y-4 mb-6 md:mb-10">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 truncate">
                             Смены
                         </h1>
                     </div>
-                    <div className="flex space-x-3">
-                        <Link to="/shifts/create">
-                            <Button className="px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800  text-white  rounded-xl font-medium transition-all duration-200">
+                    <div className="flex space-x-3 flex-shrink-0">
+                        <Link to="/shifts/create" className="block w-full sm:w-auto">
+                            <Button className="w-full sm:w-auto px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium transition-all duration-200">
                                 <IoMdAdd className="w-4 h-4" />
                                 Добавить
                             </Button>
@@ -196,10 +197,10 @@ const Shifts = () => {
             </div>
 
             {/* Main Content */}
-            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
-                <CardHeader>
+            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <CardHeader className="px-4 md:px-6">
                     <div className="flex flex-col space-y-4">
-                        <div className="flex justify-start w-full">
+                        <div className="flex justify-start w-full min-w-0">
                             <SearchInput
                                 placeholder="Поиск по названию смены..."
                                 value={searchTerm}
@@ -208,11 +209,11 @@ const Shifts = () => {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
+                <CardContent className="p-0 overflow-x-auto scrollbar-hide">
+                    <Table className="min-w-[720px]">
                         <TableHeader className="bg-mainbg/10">
                             <TableRow>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-maintx hidden md:table-cell w-12">
                                     <Checkbox
                                         checked={isAllSelected}
                                         onCheckedChange={handleSelectAll}
@@ -230,9 +231,9 @@ const Shifts = () => {
                                 <TableHead className="text-maintx ">
                                     Допуск опоздания (мин)
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                {/* <TableHead className="text-maintx ">
                                     Статус
-                                </TableHead>
+                                </TableHead> */}
                                 <TableHead className="text-maintx ">
                                     Дата создания
                                 </TableHead>
@@ -259,7 +260,7 @@ const Shifts = () => {
                                         key={shift.shift_id}
                                         className="border-dashed border-gray-200  hover:bg-gray-100 "
                                     >
-                                        <TableCell>
+                                        <TableCell className="hidden md:table-cell w-12">
                                             <Checkbox
                                                 checked={selectedShifts.includes(
                                                     shift.shift_id
@@ -299,19 +300,19 @@ const Shifts = () => {
                                         <TableCell className="text-gray-600 ">
                                             {shift.late_tolerance_minutes} мин
                                         </TableCell>
-                                        <TableCell>
+                                        {/* <TableCell>
                                             <span
                                                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    shift.is_active === 1
+                                                    shift.is_active === "1"
                                                         ? "bg-green-100 text-green-800 "
                                                         : "bg-red-100 text-red-800 "
                                                 }`}
                                             >
-                                                {shift.is_active === 1
+                                                {shift.is_active === "1"
                                                     ? "Активна"
                                                     : "Неактивна"}
                                             </span>
-                                        </TableCell>
+                                        </TableCell> */}
                                         <TableCell className="text-gray-600 ">
                                             {new Date(
                                                 shift.created_at
@@ -363,9 +364,9 @@ const Shifts = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center border-t border-gray-200  pt-4">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-gray-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
-                        <label htmlFor="" className="text-gray-500 text-sm">
+                        <label htmlFor="" className="text-gray-500 text-sm whitespace-nowrap">
                             Строк на странице:
                         </label>
                         <Select

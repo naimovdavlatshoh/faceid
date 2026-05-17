@@ -39,6 +39,7 @@ interface ShiftTime {
     end_time: string;
     is_day_off: number;
     is_day_off_name: string;
+    shift_type_name?: string;
 }
 
 interface Shift {
@@ -49,6 +50,7 @@ interface Shift {
     is_active: number;
     created_at: string;
     updated_at: string;
+    shift_type_name?: string;
     shift_times: ShiftTime[];
 }
 
@@ -78,6 +80,7 @@ const ShiftDaysModal = ({
     const [loading, setLoading] = useState(false);
     const [hasShiftTimes, setHasShiftTimes] = useState(false);
     const [shiftType, setShiftType] = useState<0 | 1>(0);
+    const [shiftTypeName, setShiftTypeName] = useState<string>("Стандартная смена");
     const [standardStart, setStandardStart] = useState<string>("00:00");
     const [standardEnd, setStandardEnd] = useState<string>("00:00");
     const navigate = useNavigate();
@@ -115,6 +118,7 @@ const ShiftDaysModal = ({
                 );
                 if (std) {
                     setShiftType(1);
+                    setShiftTypeName(std.shift_type_name || "Стандартная смена");
                     setStandardStart(std.start_time.substring(0, 5));
                     setStandardEnd(std.end_time.substring(0, 5));
                 } else {
@@ -230,7 +234,7 @@ const ShiftDaysModal = ({
                         {hasShiftTimes && shiftType === 1 ? (
                             <div className="p-4 rounded-2xl border border-maintx bg-mainbg/10 ">
                                 <h3 className="text-base font-semibold">
-                                    Стандартная смена
+                                    {shiftTypeName}
                                 </h3>
                                 <p className="text-sm mt-1">
                                     Каждый день:{" "}

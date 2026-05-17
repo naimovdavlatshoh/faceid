@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomCombobox } from "@/components/ui/custom-form";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import {
     Select,
     SelectContent,
@@ -26,6 +27,7 @@ import {
     GetDataSimple,
     PostDataToken,
     PostDataTokenJson,
+    PostSimple,
     DeleteFaceIdUser,
 } from "@/services/data";
 import CustomModal from "@/components/ui/custom-modal";
@@ -64,20 +66,25 @@ const Account = () => {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const [positionItems, setPositionItems] = useState<any[]>([]);
+    const [isPositionSearching, setIsPositionSearching] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
+                console.log("hello");
                 const objectsRes = await GetDataSimple("api/faceid/info");
+
                 const shiftsRes = await GetDataSimple(
-                    `api/shift/list?page=1&limit=10&object_id=${objectId}`
+                    `api/shift/list?page=1&limit=10&object_id=${objectId}`,
                 );
 
                 const positionsRes = await GetDataSimple(
-                    `api/staff/position/list?page=1&limit=100&object_id=${objectId}`
+                    `api/staff/position/list?page=1&limit=20&object_id=${objectId}`,
                 );
 
                 const userRes = await GetDataSimple(
-                    `api/faceid/user/read?faceid_user_id=${id}&object_id=${objectId}`
+                    `api/faceid/user/read?faceid_user_id=${id}&object_id=${objectId}`,
                 );
 
                 if (userRes) {
@@ -91,13 +98,13 @@ const Account = () => {
                         dayOffType === "1"
                             ? dayOffItems
                                   .map((d: any) =>
-                                      typeof d === "number" ? d : d?.days_off
+                                      typeof d === "number" ? d : d?.days_off,
                                   )
                                   .filter((v: any) => typeof v === "number")
                                   .map((v: any) => v.toString())
                             : dayOffItems
                                   .map((d: any) =>
-                                      typeof d === "number" ? d : d?.days_off
+                                      typeof d === "number" ? d : d?.days_off,
                                   )
                                   .filter((v: any) => typeof v === "number")
                                   .map((v: any) => v.toString());
@@ -134,7 +141,7 @@ const Account = () => {
                     const mappedDays = Array.isArray(userRes.day_off_items)
                         ? userRes.day_off_items
                               .map((d: any) =>
-                                  typeof d === "number" ? d : d?.days_off
+                                  typeof d === "number" ? d : d?.days_off,
                               )
                               .filter((v: any) => typeof v === "number")
                         : [];
@@ -142,9 +149,12 @@ const Account = () => {
                     setDayOffItemsRaw(
                         Array.isArray(userRes.day_off_items)
                             ? userRes.day_off_items
-                            : []
+                            : [],
                     );
                 }
+
+                // keep local search list in sync with initial list
+                setPositionItems(positionsRes?.result || []);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -162,7 +172,7 @@ const Account = () => {
     };
 
     const handleAvatarChange = async (
-        e: React.ChangeEvent<HTMLInputElement>
+        e: React.ChangeEvent<HTMLInputElement>,
     ) => {
         const file = e.target.files?.[0];
         if (!file) {
@@ -214,7 +224,7 @@ const Account = () => {
             toast.error(
                 error.response?.data?.error ||
                     error.response?.data?.message ||
-                    "Ошибка загрузки изображения"
+                    "Ошибка загрузки изображения",
             );
         } finally {
             setIsUploading(false);
@@ -246,6 +256,37 @@ const Account = () => {
         );
     }
 
+    const handlePositionSearch = async (keyword: string) => {
+        try {
+            if (!keyword) {
+                setPositionItems(formData.positions || []);
+                return;
+            }
+
+            setIsPositionSearching(true);
+
+            const response = await PostSimple(
+                `api/staff/position/search?object_id=${localStorage.getItem(
+                    "object",
+                )}&keyword=${encodeURIComponent(keyword)}`,
+                {},
+            );
+
+            const payload = response?.data;
+            const result = Array.isArray(payload?.result)
+                ? payload.result
+                : Array.isArray(payload)
+                  ? payload
+                  : [];
+
+            setPositionItems(result);
+        } catch (error) {
+            console.error("Error searching positions:", error);
+        } finally {
+            setIsPositionSearching(false);
+        }
+    };
+
     const handleInputChange = async (field: string, value: string) => {
         let processedValue = value;
 
@@ -261,7 +302,7 @@ const Account = () => {
         if (field === "objectId" && value) {
             try {
                 const shiftsRes = await GetDataSimple(
-                    `api/shift/list?page=1&limit=10&object_id=${value}`
+                    `api/shift/list?page=1&limit=10&object_id=${value}`,
                 );
                 setFormData((prev) => ({
                     ...prev,
@@ -305,20 +346,20 @@ const Account = () => {
                         ? // без выходных: пустой массив
                           []
                         : formData.dayOffType === "1"
-                        ? // standard: multiple weekdays
-                          (formData.dayOffWeekdays || [])
-                              .map((v) => v.trim())
-                              .filter(
-                                  (v) => v !== "" && !Number.isNaN(Number(v))
-                              )
-                              .map((v) => ({ days_off: parseInt(v) }))
-                        : // hybrid: multiple month days
-                          (formData.dayOffItems || [])
-                              .map((v) => v.trim())
-                              .filter(
-                                  (v) => v !== "" && !Number.isNaN(Number(v))
-                              )
-                              .map((v) => ({ days_off: parseInt(v) })),
+                          ? // standard: multiple weekdays
+                            (formData.dayOffWeekdays || [])
+                                .map((v) => v.trim())
+                                .filter(
+                                    (v) => v !== "" && !Number.isNaN(Number(v)),
+                                )
+                                .map((v) => ({ days_off: parseInt(v) }))
+                          : // hybrid: multiple month days
+                            (formData.dayOffItems || [])
+                                .map((v) => v.trim())
+                                .filter(
+                                    (v) => v !== "" && !Number.isNaN(Number(v)),
+                                )
+                                .map((v) => ({ days_off: parseInt(v) })),
             };
 
             await PostDataTokenJson(`api/faceid/user/update/${id}`, submitData);
@@ -329,7 +370,7 @@ const Account = () => {
             toast.error(
                 error.response?.data?.error ||
                     error.response?.data?.message ||
-                    "Ошибка обновления данных"
+                    "Ошибка обновления данных",
             );
         } finally {
             setIsSubmitting(false);
@@ -351,7 +392,7 @@ const Account = () => {
             console.error("Error deleting user:", error);
             toast.error(
                 error?.response?.data?.message ||
-                    "Не удалось удалить сотрудника"
+                    "Не удалось удалить сотрудника",
             );
         } finally {
             setIsDeleting(false);
@@ -497,13 +538,13 @@ const Account = () => {
                                                 Array.isArray(dayOffItemsRaw) &&
                                                 dayOffItemsRaw.some(
                                                     (d: any) =>
-                                                        d?.days_off_id === 3
+                                                        d?.days_off_id === 3,
                                                 );
                                             const hasWeekly =
                                                 Array.isArray(dayOffItemsRaw) &&
                                                 dayOffItemsRaw.some(
                                                     (d: any) =>
-                                                        d?.days_off_id === 2
+                                                        d?.days_off_id === 2,
                                                 );
 
                                             const isWeekly =
@@ -516,21 +557,23 @@ const Account = () => {
                                             ) {
                                                 const parts =
                                                     dayOffItemsList.map(
-                                                        (n) => `${n}-го`
+                                                        (n) => `${n}-го`,
                                                     );
                                                 const humanList =
                                                     parts.length === 1
                                                         ? parts[0]
                                                         : parts.length === 2
-                                                        ? `${parts[0]} и ${parts[1]}`
-                                                        : `${parts
-                                                              .slice(0, -1)
-                                                              .join(", ")} и ${
-                                                              parts[
-                                                                  parts.length -
-                                                                      1
-                                                              ]
-                                                          }`;
+                                                          ? `${parts[0]} и ${parts[1]}`
+                                                          : `${parts
+                                                                .slice(0, -1)
+                                                                .join(
+                                                                    ", ",
+                                                                )} и ${
+                                                                parts[
+                                                                    parts.length -
+                                                                        1
+                                                                ]
+                                                            }`;
                                                 return (
                                                     <span>
                                                         {humanList} числа
@@ -544,7 +587,7 @@ const Account = () => {
                                                     <span>
                                                         Каждого месяца:{" "}
                                                         {dayOffItemsList.join(
-                                                            ", "
+                                                            ", ",
                                                         )}
                                                     </span>
                                                 );
@@ -566,7 +609,7 @@ const Account = () => {
                                                 const names =
                                                     dayOffItemsList.map(
                                                         (n) =>
-                                                            map[n] || String(n)
+                                                            map[n] || String(n),
                                                     );
                                                 return (
                                                     <span>
@@ -619,7 +662,7 @@ const Account = () => {
                                             onChange={(e) =>
                                                 handleInputChange(
                                                     "fullName",
-                                                    e.target.value
+                                                    e.target.value,
                                                 )
                                             }
                                             className="h-12 rounded-xl border-gray-200 "
@@ -634,7 +677,7 @@ const Account = () => {
                                             onChange={(value) =>
                                                 handleInputChange(
                                                     "salaryType",
-                                                    value
+                                                    value,
                                                 )
                                             }
                                             options={[
@@ -662,7 +705,7 @@ const Account = () => {
                                             onValueChange={(value) => {
                                                 handleInputChange(
                                                     "dayOffType",
-                                                    value
+                                                    value,
                                                 );
                                                 if (value === "0") {
                                                     setFormData((prev) => ({
@@ -719,7 +762,7 @@ const Account = () => {
                                                 ].map((d) => {
                                                     const active =
                                                         formData.dayOffWeekdays.includes(
-                                                            d.v
+                                                            d.v,
                                                         );
                                                     return (
                                                         <Button
@@ -739,16 +782,16 @@ const Account = () => {
                                                                             active
                                                                                 ? prev.dayOffWeekdays.filter(
                                                                                       (
-                                                                                          x
+                                                                                          x,
                                                                                       ) =>
                                                                                           x !==
-                                                                                          d.v
+                                                                                          d.v,
                                                                                   )
                                                                                 : [
                                                                                       ...prev.dayOffWeekdays,
                                                                                       d.v,
                                                                                   ],
-                                                                    })
+                                                                    }),
                                                                 )
                                                             }
                                                         >
@@ -776,7 +819,7 @@ const Account = () => {
                                                     onClick={() => {
                                                         const input =
                                                             document.getElementById(
-                                                                "dayoff-input"
+                                                                "dayoff-input",
                                                             ) as HTMLInputElement | null;
                                                         if (!input) return;
                                                         const val =
@@ -791,13 +834,13 @@ const Account = () => {
                                                             num > max
                                                         ) {
                                                             toast.error(
-                                                                `Недопустимое значение (1-${max})`
+                                                                `Недопустимое значение (1-${max})`,
                                                             );
                                                             return;
                                                         }
                                                         if (
                                                             !formData.dayOffItems.includes(
-                                                                val
+                                                                val,
                                                             )
                                                         ) {
                                                             setFormData(
@@ -808,7 +851,7 @@ const Account = () => {
                                                                             ...prev.dayOffItems,
                                                                             val,
                                                                         ],
-                                                                })
+                                                                }),
                                                             );
                                                         }
                                                         input.value = "";
@@ -834,25 +877,25 @@ const Account = () => {
                                                                         onClick={() =>
                                                                             setFormData(
                                                                                 (
-                                                                                    prev
+                                                                                    prev,
                                                                                 ) => ({
                                                                                     ...prev,
                                                                                     dayOffItems:
                                                                                         prev.dayOffItems.filter(
                                                                                             (
-                                                                                                x
+                                                                                                x,
                                                                                             ) =>
                                                                                                 x !==
-                                                                                                v
+                                                                                                v,
                                                                                         ),
-                                                                                })
+                                                                                }),
                                                                             )
                                                                         }
                                                                     >
                                                                         ×
                                                                     </button>
                                                                 </div>
-                                                            )
+                                                            ),
                                                         )}
                                                     </div>
                                                 )}
@@ -871,7 +914,7 @@ const Account = () => {
                                             onChange={(value) =>
                                                 handleInputChange(
                                                     "shiftId",
-                                                    value
+                                                    value,
                                                 )
                                             }
                                             options={formData.shifts
@@ -879,7 +922,7 @@ const Account = () => {
                                                     (shift: any) =>
                                                         shift &&
                                                         shift.shift_id &&
-                                                        shift.shift_name
+                                                        shift.shift_name,
                                                 )
                                                 .map((shift: any) => ({
                                                     value: shift.shift_id.toString(),
@@ -889,22 +932,24 @@ const Account = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <CustomCombobox
+                                        <SearchableCombobox
                                             label="Должность"
                                             placeholder="Выберите должность"
                                             value={formData.positionId}
                                             onChange={(value) =>
                                                 handleInputChange(
                                                     "positionId",
-                                                    value
+                                                    value,
                                                 )
                                             }
-                                            options={formData.positions
+                                            onSearch={handlePositionSearch}
+                                            isLoading={isPositionSearching}
+                                            options={positionItems
                                                 .filter(
                                                     (position: any) =>
                                                         position &&
                                                         position.position_id &&
-                                                        position.position_name
+                                                        position.position_name,
                                                 )
                                                 .map((position: any) => ({
                                                     value: position.position_id.toString(),
@@ -930,7 +975,7 @@ const Account = () => {
                                             onChange={(e) =>
                                                 handleInputChange(
                                                     "salary",
-                                                    e.target.value
+                                                    e.target.value,
                                                 )
                                             }
                                             className="h-12 rounded-xl border-gray-200 "

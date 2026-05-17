@@ -1,8 +1,10 @@
 import { handleAuthError } from "@/utils/authUtils";
 import axios from "axios";
 
+// export const BASE_URL =
+//     import.meta.env.VITE_BASE_URL || "https://faceid.afandicloud.uz/";
 export const BASE_URL =
-    import.meta.env.VITE_BASE_URL || "https://faceid.afandicloud.uz/";
+    import.meta.env.VITE_BASE_URL || "https://apifaceid.ph.town/";
 
 axios.interceptors.request.use(
     (config) => {
@@ -273,6 +275,23 @@ export const DownloadAttendanceExcel = async (month: string) => {
     const token = getToken();
     const response = await axios.get(
         BASE_URL + `api/excel/attendance?month=${month}`,
+        {
+            responseType: "blob",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        }
+    );
+    return response.data;
+};
+
+export const DownloadEmployeePayrollExcel = async (
+    year: number,
+    month: number
+) => {
+    const token = getToken();
+    const response = await axios.get(
+        BASE_URL + `api/payroll/employee-excel?year=${year}&month=${month}`,
         {
             responseType: "blob",
             headers: {

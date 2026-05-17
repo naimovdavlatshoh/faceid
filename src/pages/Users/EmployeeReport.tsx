@@ -1,15 +1,44 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { GetEmployeeReport, GetDataSimple, PostSimple } from "@/services/data";
-import { Loader2, X } from "lucide-react";
+import {
+    GetEmployeeReport,
+    GetDataSimple,
+    PostSimple,
+    DownloadEmployeePayrollExcel,
+} from "@/services/data";
+import { Download, Loader2, X } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import CustomModal from "@/components/ui/custom-modal";
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
+
+const MONTHS_PAYROLL = [
+    { name: "Январь", value: "1" },
+    { name: "Февраль", value: "2" },
+    { name: "Март", value: "3" },
+    { name: "Апрель", value: "4" },
+    { name: "Май", value: "5" },
+    { name: "Июнь", value: "6" },
+    { name: "Июль", value: "7" },
+    { name: "Август", value: "8" },
+    { name: "Сентябрь", value: "9" },
+    { name: "Октябрь", value: "10" },
+    { name: "Ноябрь", value: "11" },
+    { name: "Декабрь", value: "12" },
+];
 
 type DayStatus = "complete" | "partial_in" | "partial_out" | "absent";
 type ArrivalStatus = "on_time" | "late" | "unknown";
@@ -26,6 +55,7 @@ type DayData = {
     last_out: string | null;
     worked_minutes: number;
     worked_hours: number;
+
     worked_time_formatted: string;
     late_minutes: number;
     late_minutes_penalty: number;
@@ -54,6 +84,8 @@ type Statistics = {
     salary_amount: number;
     final_salary_by_hours: number;
     final_salary_by_minutes: number;
+    hourly_rate: number;
+    final_salary: number;
 };
 
 type EmployeeReportData = {
@@ -145,12 +177,12 @@ const EmployeeReport = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [reportData, setReportData] = useState<EmployeeReportData | null>(
-        null
+        null,
     );
     const [error, setError] = useState<string | null>(null);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [selectedMonth, setSelectedMonth] = useState(
-        new Date().getMonth() + 1
+        new Date().getMonth() + 1,
     );
     const [selectedDay, setSelectedDay] = useState<Date | undefined>(undefined);
     const [employees, setEmployees] = useState<ApiUser[]>([]);
@@ -159,6 +191,15 @@ const EmployeeReport = () => {
     const [isSearching, setIsSearching] = useState(false);
     const searchTimeoutRef = useRef<number | null>(null);
     const hasSearchedRef = useRef(false);
+
+    const [salaryExcelModalOpen, setSalaryExcelModalOpen] = useState(false);
+    const [salaryExcelYear, setSalaryExcelYear] = useState(
+        () => new Date().getFullYear()
+    );
+    const [salaryExcelMonth, setSalaryExcelMonth] = useState(
+        () => String(new Date().getMonth() + 1)
+    );
+    const [salaryExcelDownloading, setSalaryExcelDownloading] = useState(false);
 
     const currentDate = useMemo(() => {
         return new Date(selectedYear, selectedMonth - 1, 1);
@@ -195,7 +236,7 @@ const EmployeeReport = () => {
         try {
             setLoadingEmployees(true);
             const data: ApiResponse = await GetDataSimple(
-                `api/faceid/users/list?page=1&limit=100&object_id=1`
+                `api/faceid/users/list?page=1&limit=100&object_id=1`,
             );
             setEmployees(data.result || []);
         } catch (error) {
@@ -218,7 +259,7 @@ const EmployeeReport = () => {
             setIsSearching(true);
             const response = await PostSimple(
                 `api/faceid/user/search?keyword=${encodeURIComponent(keyword)}`,
-                {}
+                {},
             );
 
             setEmployees(response.data?.result || []);
@@ -234,6 +275,38 @@ const EmployeeReport = () => {
     useEffect(() => {
         fetchEmployees();
     }, []);
+
+    const handleEmployeeSearch = useCallback((term: string) => {
+        if (term.length < 3) fetchEmployees();
+        else searchEmployees(term);
+    }, []);
+
+    const handleDownloadPayrollExcel = async () => {
+        const year = salaryExcelYear;
+        const month = Number(salaryExcelMonth);
+        if (!year || !month) return;
+        try {
+            setSalaryExcelDownloading(true);
+            const blob = await DownloadEmployeePayrollExcel(year, month);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `payroll_${year}_${String(month).padStart(2, "0")}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.success("Файл успешно скачан");
+            setSalaryExcelModalOpen(false);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(
+                err?.response?.data?.message || "Ошибка скачивания файла"
+            );
+        } finally {
+            setSalaryExcelDownloading(false);
+        }
+    };
 
     // Если id нет, но есть сотрудники, перенаправляем на первого
     useEffect(() => {
@@ -286,13 +359,13 @@ const EmployeeReport = () => {
                 const data = await GetEmployeeReport(
                     selectedYear,
                     selectedMonth,
-                    parseInt(id)
+                    parseInt(id),
                 );
                 setReportData(data);
             } catch (err: any) {
                 setError(
                     err?.response?.data?.message ||
-                        "Не удалось загрузить отчет сотрудника"
+                        "Не удалось загрузить отчет сотрудника",
                 );
                 console.error("Error fetching employee report:", err);
                 toast.error("Ошибка загрузки данных");
@@ -321,9 +394,9 @@ const EmployeeReport = () => {
     // Не показываем полный экран загрузки, список сотрудников должен оставаться видимым
 
     return (
-        <div className="flex gap-6 h-[calc(100vh-100px)] overflow-hidden">
-            {/* Employees Sidebar */}
-            <div className="w-72 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-full">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 md:h-[calc(100vh-100px)] overflow-hidden">
+            {/* Employees Sidebar - hidden on mobile, use dropdown in main instead */}
+            <div className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-full">
                 <div className="p-4 border-b border-gray-200 flex-shrink-0 space-y-3">
                     <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Сотрудники
@@ -371,14 +444,14 @@ const EmployeeReport = () => {
                                     key={employee.faceid_user_id}
                                     onClick={() => {
                                         navigate(
-                                            `/users/report/${employee.faceid_user_id}`
+                                            `/users/report/${employee.faceid_user_id}`,
                                         );
                                     }}
                                     className={cn(
                                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group text-left",
                                         isActive
                                             ? "bg-mainbg/10 text-maintx"
-                                            : "hover:bg-gray-100 text-gray-700"
+                                            : "hover:bg-gray-100 text-gray-700",
                                     )}
                                 >
                                     <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-mainbg/50 transition-colors">
@@ -402,7 +475,7 @@ const EmployeeReport = () => {
                                                 "text-sm font-medium truncate",
                                                 isActive
                                                     ? "text-maintx"
-                                                    : "text-gray-900"
+                                                    : "text-gray-900",
                                             )}
                                         >
                                             {employee.name}
@@ -419,7 +492,27 @@ const EmployeeReport = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col gap-5 h-full overflow-hidden">
+            <div className="flex-1 flex flex-col gap-4 md:gap-5 min-h-0 h-full overflow-hidden">
+                {/* Mobile: employee selector — combobox with search */}
+                <div className="md:hidden flex-shrink-0">
+                    <SearchableCombobox
+                        label="Сотрудник"
+                        placeholder="Выберите сотрудника"
+                        searchPlaceholder="Поиск сотрудников..."
+                        emptyMessage="Сотрудники не найдены"
+                        value={id || ""}
+                        onChange={(value) =>
+                            value && navigate(`/users/report/${value}`)
+                        }
+                        onSearch={handleEmployeeSearch}
+                        options={employees.map((e) => ({
+                            value: String(e.faceid_user_id),
+                            label: `${e.name}${e.position_name ? ` (${e.position_name})` : ""}`,
+                        }))}
+                        isLoading={loadingEmployees || isSearching}
+                        className="min-w-0"
+                    />
+                </div>
                 {loading ? (
                     <div className="flex-1 flex justify-center items-center">
                         <div className="flex flex-col items-center gap-4">
@@ -481,10 +574,10 @@ const EmployeeReport = () => {
                                             onClick={() => {
                                                 const today = new Date();
                                                 setSelectedYear(
-                                                    today.getFullYear()
+                                                    today.getFullYear(),
                                                 );
                                                 setSelectedMonth(
-                                                    today.getMonth() + 1
+                                                    today.getMonth() + 1,
                                                 );
                                             }}
                                             className="rounded-xl"
@@ -507,17 +600,122 @@ const EmployeeReport = () => {
                 ) : (
                     <>
                         {/* Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
-                            <div>
-                                <h1 className="text-2xl  font-semibold text-gray-900">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4 flex-shrink-0">
+                            <div className="min-w-0 flex items-center justify-between w-full">
+                                <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 truncate">
                                     {reportData.name} -{" "}
                                     {reportData.position_name}
                                 </h1>
+                                <Button
+                                    className="rounded-xl"
+                                    onClick={() =>
+                                        setSalaryExcelModalOpen(true)
+                                    }
+                                >
+                                    <Download className="w-4 h-4" /> Зарплата
+                                </Button>
                             </div>
                         </div>
 
+                        {/* Modal: Скачать Excel (зарплата) */}
+                        <CustomModal
+                            showTrigger={false}
+                            open={salaryExcelModalOpen}
+                            onOpenChange={setSalaryExcelModalOpen}
+                            title="Скачать Excel (зарплата)"
+                            showFooter={false}
+                            size="md"
+                        >
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-medium text-gray-700">
+                                            Год
+                                        </label>
+                                        <Select
+                                            value={String(salaryExcelYear)}
+                                            onValueChange={(v) =>
+                                                setSalaryExcelYear(
+                                                    parseInt(v, 10)
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Выберите год" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {[2025, 2026, 2027, 2028, 2029, 2030].map(
+                                                    (y) => (
+                                                        <SelectItem
+                                                            key={y}
+                                                            value={String(y)}
+                                                        >
+                                                            {y}
+                                                        </SelectItem>
+                                                    )
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        <label className="text-sm font-medium text-gray-700">
+                                            Месяц
+                                        </label>
+                                        <Select
+                                            value={salaryExcelMonth}
+                                            onValueChange={setSalaryExcelMonth}
+                                        >
+                                            <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Выберите месяц" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {MONTHS_PAYROLL.map((m) => (
+                                                    <SelectItem
+                                                        key={m.value}
+                                                        value={m.value}
+                                                    >
+                                                        {m.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 justify-end pt-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() =>
+                                            setSalaryExcelModalOpen(false)
+                                        }
+                                        disabled={salaryExcelDownloading}
+                                        className="rounded-xl"
+                                    >
+                                        Отмена
+                                    </Button>
+                                    <Button
+                                        onClick={handleDownloadPayrollExcel}
+                                        disabled={
+                                            salaryExcelDownloading ||
+                                            !salaryExcelYear ||
+                                            !salaryExcelMonth
+                                        }
+                                        className="rounded-xl bg-mainbg hover:bg-mainbg/90 text-white"
+                                    >
+                                        {salaryExcelDownloading ? (
+                                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                        ) : (
+                                            <Download className="w-4 h-4 mr-2" />
+                                        )}
+                                        {salaryExcelDownloading
+                                            ? "Загрузка..."
+                                            : "Скачать"}
+                                    </Button>
+                                </div>
+                            </div>
+                        </CustomModal>
+
                         {/* Statistics Cards */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-2 flex-shrink-0">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 flex-shrink-0">
                             <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow">
                                 <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
                                     Всего дней
@@ -576,10 +774,9 @@ const EmployeeReport = () => {
                                             reportData.statistics
                                                 .total_worked_minutes || 0;
                                         const hours = Math.floor(
-                                            totalMinutes / 60
+                                            totalMinutes / 60,
                                         );
-                                        const minutes =
-                                            totalMinutes % 60;
+                                        const minutes = totalMinutes % 60;
                                         return `${hours} ч ${minutes} м`;
                                     })()}
                                 </p>
@@ -591,7 +788,7 @@ const EmployeeReport = () => {
                                 <p className="text-lg font-bold text-purple-600 leading-tight">
                                     {formatCurrency(
                                         reportData?.statistics?.salary_amount ||
-                                            0
+                                            0,
                                     )}
                                 </p>
                             </div>
@@ -601,8 +798,7 @@ const EmployeeReport = () => {
                                 </p>
                                 <p className="text-lg font-bold text-indigo-600 leading-tight">
                                     {formatCurrency(
-                                        reportData.statistics
-                                            .final_salary_by_hours || 0
+                                        reportData.statistics.hourly_rate || 0,
                                     )}
                                 </p>
                             </div>
@@ -611,31 +807,23 @@ const EmployeeReport = () => {
                                     Заработано
                                 </p>
                                 <p className="text-lg font-bold text-pink-600 leading-tight">
-                                    {(() => {
-                                        const minutes =
-                                            reportData.statistics
-                                                .total_worked_minutes || 0;
-                                        const ratePerMinute =
-                                            reportData.statistics
-                                                .final_salary_by_minutes || 0;
-                                        const total =
-                                            minutes * ratePerMinute;
-                                        return formatCurrency(total);
-                                    })()}
+                                    {formatCurrency(
+                                        reportData.statistics.final_salary,
+                                    )}
                                 </p>
                             </div>
                         </div>
 
                         {/* Calendar and Details */}
-                        <div className="grid gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto">
+                        <div className="grid gap-4 md:gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                             {/* Calendar */}
-                            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100 lg:col-span-2">
-                                <CardHeader>
-                                    <CardTitle className="text-lg font-semibold text-gray-900">
+                            <Card className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 lg:col-span-2 min-w-0">
+                                <CardHeader className="px-4 md:px-6 py-3 md:py-6">
+                                    <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
                                         Календарь посещаемости
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
                                     <Calendar
                                         mode="single"
                                         selected={selectedDay}
@@ -644,7 +832,7 @@ const EmployeeReport = () => {
                                         onMonthChange={(date) => {
                                             setSelectedYear(date.getFullYear());
                                             setSelectedMonth(
-                                                date.getMonth() + 1
+                                                date.getMonth() + 1,
                                             );
                                         }}
                                         disabled={(date) => {
@@ -673,22 +861,22 @@ const EmployeeReport = () => {
 
                                             return false;
                                         }}
-                                        className="rounded-xl w-full"
+                                        className="rounded-xl w-full max-w-[280px] md:max-w-none mx-auto"
                                         classNames={{
-                                            day: "relative p-1",
-                                            month: "space-y-4",
+                                            day: "relative p-0.5 md:p-1",
+                                            month: "space-y-2 md:space-y-4",
                                             months: "flex flex-col",
                                             month_caption:
-                                                "flex justify-center pt-1 relative items-center",
+                                                "flex justify-center pt-1 relative items-center text-sm md:text-base",
                                             caption:
                                                 "flex justify-center pt-1 relative items-center",
-                                            nav: "space-x-1 flex items-center",
-                                            table: "w-full border-collapse space-y-1",
+                                            nav: "space-x-0.5 md:space-x-1 flex items-center",
+                                            table: "w-full border-collapse space-y-0 md:space-y-1",
                                             head_row: "flex",
-                                            row: "flex w-full mt-2",
-                                            cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                                            row: "flex w-full mt-1 md:mt-2",
+                                            cell: "text-center text-xs md:text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
                                             day_button:
-                                                "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+                                                "h-7 w-7 md:h-9 md:w-9 p-0 font-normal aria-selected:opacity-100",
                                         }}
                                         modifiersClassNames={{
                                             hasData: "bg-blue-50",
@@ -703,10 +891,10 @@ const EmployeeReport = () => {
                                                 // Форматируем дату в формате YYYY-MM-DD без учета timezone
                                                 const year = date.getFullYear();
                                                 const month = String(
-                                                    date.getMonth() + 1
+                                                    date.getMonth() + 1,
                                                 ).padStart(2, "0");
                                                 const dayNum = String(
-                                                    date.getDate()
+                                                    date.getDate(),
                                                 ).padStart(2, "0");
                                                 const dateStr = `${year}-${month}-${dayNum}`;
                                                 const dayData =
@@ -729,7 +917,7 @@ const EmployeeReport = () => {
                                                 const today = new Date();
                                                 today.setHours(0, 0, 0, 0);
                                                 const checkDate = new Date(
-                                                    date
+                                                    date,
                                                 );
                                                 checkDate.setHours(0, 0, 0, 0);
                                                 const isFuture =
@@ -757,7 +945,7 @@ const EmployeeReport = () => {
                                                             isOtherMonth
                                                         }
                                                         className={cn(
-                                                            "relative w-full h-full rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-0.5 p-1.5 min-h-[3rem] aspect-square",
+                                                            "relative w-full h-full rounded-lg md:rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-0.5 p-1 min-h-[2.25rem] md:min-h-[3rem] aspect-square",
                                                             isFuture ||
                                                                 isOtherMonth
                                                                 ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50"
@@ -765,25 +953,25 @@ const EmployeeReport = () => {
                                                                       colors.bg,
                                                                       colors.text,
                                                                       colors.border,
-                                                                      "border-2",
-                                                                      "hover:shadow-lg hover:scale-105 hover:z-10"
+                                                                      "border md:border-2",
+                                                                      "hover:shadow-lg hover:scale-105 hover:z-10",
                                                                   ),
                                                             isSelected &&
                                                                 !isFuture &&
                                                                 !isOtherMonth &&
-                                                                "ring-2 ring-mainbg ring-offset-2 shadow-xl scale-110 z-20",
+                                                                "ring-2 ring-mainbg ring-offset-1 md:ring-offset-2 shadow-lg md:shadow-xl scale-105 md:scale-110 z-20",
                                                             isToday &&
                                                                 !isSelected &&
                                                                 !isFuture &&
                                                                 !isOtherMonth &&
-                                                                "ring-2 ring-gray-400 ring-offset-1"
+                                                                "ring-2 ring-gray-400 ring-offset-1",
                                                         )}
                                                     >
                                                         <span
                                                             className={cn(
-                                                                "text-sm font-bold leading-none",
+                                                                "text-xs md:text-sm font-bold leading-none",
                                                                 isSelected &&
-                                                                    "text-mainbg text-base"
+                                                                    "text-mainbg text-sm md:text-base",
                                                             )}
                                                         >
                                                             {date.getDate()}
@@ -791,8 +979,8 @@ const EmployeeReport = () => {
                                                         {colors.dot && (
                                                             <div
                                                                 className={cn(
-                                                                    "w-1.5 h-1.5 rounded-full mt-0.5",
-                                                                    colors.dot
+                                                                    "w-1 h-1 md:w-1.5 md:h-1.5 rounded-full mt-0.5",
+                                                                    colors.dot,
                                                                 )}
                                                             />
                                                         )}
@@ -805,26 +993,26 @@ const EmployeeReport = () => {
                             </Card>
 
                             {/* Day Details */}
-                            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100">
-                                <CardHeader>
-                                    <CardTitle className="text-lg font-semibold text-gray-900">
+                            <Card className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 min-w-0">
+                                <CardHeader className="px-4 md:px-6 py-3 md:py-6">
+                                    <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
                                         Детали дня
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
                                     {selectedDayData ? (
                                         <div className="space-y-4">
                                             <div>
                                                 <p className="font-semibold text-gray-900">
                                                     {new Date(
-                                                        selectedDayData.day_date
+                                                        selectedDayData.day_date,
                                                     ).toLocaleDateString(
                                                         "ru-RU",
                                                         {
                                                             day: "numeric",
                                                             month: "long",
                                                             year: "numeric",
-                                                        }
+                                                        },
                                                     )}
                                                 </p>
                                             </div>
@@ -833,26 +1021,26 @@ const EmployeeReport = () => {
                                                     className={cn(
                                                         "border",
                                                         getStatusColor(
-                                                            selectedDayData
+                                                            selectedDayData,
                                                         ).bg,
                                                         getStatusColor(
-                                                            selectedDayData
+                                                            selectedDayData,
                                                         ).text,
                                                         getStatusColor(
-                                                            selectedDayData
-                                                        ).border
+                                                            selectedDayData,
+                                                        ).border,
                                                     )}
                                                 >
                                                     {selectedDayData.day_status ===
                                                     "complete"
                                                         ? "Полный день"
                                                         : selectedDayData.day_status ===
-                                                          "partial_in"
-                                                        ? "Частичный (вход)"
-                                                        : selectedDayData.day_status ===
-                                                          "partial_out"
-                                                        ? "Частичный (выход)"
-                                                        : "Отсутствие"}
+                                                            "partial_in"
+                                                          ? "Частичный (вход)"
+                                                          : selectedDayData.day_status ===
+                                                              "partial_out"
+                                                            ? "Частичный (выход)"
+                                                            : "Отсутствие"}
                                                 </Badge>
                                             </div>
                                             <div>
@@ -872,13 +1060,13 @@ const EmployeeReport = () => {
                                                 <p className="text-sm font-medium text-gray-900">
                                                     {selectedDayData.first_in
                                                         ? new Date(
-                                                              selectedDayData.first_in
+                                                              selectedDayData.first_in,
                                                           ).toLocaleTimeString(
                                                               "ru-RU",
                                                               {
                                                                   hour: "2-digit",
                                                                   minute: "2-digit",
-                                                              }
+                                                              },
                                                           )
                                                         : "—"}
                                                 </p>
@@ -890,13 +1078,13 @@ const EmployeeReport = () => {
                                                 <p className="text-sm font-medium text-gray-900">
                                                     {selectedDayData.last_out
                                                         ? new Date(
-                                                              selectedDayData.last_out
+                                                              selectedDayData.last_out,
                                                           ).toLocaleTimeString(
                                                               "ru-RU",
                                                               {
                                                                   hour: "2-digit",
                                                                   minute: "2-digit",
-                                                              }
+                                                              },
                                                           )
                                                         : "—"}
                                                 </p>
@@ -919,7 +1107,7 @@ const EmployeeReport = () => {
                                                     </p>
                                                     <p className="text-sm font-semibold text-red-600">
                                                         {formatTime(
-                                                            selectedDayData.late_minutes
+                                                            selectedDayData.late_minutes,
                                                         )}
                                                     </p>
                                                 </div>
@@ -932,7 +1120,7 @@ const EmployeeReport = () => {
                                                     </p>
                                                     <p className="text-sm font-semibold text-green-600">
                                                         {formatTime(
-                                                            selectedDayData.overtime_minutes
+                                                            selectedDayData.overtime_minutes,
                                                         )}
                                                     </p>
                                                 </div>

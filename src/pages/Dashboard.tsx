@@ -371,14 +371,14 @@ const Dashboard = () => {
     const attendanceListSafe = attendanceData.attendance ?? [];
 
     return (
-        <div className="space-y-6 pb-10">
-            <div className="rounded-3xl border border-mainbg/30 bg-gradient-to-br from-white via-blue-50 to-white p-6 shadow-sm">
+        <div className="space-y-4 md:space-y-6 pb-6 md:pb-10">
+            <div className="rounded-2xl md:rounded-3xl border border-mainbg/30 bg-gradient-to-br from-white via-blue-50 to-white p-4 md:p-6 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p className="text-sm uppercase tracking-widest text-gray-400">
+                    <div className="min-w-0">
+                        <p className="text-xs md:text-sm uppercase tracking-widest text-gray-400">
                             Посещаемость за день
                         </p>
-                        <h1 className="text-3xl font-semibold text-gray-900">
+                        <h1 className="text-xl md:text-3xl font-semibold text-gray-900 truncate">
                             {formattedDate}
                         </h1>
                         <p className="text-gray-500">
@@ -397,7 +397,7 @@ const Dashboard = () => {
                                 date={selectedDateValue}
                                 onSelect={handleDateChange}
                                 placeholder="Выберите дату"
-                                className="min-w-[220px]"
+                                className="w-full min-w-0 sm:min-w-[220px]"
                             />
                         </div>
                     </div>
@@ -502,7 +502,7 @@ const Dashboard = () => {
                 </CustomModal>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+            <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
                 {summary?.map((stat) => (
                     <div
                         key={stat.label}
@@ -532,7 +532,7 @@ const Dashboard = () => {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-3xl border border-mainbg/20 bg-white p-6 shadow-sm lg:col-span-2">
+                <div className="rounded-2xl md:rounded-3xl border border-mainbg/20 bg-white p-4 md:p-6 shadow-sm lg:col-span-2 min-w-0 overflow-hidden">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div>
                             <h2 className="text-xl font-semibold text-gray-900">
@@ -554,11 +554,11 @@ const Dashboard = () => {
                             </div>
                         ) : (
                             attendanceListSafe.map((item) => (
-                                <div
-                                    key={item?.faceid_user_id ?? Math.random()}
-                                    className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
-                                >
-                                    <div className="flex items-center gap-4">
+                                    <div
+                                        key={item?.faceid_user_id ?? Math.random()}
+                                        className="flex flex-col gap-3 py-3 md:py-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 last:border-0"
+                                    >
+                                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
                                         <div
                                             className="w-14 h-14 rounded-full overflow-hidden border-2 border-mainbg flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                                             onClick={() => {
@@ -605,8 +605,8 @@ const Dashboard = () => {
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-10">
-                                        <div className="flex flex-col text-sm text-gray-500 w-48">
+                                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 md:gap-10">
+                                        <div className="flex flex-col text-sm text-gray-500 w-full sm:w-48 min-w-0">
                                             <span className="text-green-500">
                                                 Вход:{" "}
                                                 <span className="font-medium">
@@ -674,7 +674,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="space-y-4">
-                    <div className="rounded-3xl border border-mainbg/20 bg-white p-6 shadow-sm">
+                    <div className="rounded-2xl md:rounded-3xl border border-mainbg/20 bg-white p-4 md:p-6 shadow-sm">
                         <h3 className="text-lg font-semibold text-gray-900">
                             По статусам
                         </h3>
@@ -719,7 +719,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="rounded-3xl border border-mainbg/20 bg-gradient-to-br from-mainbg/10 via-white to-white p-6 shadow-sm">
+                    <div className="rounded-2xl md:rounded-3xl border border-mainbg/20 bg-gradient-to-br from-mainbg/10 via-white to-white p-4 md:p-6 shadow-sm">
                         <h3 className="text-lg font-semibold text-gray-900">
                             Группа риска
                         </h3>

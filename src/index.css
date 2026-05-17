@@ -98,3 +98,17 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
 }
+
+/* Mobile: safe area and touch-friendly */
+@supports (padding: max(0px)) {
+    .safe-area-bottom {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Horizontal scroll on mobile for tables */
+@media (max-width: 767px) {
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+}

@@ -10,6 +10,7 @@ import { MdBarChart } from "react-icons/md";
 
 interface SidebarProps {
     className?: string;
+    onClose?: () => void;
 }
 
 const navigation = [
@@ -40,7 +41,7 @@ const navigation = [
     },
 ];
 
-const Sidebar = ({ className }: SidebarProps) => {
+const Sidebar = ({ className, onClose }: SidebarProps) => {
     const location = useLocation();
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
@@ -71,8 +72,13 @@ const Sidebar = ({ className }: SidebarProps) => {
             )}
         >
             {/* Logo Section */}
-            <div className="p-6">
-                <h2 className="text-xl font-bold text-maintx ">
+            <div className="p-6 flex flex-col items-start gap-3">
+            {/* <img
+                    src="/logo1.jpg"
+                    alt="Logo"
+                    className="w-24 h-24 object-contain"
+                /> */}
+                <h2 className="text-xl font-bold text-maintx text-center">
                     {localStorage.getItem("company")}
                 </h2>
             </div>
@@ -92,6 +98,7 @@ const Sidebar = ({ className }: SidebarProps) => {
                                 <li key={item.name}>
                                     <Link
                                         to={item.href}
+                                        onClick={onClose}
                                         className={cn(
                                             "flex items-center transition-all duration-200 text-sm relative px-3 py-1 ",
                                             isActive
@@ -195,6 +202,7 @@ const Sidebar = ({ className }: SidebarProps) => {
                                                     >
                                                         <Link
                                                             to={child.href}
+                                                            onClick={onClose}
                                                             className={cn(
                                                                 "flex items-center transition-all duration-200 text-sm relative px-2 py-1 ",
                                                                 childActive

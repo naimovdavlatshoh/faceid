@@ -17,7 +17,7 @@ interface Shift {
     shift_name: string;
     overtime_after_minutes: number;
     late_tolerance_minutes: number;
-    is_active: number;
+    is_active: string;
     created_at: string;
     updated_at: string;
 }

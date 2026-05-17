@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CustomCombobox } from "@/components/ui/custom-form";
+import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import {
     Select,
     SelectContent,
@@ -15,7 +16,7 @@ import {
 import { Link } from "react-router-dom";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
-import { GetDataSimple, PostDataTokenJson } from "@/services/data";
+import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 import { useNavigate } from "react-router-dom";
@@ -40,6 +41,10 @@ const CreateUser = () => {
     const objectId = localStorage.getItem("object");
     const navigate = useNavigate();
 
+    const [positionItems, setPositionItems] = useState<any[]>([]);
+    const [isPositionSearching, setIsPositionSearching] = useState(false);
+    const defaultPositionsRef = useRef<any[]>([]);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -50,14 +55,17 @@ const CreateUser = () => {
 
                 // Fetch positions
                 const positionsRes = await GetDataSimple(
-                    `api/staff/position/list?page=1&limit=100&object_id=${objectId}`
+                    `api/staff/position/list?page=1&limit=20&object_id=${objectId}`
                 );
+
+                const positions = positionsRes?.result || [];
+                defaultPositionsRef.current = positions;
+                setPositionItems(positions);
 
                 setFormData((prev) => ({
                     ...prev,
-
                     shifts: shiftsRes?.result || [],
-                    positions: positionsRes?.result || [],
+                    positions,
                 }));
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -67,6 +75,34 @@ const CreateUser = () => {
 
         fetchData();
     }, []);
+
+    const handlePositionSearch = async (keyword: string) => {
+        if (!keyword) {
+            setPositionItems(defaultPositionsRef.current);
+            return;
+        }
+
+        try {
+            setIsPositionSearching(true);
+            const response = await PostSimple(
+                `api/staff/position/search?object_id=${localStorage.getItem(
+                    "object",
+                )}&keyword=${encodeURIComponent(keyword)}`,
+                {},
+            );
+            const payload = response?.data;
+            const result = Array.isArray(payload?.result)
+                ? payload.result
+                : Array.isArray(payload)
+                  ? payload
+                  : [];
+            setPositionItems(result);
+        } catch (error) {
+            console.error("Error searching positions:", error);
+        } finally {
+            setIsPositionSearching(false);
+        }
+    };
 
     const handleInputChange = async (field: string, value: string) => {
         let processedValue = value;
@@ -510,22 +546,24 @@ const CreateUser = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <CustomCombobox
+                                        <SearchableCombobox
                                             label="Должность"
                                             placeholder="Выберите должность"
                                             value={formData.positionId}
                                             onChange={(value) =>
                                                 handleInputChange(
                                                     "positionId",
-                                                    value
+                                                    value,
                                                 )
                                             }
-                                            options={formData.positions
+                                            onSearch={handlePositionSearch}
+                                            isLoading={isPositionSearching}
+                                            options={positionItems
                                                 .filter(
                                                     (position: any) =>
                                                         position &&
                                                         position.position_id &&
-                                                        position.position_name
+                                                        position.position_name,
                                                 )
                                                 .map((position: any) => ({
                                                     value: position.position_id.toString(),

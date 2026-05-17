@@ -62,7 +62,7 @@ interface ApiResponse {
 const Positions = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
-    const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
     const [selectedPositions, setSelectedPositions] = useState<number[]>([]);
 
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -79,7 +79,7 @@ const Positions = () => {
     const [selectedPosition, setSelectedPosition] =
         useState<ApiPosition | null>(null);
 
-    const fetchPositions = async (page: number = 1, limit: number = 10) => {
+    const fetchPositions = async (page: number = 1, limit: number = 20) => {
         try {
             const data: ApiResponse = await GetDataSimple(
                 `api/staff/position/list?page=${page}&limit=${limit}&object_id=1`
@@ -103,7 +103,7 @@ const Positions = () => {
         try {
             setIsSearching(true);
             const response = await PostSimple(
-                `api/staff/position/search?object_id=1&keyword=${keyword}`,
+                `api/staff/position/search?object_id=${localStorage.getItem("object")}&keyword=${keyword}`,
                 {}
             );
 
@@ -234,17 +234,17 @@ const Positions = () => {
     }, []);
 
     return (
-        <div className="space-y-6">
-            <div className="space-y-4 mb-10">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-semibold text-gray-900 ">
+        <div className="space-y-4 md:space-y-6">
+            <div className="space-y-4 mb-6 md:mb-10">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 truncate">
                             Все должности
                         </h1>
                     </div>
                     <Button
                         onClick={handleAddPosition}
-                        className="bg-black text-white duration-300 hover:bg-black/70 rounded-xl"
+                        className="w-full sm:w-auto bg-black text-white duration-300 hover:bg-black/70 rounded-xl"
                     >
                         <IoMdAdd className="w-3 h-3" /> Добавить
                     </Button>
@@ -257,10 +257,10 @@ const Positions = () => {
                 />
             </div>
 
-            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
-                <CardHeader className="pb-4">
+            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <CardHeader className="pb-4 px-4 md:px-6">
                     <div className="flex flex-col space-y-4">
-                        <div className="flex justify-start w-full">
+                        <div className="flex justify-start w-full min-w-0">
                             <SearchInput
                                 placeholder="Поиск должностей..."
                                 value={searchQuery}
@@ -269,11 +269,11 @@ const Positions = () => {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
+                <CardContent className="p-0 overflow-x-auto scrollbar-hide">
+                    <Table className="min-w-[400px]">
                         <TableHeader className="bg-mainbg/10">
                             <TableRow>
-                                <TableHead className="text-maintx  w-12">
+                                <TableHead className="text-maintx w-12 hidden md:table-cell">
                                     <Checkbox
                                         checked={
                                             selectedPositions?.length ===
@@ -326,7 +326,7 @@ const Positions = () => {
                                         key={position.position_id}
                                         className="border-dashed border-gray-200  hover:bg-gray-100 "
                                     >
-                                        <TableCell className="w-12">
+                                        <TableCell className="w-12 hidden md:table-cell">
                                             <Checkbox
                                                 checked={selectedPositions?.includes(
                                                     position?.position_id
@@ -338,13 +338,13 @@ const Positions = () => {
                                                 }
                                             />
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center space-x-3">
-                                                <div className="w-12 h-12 rounded-full border-2 border-maintx flex items-center justify-center">
-                                                    <FaUserCog className="w-5 h-5 text-maintx" />
+                                        <TableCell className="whitespace-nowrap">
+                                            <div className="flex items-center space-x-3 min-w-0">
+                                                <div className="w-12 h-12 min-w-12 min-h-12 flex-shrink-0 rounded-full border-2 border-maintx flex items-center justify-center">
+                                                    <FaUserCog className="w-5 h-5 text-maintx flex-shrink-0" />
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-900 ">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">
                                                         {
                                                             position?.position_name
                                                         }
@@ -403,9 +403,9 @@ const Positions = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center border-t border-gray-200  pt-4">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-gray-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
-                        <label htmlFor="" className="text-gray-500 text-sm">
+                        <label htmlFor="" className="text-gray-500 text-sm whitespace-nowrap">
                             Строк на странице:
                         </label>
                         <Select

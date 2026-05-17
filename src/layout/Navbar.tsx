@@ -9,10 +9,31 @@ import {
 import { useNavigate } from "react-router-dom";
 import { PostSimple } from "@/services/data";
 import { toast } from "sonner";
+import { useIsMobile } from "@/components/hooks/use-mobile";
+import { Menu } from "lucide-react";
 
 interface NavbarProps {
     className?: string;
     onToggleSidebar?: () => void;
+}
+
+function NavbarMobileMenu({
+    onToggleSidebar,
+}: {
+    onToggleSidebar?: () => void;
+}) {
+    const isMobile = useIsMobile();
+    if (!isMobile || !onToggleSidebar) return null;
+    return (
+        <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 text-gray-600"
+            aria-label="Открыть меню"
+        >
+            <Menu className="w-6 h-6" />
+        </button>
+    );
 }
 
 interface ObjectItem {
@@ -22,7 +43,7 @@ interface ObjectItem {
     name?: string;
 }
 
-const Navbar = ({ className }: NavbarProps) => {
+const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
     const navigate = useNavigate();
     const [objects, setObjects] = useState<ObjectItem[]>([]);
 
@@ -73,12 +94,12 @@ const Navbar = ({ className }: NavbarProps) => {
     return (
         <header
             className={cn(
-                "fixed top-0 left-72 right-0 z-40 bg-white/5  backdrop-blur-xl px-6 py-4 flex items-center justify-between",
+                "fixed top-0 left-0 md:left-72 right-0 z-40 bg-white/95 md:bg-white/5 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 flex items-center justify-between border-b border-gray-100 md:border-0",
                 className
             )}
         >
             <div className="flex items-center space-x-2">
-                {/* Sidebar Toggle Button */}
+                <NavbarMobileMenu onToggleSidebar={onToggleSidebar} />
             </div>
 
             {/* User Menu */}

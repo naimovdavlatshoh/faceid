@@ -93,8 +93,8 @@ const Login = () => {
             </div>
 
             {/* Right Side - Login Form */}
-            <div className="w-full lg:w-2/3 flex flex-col justify-center px-8 py-16">
-                <div className="max-w-md mx-auto w-full">
+            <div className="w-full lg:w-2/3 flex flex-col justify-center px-4 sm:px-6 md:px-8 py-8 sm:py-12 md:py-16">
+                <div className="max-w-md mx-auto w-full min-w-0">
                     {/* Login Form */}
                     <div className="space-y-8">
                         <div>
