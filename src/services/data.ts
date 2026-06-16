@@ -301,3 +301,21 @@ export const DownloadEmployeePayrollExcel = async (
     );
     return response.data;
 };
+
+export const GetDashboardAttendance = async (
+    dateFrom: string,
+    dateTo: string,
+    objectId?: number
+) => {
+    const params = new URLSearchParams({
+        date_from: dateFrom,
+        date_to: dateTo,
+    });
+    if (objectId !== undefined) {
+        params.append("object_id", String(objectId));
+    }
+    const response = await GetDataSimple(
+        `api/dashboard/attendance?${params.toString()}`
+    );
+    return response;
+};
