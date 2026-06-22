@@ -30,9 +30,9 @@ import CustomPagination from "@/components/ui/custom-pagination";
 import SearchInput from "@/components/ui/search-input";
 import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { useEffect, useState, useRef } from "react";
-// import EditUser from "./EditUser";
 import { CiTrash } from "react-icons/ci";
 import { HiDotsVertical } from "react-icons/hi";
+import { FiKey, FiCopy, FiCheck } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
@@ -61,6 +61,36 @@ interface ApiResponse {
     result: ApiUser[];
 }
 
+// Объект из localStorage.objects (all_objects при логине)
+interface StoredObject {
+    object_id: number;
+    object_name: string;
+    is_telegram_notification: number;
+    is_parent_notification: number;
+}
+
+// Определяем, есть ли у текущего объекта доступ к Telegram-уведомлениям.
+// Флаги берём из all_objects по текущему object_id — так переключение
+// между объектами автоматически меняет видимость кнопки.
+const getCurrentObjectNotificationAccess = (): boolean => {
+    try {
+        const currentObjectId = Number(localStorage.getItem("object"));
+        const raw = localStorage.getItem("objects");
+        if (!raw) return false;
+
+        const objects: StoredObject[] = JSON.parse(raw);
+        const current = objects.find((o) => o.object_id === currentObjectId);
+        if (!current) return false;
+
+        return (
+            current.is_telegram_notification === 1 ||
+            current.is_parent_notification === 1
+        );
+    } catch {
+        return false;
+    }
+};
+
 const Users = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
@@ -78,6 +108,18 @@ const Users = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const searchTimeoutRef = useRef<number | null>(null);
 
+    // Доступ к выдаче кода — вычисляем один раз при монтировании.
+    const [hasNotificationAccess] = useState<boolean>(
+        getCurrentObjectNotificationAccess
+    );
+
+    // Состояние модалки кода доступа
+    const [isCodeOpen, setIsCodeOpen] = useState(false);
+    const [codeLoadingId, setCodeLoadingId] = useState<number | null>(null);
+    const [accessCode, setAccessCode] = useState<string>("");
+    const [codeUserName, setCodeUserName] = useState<string>("");
+    const [copied, setCopied] = useState(false);
+
     const fetchUsers = async (page: number = 1, limit: number = 10) => {
         try {
             const data: ApiResponse = await GetDataSimple(
@@ -94,7 +136,6 @@ const Users = () => {
 
     const searchUsers = async (keyword: string) => {
         if (keyword.length < 3) {
-            // If keyword is less than 3 characters, fetch all users
             fetchUsers(currentPage, itemsPerPage);
             return;
         }
@@ -107,7 +148,7 @@ const Users = () => {
             );
 
             setUsers(response.data.result || []);
-            setTotalPages(1); // Search results are typically on one page
+            setTotalPages(1);
         } catch (error) {
             console.error("Error searching users:", error);
             toast.error("Ошибка поиска сотрудников");
@@ -116,7 +157,6 @@ const Users = () => {
         }
     };
 
-    // Use users directly since we're doing server-side search
     const currentUsers = users;
 
     const handlePageChange = (page: number) => {
@@ -131,19 +171,16 @@ const Users = () => {
         fetchUsers(1, newLimit);
     };
 
-    // Debounced search handler
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
 
-        // Clear any existing timeout
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
         }
 
-        // Set a new timeout for search
         searchTimeoutRef.current = setTimeout(() => {
             searchUsers(value);
-        }, 100); // 500ms delay
+        }, 100);
     };
 
     const handleSelectUser = (userId: number) => {
@@ -167,6 +204,48 @@ const Users = () => {
         setIsDeleteOpen(true);
     };
 
+    // Получение кода доступа сотрудника
+    const handleGetAccessCode = async (user: ApiUser) => {
+        try {
+            setCodeLoadingId(user.faceid_user_id);
+            const response = await GetDataSimple(
+                `api/faceid/access-code/${user.faceid_user_id}`
+            );
+
+            const code = response?.access_code ?? response?.data?.access_code;
+            if (!code) {
+                toast.error("Не удалось получить код доступа");
+                return;
+            }
+
+            setAccessCode(String(code));
+            setCodeUserName(user.name);
+            setCopied(false);
+            setIsCodeOpen(true);
+        } catch (error: any) {
+            console.error("Error getting access code:", error);
+            toast.error("Ошибка получения кода", {
+                description:
+                    error?.response?.data?.message ||
+                    "Не удалось сгенерировать код доступа",
+                duration: 3000,
+            });
+        } finally {
+            setCodeLoadingId(null);
+        }
+    };
+
+    const handleCopyCode = async () => {
+        try {
+            await navigator.clipboard.writeText(accessCode);
+            setCopied(true);
+            toast.success("Код скопирован");
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("Не удалось скопировать");
+        }
+    };
+
     const handleConfirmDelete = async () => {
         if (!userToDelete) return;
 
@@ -177,13 +256,11 @@ const Users = () => {
                 description: `${userToDelete.name} успешно удалён.`,
                 duration: 2500,
             });
-            // Refresh users list
             if (searchQuery.length >= 3) {
                 await searchUsers(searchQuery);
             } else {
                 await fetchUsers(currentPage, itemsPerPage);
             }
-            // Remove from selected users if was selected
             setSelectedUsers((prev) =>
                 prev.filter((id) => id !== userToDelete.id)
             );
@@ -211,7 +288,6 @@ const Users = () => {
         fetchUsers(currentPage, itemsPerPage);
     }, []);
 
-    // Cleanup timeout on unmount
     useEffect(() => {
         return () => {
             if (searchTimeoutRef.current) {
@@ -253,8 +329,6 @@ const Users = () => {
                                 onChange={handleSearchChange}
                             />
                         </div>
-
-                        {/* Tabs */}
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 overflow-x-auto overflow-y-visible scrollbar-hide">
@@ -295,7 +369,7 @@ const Users = () => {
                             {isSearching ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="text-center py-8"
                                     >
                                         <div className="flex items-center justify-center space-x-2">
@@ -309,7 +383,7 @@ const Users = () => {
                             ) : currentUsers?.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={7}
                                         className="text-center py-8 text-gray-500"
                                     >
                                         {searchQuery
@@ -377,7 +451,6 @@ const Users = () => {
                                         </TableCell>
 
                                         <TableCell className="text-right">
-                                            {/* <EditUser /> */}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <button className="rounded-full outline-none focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-0 hover:bg-gray-200 p-2 transition-colors duration-200">
@@ -385,6 +458,28 @@ const Users = () => {
                                                     </button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
+                                                    {hasNotificationAccess && (
+                                                        <DropdownMenuItem
+                                                            className="flex items-center gap-2"
+                                                            disabled={
+                                                                codeLoadingId ===
+                                                                user.faceid_user_id
+                                                            }
+                                                            onClick={() =>
+                                                                handleGetAccessCode(
+                                                                    user
+                                                                )
+                                                            }
+                                                        >
+                                                            <FiKey className="w-4 h-4" />
+                                                            <span>
+                                                                {codeLoadingId ===
+                                                                user.faceid_user_id
+                                                                    ? "Генерация..."
+                                                                    : "Код доступа"}
+                                                            </span>
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem
                                                         className="flex items-center gap-2 text-red-600 hover:text-red-600"
                                                         onClick={() =>
@@ -433,6 +528,7 @@ const Users = () => {
                     />
                 </CardFooter>
             </Card>
+
             {/* Delete Confirmation Modal */}
             <CustomModal
                 showTrigger={false}
@@ -473,6 +569,56 @@ const Users = () => {
                             {userToDelete?.name}
                         </span>
                         ? Это действие нельзя отменить.
+                    </p>
+                </div>
+            </CustomModal>
+
+            {/* Access Code Modal */}
+            <CustomModal
+                showTrigger={false}
+                open={isCodeOpen}
+                onOpenChange={setIsCodeOpen}
+                title="Код доступа"
+                size="md"
+                showCloseButton={true}
+                footerContent={
+                    <div className="flex gap-2 justify-end w-full">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsCodeOpen(false)}
+                        >
+                            Закрыть
+                        </Button>
+                        <Button
+                            onClick={handleCopyCode}
+                            className="bg-black hover:bg-black/70 text-white flex items-center gap-2"
+                        >
+                            {copied ? (
+                                <FiCheck className="w-4 h-4" />
+                            ) : (
+                                <FiCopy className="w-4 h-4" />
+                            )}
+                            {copied ? "Скопировано" : "Копировать"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                        Код доступа для сотрудника{" "}
+                        <span className="font-semibold text-gray-900">
+                            {codeUserName}
+                        </span>
+                        . Передайте его сотруднику для входа в Telegram-бот.
+                    </p>
+                    <div className="flex items-center justify-center">
+                        <span className="text-2xl font-bold tracking-[0.3em] text-gray-900 bg-gray-100 rounded-xl px-6 py-4 select-all">
+                            {accessCode}
+                        </span>
+                    </div>
+                    <p className="text-xs text-gray-400 text-center">
+                        Код одноразовый — после привязки он станет
+                        недействительным.
                     </p>
                 </div>
             </CustomModal>
