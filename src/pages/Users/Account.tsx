@@ -409,7 +409,7 @@ const Account = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 ">
+                    <h1 className="text-2xl font-semibold text-slate-900 ">
                         Аккаунт
                     </h1>
                 </div>
@@ -426,12 +426,12 @@ const Account = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="space-y-6 lg:col-span-1">
-                    <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
+                    <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm ">
                         <CardContent className="space-y-4 py-14">
                             {/* Photo Upload Area */}
                             <div className="flex flex-col items-center space-y-8">
                                 <div
-                                    className={`group relative w-32 h-32 rounded-full border-2 border-dashed border-gray-300 overflow-hidden p-1.5 bg-gray-50 ${
+                                    className={`group relative w-32 h-32 rounded-full border-2 border-dashed border-gray-300 overflow-hidden p-1.5 bg-slate-50 ${
                                         isUploading
                                             ? "cursor-not-allowed opacity-75"
                                             : "cursor-pointer"
@@ -441,7 +441,7 @@ const Account = () => {
                                     aria-label="Загрузить фото"
                                 >
                                     {isUploading ? (
-                                        <div className="w-full h-full rounded-full bg-gray-100  flex items-center justify-center">
+                                        <div className="w-full h-full rounded-full bg-slate-100  flex items-center justify-center">
                                             <div className="relative">
                                                 <div className="w-12 h-12 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
                                                 {/* Upload Icon */}
@@ -477,7 +477,7 @@ const Account = () => {
                                 </div>
 
                                 {/* File Info */}
-                                <div className="text-center text-sm text-gray-500 ">
+                                <div className="text-center text-sm text-slate-500 ">
                                     <p>*.jpeg, *.jpg макс 200 Кб</p>
                                 </div>
                                 {/* <div className="flex items-center space-x-2">
@@ -497,41 +497,41 @@ const Account = () => {
                         </CardContent>
                     </Card>
                     {/* Quick Info */}
-                    <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100 ">
+                    <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm ">
                         <CardHeader>
-                            <CardTitle className="text-base font-semibold text-gray-900 ">
+                            <CardTitle className="text-base font-semibold text-slate-900 ">
                                 Информация
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500">Смена</span>
-                                <span className="text-gray-900  font-medium">
+                                <span className="text-slate-500">Смена</span>
+                                <span className="text-slate-900  font-medium">
                                     {formData.displayShiftName || "—"}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500">
+                                <span className="text-slate-500">
                                     Тип зарплаты
                                 </span>
-                                <span className="text-gray-900  font-medium">
+                                <span className="text-slate-900  font-medium">
                                     {formData.displaySalaryTypeText || "—"}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-gray-500">
+                                <span className="text-slate-500">
                                     Тип выходного
                                 </span>
-                                <span className="text-gray-900  font-medium">
+                                <span className="text-slate-900  font-medium">
                                     {formData.displayDayOffTypeText || "—"}
                                 </span>
                             </div>
                             {dayOffItemsList.length > 0 && (
                                 <div className="pt-1">
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-slate-500">
                                         Выходные
                                     </span>
-                                    <div className="mt-2 text-sm text-gray-900 ">
+                                    <div className="mt-2 text-sm text-slate-900 ">
                                         {(() => {
                                             const t = formData.dayOffType;
                                             const hasMonthly =
@@ -633,9 +633,9 @@ const Account = () => {
                 </div>
 
                 {/* Right Section - User Details Form */}
-                <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-gray-100  flex flex-col">
+                <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-slate-100  flex flex-col">
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-gray-900 ">
+                        <CardTitle className="text-lg font-semibold text-slate-900 ">
                             Данные пользователя
                         </CardTitle>
                     </CardHeader>
@@ -650,7 +650,7 @@ const Account = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="fullName"
-                                            className="text-sm font-medium text-gray-700 "
+                                            className="text-sm font-medium text-slate-700 "
                                         >
                                             Имя
                                         </Label>
@@ -665,7 +665,7 @@ const Account = () => {
                                                     e.target.value,
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 "
+                                            className="h-12 rounded-xl border-slate-200 "
                                         />
                                     </div>
                                     {/* Salary Type */}
@@ -697,7 +697,7 @@ const Account = () => {
 
                                     {/* day off type */}
                                     <div className="space-y-2">
-                                        <Label className="text-sm font-medium text-gray-700 ">
+                                        <Label className="text-sm font-medium text-slate-700 ">
                                             Тип выходного
                                         </Label>
                                         <Select
@@ -746,7 +746,7 @@ const Account = () => {
                                     {formData.dayOffType ===
                                     "2" ? null : formData.dayOffType === "1" ? (
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-gray-700 ">
+                                            <Label className="text-sm font-medium text-slate-700 ">
                                                 Дни недели выходных (можно
                                                 несколько)
                                             </Label>
@@ -803,7 +803,7 @@ const Account = () => {
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-gray-700 ">
+                                            <Label className="text-sm font-medium text-slate-700 ">
                                                 Даты выходных (1-27)
                                             </Label>
                                             <div className="flex gap-2 items-center">
@@ -866,7 +866,7 @@ const Account = () => {
                                                             (v, idx) => (
                                                                 <div
                                                                     key={idx}
-                                                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100  text-sm"
+                                                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100  text-sm"
                                                                 >
                                                                     <span>
                                                                         {v}
@@ -963,7 +963,7 @@ const Account = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="salary"
-                                            className="text-sm font-medium text-gray-700 "
+                                            className="text-sm font-medium text-slate-700 "
                                         >
                                             Зарплата
                                         </Label>
@@ -978,7 +978,7 @@ const Account = () => {
                                                     e.target.value,
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 "
+                                            className="h-12 rounded-xl border-slate-200 "
                                         />
                                     </div>
                                 </div>
@@ -990,7 +990,7 @@ const Account = () => {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="px-6 py-2 h-12 rounded-xl border-gray-300  text-gray-700  hover:bg-gray-50 "
+                                className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                             >
                                 Назад
                             </Button>
@@ -999,7 +999,7 @@ const Account = () => {
                             type="submit"
                             form="accountForm"
                             disabled={isSubmitting}
-                            className="px-6 py-2 h-12 bg-gray-900 hover:bg-gray-800  text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-6 py-2 h-12 bg-blue-600 hover:bg-blue-700  text-white rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <div className="flex items-center space-x-2">
@@ -1048,9 +1048,9 @@ const Account = () => {
                 }
             >
                 <div className="space-y-2">
-                    <p className="text-sm text-gray-600 ">
+                    <p className="text-sm text-slate-600 ">
                         Вы уверены, что хотите удалить сотрудника{" "}
-                        <span className="font-semibold text-gray-900 ">
+                        <span className="font-semibold text-slate-900 ">
                             {formData.fullName}
                         </span>
                         ? Это действие нельзя отменить.

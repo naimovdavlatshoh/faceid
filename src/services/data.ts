@@ -302,6 +302,112 @@ export const DownloadEmployeePayrollExcel = async (
     return response.data;
 };
 
+// ─── SuperAdmin API ───────────────────────────────────────────────────────────
+
+export const SuperAdminGetDashboard = async () =>
+    GetDataSimple("superadmin/dashboard");
+
+// Objects
+export const SuperAdminGetObjects = async () =>
+    GetDataSimple("superadmin/objects");
+
+export const SuperAdminGetObject = async (id: number) =>
+    GetDataSimple(`superadmin/objects/${id}`);
+
+export const SuperAdminCreateObject = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/objects", data);
+
+export const SuperAdminUpdateObject = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/objects/${id}`, data);
+
+export const SuperAdminDeleteObject = async (id: number) =>
+    DeleteData(`superadmin/objects/${id}`);
+
+// Users
+export const SuperAdminGetUsers = async (page = 1, limit = 20) =>
+    GetDataSimple(`superadmin/users?page=${page}&limit=${limit}`);
+
+export const SuperAdminGetUser = async (id: number) =>
+    GetDataSimple(`superadmin/users/${id}`);
+
+export const SuperAdminCreateUser = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/users", data);
+
+export const SuperAdminUpdateUser = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/users/${id}`, data);
+
+export const SuperAdminDeleteUser = async (id: number) =>
+    DeleteData(`superadmin/users/${id}`);
+
+// Employees
+export const SuperAdminGetEmployees = async (page = 1, limit = 20, objectId?: number) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (objectId) params.append("object_id", String(objectId));
+    return GetDataSimple(`superadmin/employees?${params.toString()}`);
+};
+
+export const SuperAdminGetEmployee = async (id: number) =>
+    GetDataSimple(`superadmin/employees/${id}`);
+
+export const SuperAdminCreateEmployee = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/employees", data);
+
+export const SuperAdminUpdateEmployee = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/employees/${id}`, data);
+
+export const SuperAdminDeleteEmployee = async (id: number) =>
+    DeleteData(`superadmin/employees/${id}`);
+
+// Terminals
+export const SuperAdminGetTerminals = async (objectId?: number) => {
+    const params = objectId ? `?object_id=${objectId}` : "";
+    return GetDataSimple(`superadmin/terminals${params}`);
+};
+
+export const SuperAdminGetTerminal = async (id: number) =>
+    GetDataSimple(`superadmin/terminals/${id}`);
+
+export const SuperAdminCreateTerminal = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/terminals", data);
+
+export const SuperAdminUpdateTerminal = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/terminals/${id}`, data);
+
+export const SuperAdminDeleteTerminal = async (id: number) =>
+    DeleteData(`superadmin/terminals/${id}`);
+
+// Object-Users bindings
+export const SuperAdminGetObjectUsers = async (objectId?: number) => {
+    const params = objectId ? `?object_id=${objectId}` : "";
+    return GetDataSimple(`superadmin/object-users${params}`);
+};
+
+export const SuperAdminCreateObjectUser = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/object-users", data);
+
+export const SuperAdminUpdateObjectUser = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/object-users/${id}`, data);
+
+export const SuperAdminDeleteObjectUser = async (id: number) =>
+    DeleteData(`superadmin/object-users/${id}`);
+
+// Object-Telegram
+export const SuperAdminGetObjectTelegram = async (objectId?: number) => {
+    const params = objectId ? `?object_id=${objectId}` : "";
+    return GetDataSimple(`superadmin/object-telegram${params}`);
+};
+
+export const SuperAdminCreateObjectTelegram = async (data: Record<string, unknown>) =>
+    PostDataTokenJson("superadmin/object-telegram", data);
+
+export const SuperAdminUpdateObjectTelegram = async (id: number, data: Record<string, unknown>) =>
+    PostDataTokenJson(`superadmin/object-telegram/${id}`, data);
+
+export const SuperAdminDeleteObjectTelegram = async (id: number) =>
+    DeleteData(`superadmin/object-telegram/${id}`);
+
+// ─── End SuperAdmin API ───────────────────────────────────────────────────────
+
 export const GetDashboardAttendance = async (
     dateFrom: string,
     dateTo: string,

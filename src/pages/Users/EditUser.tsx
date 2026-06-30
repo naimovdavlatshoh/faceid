@@ -72,7 +72,7 @@ const EditUser = () => {
     return (
         <CustomModal
             trigger={
-                <button className="rounded-full p-2  hover:bg-gray-200 ">
+                <button className="rounded-full p-2  hover:bg-slate-200 ">
                     <GrEdit className="w-4 h-4" />
                 </button>
             }

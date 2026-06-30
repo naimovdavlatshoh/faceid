@@ -234,7 +234,7 @@ const CreateUser = () => {
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold text-gray-900 ">
+                    <h1 className="text-2xl font-semibold text-slate-900 ">
                         Создать нового сотрудника
                     </h1>
                 </div>
@@ -250,9 +250,9 @@ const CreateUser = () => {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-gray-100 ">
+                <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-slate-100 ">
                     <CardHeader>
-                        <CardTitle className="text-lg font-semibold text-gray-900 ">
+                        <CardTitle className="text-lg font-semibold text-slate-900 ">
                             Данные сотрудника
                         </CardTitle>
                     </CardHeader>
@@ -263,7 +263,7 @@ const CreateUser = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="fullName"
-                                            className="text-sm font-medium text-gray-700 "
+                                            className="text-sm font-medium text-slate-700 "
                                         >
                                             Имя
                                         </Label>
@@ -278,7 +278,7 @@ const CreateUser = () => {
                                                     e.target.value
                                                 )
                                             }
-                                            className="h-12 rounded-xl border-gray-200 "
+                                            className="h-12 rounded-xl border-slate-200 "
                                         />
                                     </div>
                                     {/* Salary Type */}
@@ -311,7 +311,7 @@ const CreateUser = () => {
 
                                     {/* day off type */}
                                     <div className="space-y-2">
-                                        <Label className="text-sm font-medium text-gray-700 ">
+                                        <Label className="text-sm font-medium text-slate-700 ">
                                             Тип выходного
                                         </Label>
                                         <Select
@@ -360,7 +360,7 @@ const CreateUser = () => {
                                     {formData.dayOffType ===
                                     "2" ? null : formData.dayOffType === "1" ? (
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-gray-700 ">
+                                            <Label className="text-sm font-medium text-slate-700 ">
                                                 Дни недели выходных (можно
                                                 несколько)
                                             </Label>
@@ -417,7 +417,7 @@ const CreateUser = () => {
                                         </div>
                                     ) : (
                                         <div className="space-y-2">
-                                            <Label className="text-sm font-medium text-gray-700 ">
+                                            <Label className="text-sm font-medium text-slate-700 ">
                                                 Даты выходных (1-27)
                                             </Label>
                                             <div className="flex gap-2 items-center">
@@ -480,7 +480,7 @@ const CreateUser = () => {
                                                             (v, idx) => (
                                                                 <div
                                                                     key={idx}
-                                                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100  text-sm"
+                                                                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100  text-sm"
                                                                 >
                                                                     <span>
                                                                         {v}
@@ -577,7 +577,7 @@ const CreateUser = () => {
                                     <div className="space-y-2">
                                         <Label
                                             htmlFor="salary"
-                                            className="text-sm font-medium text-gray-700 "
+                                            className="text-sm font-medium text-slate-700 "
                                         >
                                             Зарплата
                                         </Label>
@@ -604,7 +604,7 @@ const CreateUser = () => {
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="px-6 py-2 h-12 rounded-xl border-gray-300  text-gray-700  hover:bg-gray-50 "
+                                        className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                                     >
                                         Назад
                                     </Button>

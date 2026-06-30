@@ -241,7 +241,7 @@ const CreateShift = () => {
         <div className="space-y-6">
             <div className="space-y-4 mb-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <h1 className="text-2xl font-semibold text-gray-900 ">
+                    <h1 className="text-2xl font-semibold text-slate-900 ">
                         Создать смену
                     </h1>
                 </div>
@@ -254,9 +254,9 @@ const CreateShift = () => {
                 />
             </div>
 
-            <Card className="bg-white  rounded-2xl shadow-lg border border-gray-100">
+            <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg font-semibold text-gray-900 ">
+                    <CardTitle className="text-lg font-semibold text-slate-900 ">
                         Данные смены
                     </CardTitle>
                 </CardHeader>
@@ -444,14 +444,14 @@ const CreateShift = () => {
                         {/* Гибридный смена uchun kunlik */}
                         {form.shiftType === "0" && (
                             <div className="space-y-4 pt-4 border-t">
-                                <h3 className="text-lg font-semibold text-gray-900">
+                                <h3 className="text-lg font-semibold text-slate-900">
                                     Расписание по дням недели
                                 </h3>
                                 <div className="space-y-3">
                                     {daySchedules.map((day, index) => (
                                         <div
                                             key={index}
-                                            className="p-4 rounded-xl border bg-gray-50"
+                                            className="p-4 rounded-xl border bg-slate-50"
                                         >
                                             <Label>{DAY_NAMES[index]}</Label>
                                             <div className="grid grid-cols-2 gap-4 mt-2">
@@ -507,7 +507,7 @@ const CreateShift = () => {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="px-6 py-2 h-12 rounded-xl border-gray-300  text-gray-700  hover:bg-gray-50 "
+                                    className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                                 >
                                     Назад
                                 </Button>

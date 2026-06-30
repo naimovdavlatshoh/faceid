@@ -37,6 +37,7 @@ const Login = () => {
                     localStorage.setItem("token", response?.data?.jwt);
                     localStorage.setItem("object", response?.data?.object_id);
                     localStorage.setItem("company", response?.data?.firstname);
+                    localStorage.setItem("role_id", String(response?.data?.role_id ?? ""));
                     localStorage.setItem(
                         "objects",
                         JSON.stringify(response?.data?.all_objects)
@@ -44,7 +45,9 @@ const Login = () => {
 
                     setStatusbtn(false);
                     if (localStorage.getItem("token")) {
-                        navigate("/");
+                        const roleId = response?.data?.role_id;
+                        const targetPath = roleId === 1 ? "/admin" : "/";
+                        navigate(targetPath);
                         setTimeout(() => {
                             window.location.reload();
                         }, 20);

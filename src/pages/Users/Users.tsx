@@ -301,12 +301,12 @@ const Users = () => {
             <div className="space-y-4 mb-6 md:mb-10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 truncate">
+                        <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
                             Все сотрудники
                         </h1>
                     </div>
                     <Link to="/users/create" className="flex-shrink-0">
-                        <Button className="w-full sm:w-auto bg-black text-white duration-300 hover:bg-black/70 rounded-xl">
+                        <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-[13px] rounded-lg">
                             <IoMdAdd className="w-3 h-3" /> Добавить
                         </Button>
                     </Link>
@@ -319,7 +319,7 @@ const Users = () => {
                 />
             </div>
 
-            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <Card className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <CardHeader className="pb-4 px-4 md:px-6">
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full min-w-0">
@@ -333,9 +333,9 @@ const Users = () => {
                 </CardHeader>
                 <CardContent className="p-0 overflow-x-auto overflow-y-visible scrollbar-hide">
                     <Table className="min-w-[640px]">
-                        <TableHeader className="bg-mainbg/10 ">
+                        <TableHeader className="bg-slate-50/80 ">
                             <TableRow>
-                                <TableHead className="text-maintx hidden md:table-cell w-12">
+                                <TableHead className="text-slate-500 hidden md:table-cell w-12">
                                     <Checkbox
                                         checked={
                                             selectedUsers?.length ===
@@ -345,22 +345,22 @@ const Users = () => {
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Сотрудник
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Зарплата
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Смена
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Тип зарплаты
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Дата создания
                                 </TableHead>
-                                <TableHead className="text-right text-maintx ">
+                                <TableHead className="text-right text-slate-500 ">
                                     Действия
                                 </TableHead>
                             </TableRow>
@@ -374,7 +374,7 @@ const Users = () => {
                                     >
                                         <div className="flex items-center justify-center space-x-2">
                                             <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                                            <span className="text-gray-500">
+                                            <span className="text-slate-500">
                                                 Поиск...
                                             </span>
                                         </div>
@@ -384,7 +384,7 @@ const Users = () => {
                                 <TableRow>
                                     <TableCell
                                         colSpan={7}
-                                        className="text-center py-8 text-gray-500"
+                                        className="text-center py-8 text-slate-500"
                                     >
                                         {searchQuery
                                             ? "Сотрудники не найдены"
@@ -395,7 +395,7 @@ const Users = () => {
                                 currentUsers?.map((user) => (
                                     <TableRow
                                         key={user.faceid_user_id}
-                                        className="border-dashed border-gray-200  hover:bg-gray-100 "
+                                        className="border-dashed border-slate-200  hover:bg-slate-50/60 "
                                     >
                                         <TableCell className="w-12 hidden md:table-cell">
                                             <Checkbox
@@ -411,7 +411,7 @@ const Users = () => {
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
                                             <div className="flex items-center space-x-3 min-w-0">
-                                                <div className="w-12 h-12 min-w-12 min-h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-maintx">
+                                                <div className="w-12 h-12 min-w-12 min-h-12 flex-shrink-0 rounded-full overflow-hidden border-2 border-blue-200">
                                                     <img
                                                         src={
                                                             user?.image_path
@@ -425,26 +425,26 @@ const Users = () => {
                                                 <div className="min-w-0">
                                                     <Link
                                                         to={`/details/${user.faceid_user_id}`}
-                                                        className="text-sm font-medium text-gray-900  hover:underline cursor-pointer transition-all duration-200"
+                                                        className="text-[13px] font-medium text-slate-900  hover:underline cursor-pointer transition-all duration-200"
                                                     >
                                                         {user.name}
                                                     </Link>
-                                                    <p className="text-xs text-gray-400">
+                                                    <p className="text-[11px] text-slate-400">
                                                         {user.position_name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {user.salary.toLocaleString()} сум
                                         </TableCell>
                                         <TableCell className="text-gray-600">
                                             {user.shift_name || "—"}
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {user.salary_type_text || "—"}
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {new Date(
                                                 user.created_at
                                             ).toLocaleDateString("ru-RU")}
@@ -454,7 +454,7 @@ const Users = () => {
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <button className="rounded-full outline-none focus:outline-none focus:ring-0 focus:border-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-0 hover:bg-gray-200 p-2 transition-colors duration-200">
-                                                        <HiDotsVertical className="w-4 h-4 text-gray-500" />
+                                                        <HiDotsVertical className="w-4 h-4 text-slate-500" />
                                                     </button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
@@ -501,9 +501,9 @@ const Users = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-gray-200 pt-4 px-4 md:px-6 pb-4">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
-                        <label htmlFor="" className="text-gray-500 text-sm">
+                        <label htmlFor="" className="text-slate-500 text-sm">
                             Строк на странице:
                         </label>
                         <Select
@@ -563,7 +563,7 @@ const Users = () => {
                 }
             >
                 <div className="space-y-2">
-                    <p className="text-sm text-gray-600 ">
+                    <p className="text-sm text-slate-600 ">
                         Вы уверены, что хотите удалить сотрудника{" "}
                         <span className="font-semibold text-gray-900 ">
                             {userToDelete?.name}
@@ -591,7 +591,7 @@ const Users = () => {
                         </Button>
                         <Button
                             onClick={handleCopyCode}
-                            className="bg-black hover:bg-black/70 text-white flex items-center gap-2"
+                            className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                         >
                             {copied ? (
                                 <FiCheck className="w-4 h-4" />
@@ -612,11 +612,11 @@ const Users = () => {
                         . Передайте его сотруднику для входа в Telegram-бот.
                     </p>
                     <div className="flex items-center justify-center">
-                        <span className="text-2xl font-bold tracking-[0.3em] text-gray-900 bg-gray-100 rounded-xl px-6 py-4 select-all">
+                        <span className="text-2xl font-bold tracking-[0.3em] text-gray-900 bg-slate-100 rounded-xl px-6 py-4 select-all">
                             {accessCode}
                         </span>
                     </div>
-                    <p className="text-xs text-gray-400 text-center">
+                    <p className="text-[11px] text-slate-400 text-center">
                         Код одноразовый — после привязки он станет
                         недействительным.
                     </p>

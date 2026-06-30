@@ -112,9 +112,9 @@ interface ApiResponse {
 const getStatusColor = (day: DayData | undefined) => {
     if (!day)
         return {
-            bg: "bg-gray-50",
-            text: "text-gray-400",
-            border: "border-gray-200",
+            bg: "bg-slate-50",
+            text: "text-slate-400",
+            border: "border-slate-200",
             dot: "",
         };
 
@@ -165,9 +165,9 @@ const getStatusColor = (day: DayData | undefined) => {
     }
 
     return {
-        bg: "bg-gray-50",
-        text: "text-gray-400",
-        border: "border-gray-200",
+        bg: "bg-slate-50",
+        text: "text-slate-400",
+        border: "border-slate-200",
         dot: "",
     };
 };
@@ -396,9 +396,9 @@ const EmployeeReport = () => {
     return (
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 md:h-[calc(100vh-100px)] overflow-hidden">
             {/* Employees Sidebar - hidden on mobile, use dropdown in main instead */}
-            <div className="hidden md:flex w-72 bg-white border-r border-gray-200 flex-shrink-0 flex-col h-full">
-                <div className="p-4 border-b border-gray-200 flex-shrink-0 space-y-3">
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+            <div className="hidden md:flex w-72 bg-white border-r border-slate-200 flex-shrink-0 flex-col h-full">
+                <div className="p-4 border-b border-slate-200 flex-shrink-0 space-y-3">
+                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
                         Сотрудники
                     </h3>
                     <div className="relative">
@@ -417,7 +417,7 @@ const EmployeeReport = () => {
                                     hasSearchedRef.current = false;
                                     fetchEmployees();
                                 }}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                             >
                                 <X className="w-4 h-4" />
                             </button>
@@ -430,7 +430,7 @@ const EmployeeReport = () => {
                             <Loader2 className="w-5 h-5 animate-spin text-mainbg" />
                         </div>
                     ) : employees.length === 0 ? (
-                        <div className="text-center py-4 text-gray-400 text-sm">
+                        <div className="text-center py-4 text-slate-400 text-sm">
                             {searchQuery
                                 ? "Сотрудники не найдены"
                                 : "Нет сотрудников"}
@@ -450,11 +450,11 @@ const EmployeeReport = () => {
                                     className={cn(
                                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group text-left",
                                         isActive
-                                            ? "bg-mainbg/10 text-maintx"
-                                            : "hover:bg-gray-100 text-gray-700",
+                                            ? "bg-slate-50/80 text-slate-500"
+                                            : "hover:bg-slate-50/60 text-slate-700",
                                     )}
                                 >
-                                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-200 group-hover:border-mainbg/50 transition-colors">
+                                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-200 group-hover:border-mainbg/50 transition-colors">
                                         <img
                                             src={
                                                 employee.image_path ||
@@ -474,13 +474,13 @@ const EmployeeReport = () => {
                                             className={cn(
                                                 "text-sm font-medium truncate",
                                                 isActive
-                                                    ? "text-maintx"
-                                                    : "text-gray-900",
+                                                    ? "text-slate-500"
+                                                    : "text-slate-900",
                                             )}
                                         >
                                             {employee.name}
                                         </p>
-                                        <p className="text-xs text-gray-500 truncate">
+                                        <p className="text-xs text-slate-500 truncate">
                                             {employee.position_name || "—"}
                                         </p>
                                     </div>
@@ -517,7 +517,7 @@ const EmployeeReport = () => {
                     <div className="flex-1 flex justify-center items-center">
                         <div className="flex flex-col items-center gap-4">
                             <Loader2 className="w-8 h-8 animate-spin text-mainbg" />
-                            <p className="text-gray-500 text-sm">
+                            <p className="text-slate-500 text-sm">
                                 Загрузка данных...
                             </p>
                         </div>
@@ -534,7 +534,7 @@ const EmployeeReport = () => {
                     </div>
                 ) : !reportData ? (
                     <div className="flex-1 flex justify-center items-center">
-                        <p className="text-gray-500 text-lg">
+                        <p className="text-slate-500 text-lg">
                             Нет данных для отображения
                         </p>
                     </div>
@@ -543,12 +543,12 @@ const EmployeeReport = () => {
                       !Array.isArray(reportData.days) ||
                       reportData.days.length === 0) ? (
                     <div className="flex-1 flex justify-center items-center">
-                        <Card className="bg-white rounded-2xl shadow-lg border border-gray-100">
+                        <Card className="bg-white rounded-xl border border-slate-200/80 shadow-sm">
                             <CardContent className="pt-12 pb-12">
                                 <div className="flex flex-col items-center justify-center text-center">
-                                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                                         <svg
-                                            className="w-8 h-8 text-gray-400"
+                                            className="w-8 h-8 text-slate-400"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -561,10 +561,10 @@ const EmployeeReport = () => {
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                    <h3 className="text-xl font-semibold text-slate-900 mb-2">
                                         Нет данных за выбранный период
                                     </h3>
-                                    <p className="text-gray-500 mb-6">
+                                    <p className="text-slate-500 mb-6">
                                         За выбранный месяц нет данных о
                                         посещаемости
                                     </p>
@@ -602,7 +602,7 @@ const EmployeeReport = () => {
                         {/* Header */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4 flex-shrink-0">
                             <div className="min-w-0 flex items-center justify-between w-full">
-                                <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 truncate">
+                                <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900 truncate">
                                     {reportData.name} -{" "}
                                     {reportData.position_name}
                                 </h1>
@@ -629,7 +629,7 @@ const EmployeeReport = () => {
                             <div className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-sm font-medium text-gray-700">
+                                        <label className="text-sm font-medium text-slate-700">
                                             Год
                                         </label>
                                         <Select
@@ -658,7 +658,7 @@ const EmployeeReport = () => {
                                         </Select>
                                     </div>
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-sm font-medium text-gray-700">
+                                        <label className="text-sm font-medium text-slate-700">
                                             Месяц
                                         </label>
                                         <Select
@@ -716,16 +716,16 @@ const EmployeeReport = () => {
 
                         {/* Statistics Cards */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 flex-shrink-0">
-                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Всего дней
                                 </p>
-                                <p className="text-lg font-bold text-gray-900">
+                                <p className="text-lg font-bold text-slate-900">
                                     {reportData.statistics.total_days}
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Полных дней
                                 </p>
                                 <p className="text-lg font-bold text-green-600">
@@ -733,7 +733,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-yellow-50 to-white rounded-xl border border-yellow-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Частичных
                                 </p>
                                 <p className="text-lg font-bold text-yellow-600">
@@ -741,7 +741,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-red-50 to-white rounded-xl border border-red-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Отсутствий
                                 </p>
                                 <p className="text-lg font-bold text-red-600">
@@ -749,7 +749,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl border border-amber-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Опозданий
                                 </p>
                                 <p className="text-lg font-bold text-amber-600">
@@ -757,7 +757,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl border border-emerald-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Переработок
                                 </p>
                                 <p className="text-lg font-bold text-emerald-600">
@@ -765,7 +765,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Отработано
                                 </p>
                                 <p className="text-lg font-bold text-blue-600">
@@ -782,7 +782,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Зарплата
                                 </p>
                                 <p className="text-lg font-bold text-purple-600 leading-tight">
@@ -793,7 +793,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl border border-indigo-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Ставка за час
                                 </p>
                                 <p className="text-lg font-bold text-indigo-600 leading-tight">
@@ -803,7 +803,7 @@ const EmployeeReport = () => {
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-pink-50 to-white rounded-xl border border-pink-200 p-3 shadow-sm hover:shadow-md transition-shadow">
-                                <p className="text-[10px] text-gray-500 mb-1 font-medium uppercase tracking-wide">
+                                <p className="text-[10px] text-slate-500 mb-1 font-medium uppercase tracking-wide">
                                     Заработано
                                 </p>
                                 <p className="text-lg font-bold text-pink-600 leading-tight">
@@ -817,9 +817,9 @@ const EmployeeReport = () => {
                         {/* Calendar and Details */}
                         <div className="grid gap-4 md:gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
                             {/* Calendar */}
-                            <Card className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 lg:col-span-2 min-w-0">
+                            <Card className="bg-white rounded-xl md:rounded-xl border border-slate-200/80 shadow-sm lg:col-span-2 min-w-0">
                                 <CardHeader className="px-4 md:px-6 py-3 md:py-6">
-                                    <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
+                                    <CardTitle className="text-base md:text-lg font-semibold text-slate-900">
                                         Календарь посещаемости
                                     </CardTitle>
                                 </CardHeader>
@@ -948,7 +948,7 @@ const EmployeeReport = () => {
                                                             "relative w-full h-full rounded-lg md:rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-0.5 p-1 min-h-[2.25rem] md:min-h-[3rem] aspect-square",
                                                             isFuture ||
                                                                 isOtherMonth
-                                                                ? "bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed opacity-50"
+                                                                ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
                                                                 : cn(
                                                                       colors.bg,
                                                                       colors.text,
@@ -993,9 +993,9 @@ const EmployeeReport = () => {
                             </Card>
 
                             {/* Day Details */}
-                            <Card className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 min-w-0">
+                            <Card className="bg-white rounded-xl md:rounded-xl border border-slate-200/80 shadow-sm min-w-0">
                                 <CardHeader className="px-4 md:px-6 py-3 md:py-6">
-                                    <CardTitle className="text-base md:text-lg font-semibold text-gray-900">
+                                    <CardTitle className="text-base md:text-lg font-semibold text-slate-900">
                                         Детали дня
                                     </CardTitle>
                                 </CardHeader>
@@ -1003,7 +1003,7 @@ const EmployeeReport = () => {
                                     {selectedDayData ? (
                                         <div className="space-y-4">
                                             <div>
-                                                <p className="font-semibold text-gray-900">
+                                                <p className="font-semibold text-slate-900">
                                                     {new Date(
                                                         selectedDayData.day_date,
                                                     ).toLocaleDateString(
@@ -1044,20 +1044,20 @@ const EmployeeReport = () => {
                                                 </Badge>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-500 mb-1">
+                                                <p className="text-sm text-slate-500 mb-1">
                                                     Описание
                                                 </p>
-                                                <p className="text-sm text-gray-900">
+                                                <p className="text-sm text-slate-900">
                                                     {
                                                         selectedDayData.status_description
                                                     }
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-500 mb-1">
+                                                <p className="text-sm text-slate-500 mb-1">
                                                     Вход
                                                 </p>
-                                                <p className="text-sm font-medium text-gray-900">
+                                                <p className="text-sm font-medium text-slate-900">
                                                     {selectedDayData.first_in
                                                         ? new Date(
                                                               selectedDayData.first_in,
@@ -1072,10 +1072,10 @@ const EmployeeReport = () => {
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-500 mb-1">
+                                                <p className="text-sm text-slate-500 mb-1">
                                                     Выход
                                                 </p>
-                                                <p className="text-sm font-medium text-gray-900">
+                                                <p className="text-sm font-medium text-slate-900">
                                                     {selectedDayData.last_out
                                                         ? new Date(
                                                               selectedDayData.last_out,
@@ -1090,10 +1090,10 @@ const EmployeeReport = () => {
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-500 mb-1">
+                                                <p className="text-sm text-slate-500 mb-1">
                                                     Отработано
                                                 </p>
-                                                <p className="text-sm font-semibold text-gray-900">
+                                                <p className="text-sm font-semibold text-slate-900">
                                                     {
                                                         selectedDayData.worked_time_formatted
                                                     }
@@ -1102,7 +1102,7 @@ const EmployeeReport = () => {
                                             {selectedDayData.late_minutes >
                                                 0 && (
                                                 <div>
-                                                    <p className="text-sm text-gray-500 mb-1">
+                                                    <p className="text-sm text-slate-500 mb-1">
                                                         Опоздание
                                                     </p>
                                                     <p className="text-sm font-semibold text-red-600">
@@ -1115,7 +1115,7 @@ const EmployeeReport = () => {
                                             {selectedDayData.overtime_minutes >
                                                 0 && (
                                                 <div>
-                                                    <p className="text-sm text-gray-500 mb-1">
+                                                    <p className="text-sm text-slate-500 mb-1">
                                                         Переработка
                                                     </p>
                                                     <p className="text-sm font-semibold text-green-600">
@@ -1127,7 +1127,7 @@ const EmployeeReport = () => {
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 text-gray-500">
+                                        <div className="text-center py-8 text-slate-500">
                                             Выберите день в календаре
                                         </div>
                                     )}

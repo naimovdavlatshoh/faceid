@@ -175,13 +175,13 @@ const Shifts = () => {
             <div className="space-y-4 mb-6 md:mb-10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
-                        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 truncate">
+                        <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
                             Смены
                         </h1>
                     </div>
                     <div className="flex space-x-3 flex-shrink-0">
                         <Link to="/shifts/create" className="block w-full sm:w-auto">
-                            <Button className="w-full sm:w-auto px-4 py-2 h-10 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-medium transition-all duration-200">
+                            <Button className="w-full sm:w-auto px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200">
                                 <IoMdAdd className="w-4 h-4" />
                                 Добавить
                             </Button>
@@ -197,7 +197,7 @@ const Shifts = () => {
             </div>
 
             {/* Main Content */}
-            <Card className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <Card className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <CardHeader className="px-4 md:px-6">
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full min-w-0">
@@ -211,33 +211,33 @@ const Shifts = () => {
                 </CardHeader>
                 <CardContent className="p-0 overflow-x-auto scrollbar-hide">
                     <Table className="min-w-[720px]">
-                        <TableHeader className="bg-mainbg/10">
+                        <TableHeader className="bg-slate-50/80">
                             <TableRow>
-                                <TableHead className="text-maintx hidden md:table-cell w-12">
+                                <TableHead className="text-slate-500 hidden md:table-cell w-12">
                                     <Checkbox
                                         checked={isAllSelected}
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Смена
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Тип смены
                                 </TableHead>
-                                <TableHead className="text-maintx">
+                                <TableHead className="text-slate-500">
                                     Переработка (мин)
                                 </TableHead>
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Допуск опоздания (мин)
                                 </TableHead>
-                                {/* <TableHead className="text-maintx ">
+                                {/* <TableHead className="text-slate-500 ">
                                     Статус
                                 </TableHead> */}
-                                <TableHead className="text-maintx ">
+                                <TableHead className="text-slate-500 ">
                                     Дата создания
                                 </TableHead>
-                                <TableHead className=" text-maintx ">
+                                <TableHead className=" text-slate-500 ">
                                     Действия
                                 </TableHead>
                             </TableRow>
@@ -247,7 +247,7 @@ const Shifts = () => {
                                 <TableRow>
                                     <TableCell
                                         colSpan={7}
-                                        className="text-center py-8 text-gray-500 "
+                                        className="text-center py-8 text-slate-500 "
                                     >
                                         {searchTerm
                                             ? "Смены не найдены"
@@ -258,7 +258,7 @@ const Shifts = () => {
                                 searchFilteredShifts?.map((shift) => (
                                     <TableRow
                                         key={shift.shift_id}
-                                        className="border-dashed border-gray-200  hover:bg-gray-100 "
+                                        className="border-slate-100  hover:bg-slate-50/60 "
                                     >
                                         <TableCell className="hidden md:table-cell w-12">
                                             <Checkbox
@@ -275,7 +275,7 @@ const Shifts = () => {
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
-                                                <MdTimelapse className="w-6 h-6 text-maintx" />
+                                                <MdTimelapse className="w-6 h-6 text-slate-500" />
 
                                                 <button
                                                     type="button"
@@ -291,13 +291,13 @@ const Shifts = () => {
                                                 </button>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {shift.shift_type_name}
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {shift.overtime_after_minutes} мин
                                         </TableCell>
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {shift.late_tolerance_minutes} мин
                                         </TableCell>
                                         {/* <TableCell>
@@ -313,7 +313,7 @@ const Shifts = () => {
                                                     : "Неактивна"}
                                             </span>
                                         </TableCell> */}
-                                        <TableCell className="text-gray-600 ">
+                                        <TableCell className="text-slate-600 ">
                                             {new Date(
                                                 shift.created_at
                                             ).toLocaleDateString("ru-RU")}
@@ -325,7 +325,7 @@ const Shifts = () => {
                                                         variant="ghost"
                                                         className="h-8 w-8 p-0"
                                                     >
-                                                        <HiDotsVertical className="w-4 h-4 text-gray-500" />
+                                                        <HiDotsVertical className="w-4 h-4 text-slate-500" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
@@ -364,9 +364,9 @@ const Shifts = () => {
                         </TableBody>
                     </Table>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-gray-200 pt-4 px-4 md:px-6 pb-4">
+                <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
-                        <label htmlFor="" className="text-gray-500 text-sm whitespace-nowrap">
+                        <label htmlFor="" className="text-slate-500 text-sm whitespace-nowrap">
                             Строк на странице:
                         </label>
                         <Select

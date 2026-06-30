@@ -10,30 +10,11 @@ import { useNavigate } from "react-router-dom";
 import { PostSimple } from "@/services/data";
 import { toast } from "sonner";
 import { useIsMobile } from "@/components/hooks/use-mobile";
-import { Menu } from "lucide-react";
+import { Menu, LogOut, ChevronRight } from "lucide-react";
 
 interface NavbarProps {
     className?: string;
     onToggleSidebar?: () => void;
-}
-
-function NavbarMobileMenu({
-    onToggleSidebar,
-}: {
-    onToggleSidebar?: () => void;
-}) {
-    const isMobile = useIsMobile();
-    if (!isMobile || !onToggleSidebar) return null;
-    return (
-        <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 text-gray-600"
-            aria-label="Открыть меню"
-        >
-            <Menu className="w-6 h-6" />
-        </button>
-    );
 }
 
 interface ObjectItem {
@@ -44,18 +25,18 @@ interface ObjectItem {
 }
 
 const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
-    const navigate = useNavigate();
+    const navigate  = useNavigate();
+    const isMobile  = useIsMobile();
     const [objects, setObjects] = useState<ObjectItem[]>([]);
 
     useEffect(() => {
         try {
-            const objectsStr = localStorage.getItem("objects");
-            if (objectsStr) {
-                const parsed = JSON.parse(objectsStr);
+            const raw = localStorage.getItem("objects");
+            if (raw) {
+                const parsed = JSON.parse(raw);
                 setObjects(Array.isArray(parsed) ? parsed : []);
             }
-        } catch (error) {
-            console.error("Error parsing objects from localStorage:", error);
+        } catch {
             setObjects([]);
         }
     }, []);
@@ -66,147 +47,137 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
     };
 
     const handleObjectChange = async (objectId: number) => {
-        const currentObjectId = localStorage.getItem("object");
-        if (currentObjectId === objectId.toString()) {
-            return;
-        }
-
+        if (localStorage.getItem("object") === objectId.toString()) return;
         try {
-            await PostSimple(`api/user/changeobject/${objectId}`, {}).then(
-                (res) => {
-                    console.log(res);
-                    localStorage.setItem("object", objectId.toString());
-                    localStorage.setItem("token", res?.data?.jwt);
-                    toast.success(res?.data?.message);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 100);
-                }
-            );
+            await PostSimple(`api/user/changeobject/${objectId}`, {}).then((res) => {
+                localStorage.setItem("object", objectId.toString());
+                localStorage.setItem("token", res?.data?.jwt);
+                toast.success(res?.data?.message);
+                setTimeout(() => window.location.reload(), 100);
+            });
         } catch (error: any) {
-            console.error("Error changing object:", error);
-            toast.error(
-                error?.response?.data?.message || "Не удалось изменить объект"
-            );
+            toast.error(error?.response?.data?.message || "Не удалось изменить объект");
         }
     };
+
+    const company   = localStorage.getItem("company") ?? "M";
+    const initial   = company.charAt(0).toUpperCase();
 
     return (
         <header
             className={cn(
-                "fixed top-0 left-0 md:left-72 right-0 z-40 bg-white/95 md:bg-white/5 backdrop-blur-xl px-4 md:px-6 py-3 md:py-4 flex items-center justify-between border-b border-gray-100 md:border-0",
+                "h-[60px] bg-white border-b border-slate-200/80 flex items-center justify-between px-5 sm:px-6 shrink-0 z-30",
                 className
             )}
         >
-            <div className="flex items-center space-x-2">
-                <NavbarMobileMenu onToggleSidebar={onToggleSidebar} />
+            {/* Left: mobile burger */}
+            <div className="flex items-center gap-3">
+                {isMobile && onToggleSidebar && (
+                    <button
+                        type="button"
+                        onClick={onToggleSidebar}
+                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
+                    >
+                        <Menu className="w-5 h-5" />
+                    </button>
+                )}
             </div>
 
-            {/* User Menu */}
-            <div className="flex justify-end items-center">
+            {/* Right: object switcher + avatar sheet */}
+            <div className="flex items-center gap-2">
                 <Sheet>
                     <SheetTrigger asChild>
-                        <button className="flex items-center space-x-3 text-sm rounded-full hover:bg-gray-50  px-2 py-1 transition-colors">
-                            <div className="w-10 h-10 bg-mainbg rounded-full flex items-center justify-center p-[2px]">
-                                <div className="">
-                                    <img
-                                        src="/avatar-1.webp"
-                                        alt="avatar"
-                                        className="w-full h-full object-cover rounded-full"
-                                    />
-                                </div>
+                        <button className="flex items-center gap-2.5 pl-3 border-l border-slate-200 hover:opacity-80 transition-opacity">
+                            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[11px] font-bold shrink-0">
+                                {initial}
                             </div>
+                            <span className="text-[13px] font-medium text-slate-700 hidden sm:block leading-none">
+                                {company}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
                         </button>
                     </SheetTrigger>
+
                     <SheetContent
                         side="right"
-                        className="bg-white  backdrop-blur-xl border-l flex flex-col justify-between border-gray-100  p-6"
+                        className="w-72 bg-white border-l border-slate-200 flex flex-col p-0"
                     >
-                        <div className="flex flex-col items-center text-center">
-                            <div className="relative">
-                                <div className="w-24 h-24 rounded-full p-[2px] bg-mainbg">
-                                    <div className="w-full h-full rounded-full overflow-hidden bg-white p-1">
-                                        <img
-                                            src="/avatar-1.webp"
-                                            alt="avatar"
-                                            className="w-full h-full object-cover rounded-full"
-                                        />
-                                    </div>
+                        {/* Profile header */}
+                        <div className="px-6 py-6 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold shrink-0">
+                                    {initial}
                                 </div>
-                            </div>
-                            <h3 className="mt-4 text-xl font-semibold text-gray-900 ">
-                                {localStorage.getItem("company")}
-                            </h3>
-                            {/* <p className="text-sm text-gray-500">
-                                demo@minimals.cc
-                            </p> */}
-
-                            <div className="w-full mt-6">
-                                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                                    Объекты
-                                </h4>
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
-                                    {objects.length > 0 ? (
-                                        objects.map((obj, index) => (
-                                            <div
-                                                key={
-                                                    obj.object_id ||
-                                                    obj.id ||
-                                                    index
-                                                }
-                                                onClick={() => {
-                                                    const objectId =
-                                                        obj.object_id || obj.id;
-                                                    if (objectId) {
-                                                        handleObjectChange(
-                                                            objectId
-                                                        );
-                                                    }
-                                                }}
-                                                className={`flex cursor-pointer items-center justify-start gap-2 p-2 ${
-                                                    localStorage.getItem(
-                                                        "object"
-                                                    ) ===
-                                                    (
-                                                        obj.object_id || obj.id
-                                                    )?.toString()
-                                                        ? "bg-mainbg/15"
-                                                        : ""
-                                                } rounded-lg hover:bg-gray-50 transition-colors`}
-                                            >
-                                                <div className="w-8 h-8 bg-mainbg/30 rounded-full flex items-center justify-center text-xs font-medium text-maintx">
-                                                    {(
-                                                        obj.object_name ||
-                                                        obj.name ||
-                                                        "?"
-                                                    )
-                                                        .charAt(0)
-                                                        .toUpperCase()}
-                                                </div>
-                                                <span className="text-sm text-start text-gray-700 flex-1">
-                                                    {obj.object_name ||
-                                                        obj.name ||
-                                                        "Неизвестный объект"}
-                                                </span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-gray-500 text-center py-4">
-                                            Нет объектов
-                                        </p>
-                                    )}
+                                <div>
+                                    <p className="text-[14px] font-semibold text-slate-900 leading-none">
+                                        {company}
+                                    </p>
+                                    <span className="text-[11px] text-slate-400 mt-0.5 block">
+                                        Менеджер
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        <SheetClose asChild>
-                            <button
-                                onClick={handleLogout}
-                                className="mt-4 w-full rounded-xl bg-red-100 text-red-600 py-3 font-medium"
-                            >
-                                Выход из системы
-                            </button>
-                        </SheetClose>
+                        {/* Objects list */}
+                        <div className="flex-1 overflow-y-auto px-4 py-4">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] px-2 mb-3">
+                                Объекты
+                            </p>
+                            <div className="space-y-1">
+                                {objects.length > 0 ? (
+                                    objects.map((obj, idx) => {
+                                        const id   = obj.object_id ?? obj.id;
+                                        const name = obj.object_name ?? obj.name ?? "Без названия";
+                                        const isCurrentObj = localStorage.getItem("object") === id?.toString();
+                                        return (
+                                            <div
+                                                key={id ?? idx}
+                                                onClick={() => id && handleObjectChange(id)}
+                                                className={cn(
+                                                    "flex items-center gap-2.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors",
+                                                    isCurrentObj
+                                                        ? "bg-blue-50 text-blue-700"
+                                                        : "hover:bg-slate-50 text-slate-700"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0",
+                                                    isCurrentObj
+                                                        ? "bg-blue-100 text-blue-600"
+                                                        : "bg-slate-100 text-slate-500"
+                                                )}>
+                                                    {name.charAt(0).toUpperCase()}
+                                                </div>
+                                                <span className="text-[13px] font-medium truncate flex-1">
+                                                    {name}
+                                                </span>
+                                                {isCurrentObj && (
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                                                )}
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="text-[13px] text-slate-400 text-center py-6">
+                                        Нет объектов
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Logout */}
+                        <div className="px-4 pb-5 border-t border-slate-100 pt-3">
+                            <SheetClose asChild>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-[13px] font-medium transition-colors"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Выйти из системы
+                                </button>
+                            </SheetClose>
+                        </div>
                     </SheetContent>
                 </Sheet>
             </div>
