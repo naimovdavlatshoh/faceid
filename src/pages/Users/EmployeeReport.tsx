@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,6 +56,7 @@ type DayData = {
     worked_hours: number;
 
     worked_time_formatted: string;
+    shift_time_formatted: string;
     late_minutes: number;
     late_minutes_penalty: number;
     early_leave_minutes: number;
@@ -80,12 +80,16 @@ type Statistics = {
     total_late_penalty_minutes: number;
     total_early_leave_minutes: number;
     total_overtime_minutes: number;
+    total_break_minutes: number;
+    planned_work_days: number;
+    shift_id: number;
     salary_type: number;
+    salary_type_name: string;
     salary_amount: number;
-    final_salary_by_hours: number;
-    final_salary_by_minutes: number;
     hourly_rate: number;
+    minute_rate: number;
     final_salary: number;
+    calculation_details: string;
 };
 
 type EmployeeReportData = {
@@ -110,66 +114,27 @@ interface ApiResponse {
 }
 
 const getStatusColor = (day: DayData | undefined) => {
-    if (!day)
-        return {
-            bg: "bg-slate-50",
-            text: "text-slate-400",
-            border: "border-slate-200",
-            dot: "",
-        };
+    if (!day) return { bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "" };
 
-    // Дни, когда вообще не пришли - красный
     if (day.day_status === "absent") {
-        return {
-            bg: "bg-red-50",
-            text: "text-red-700",
-            border: "border-red-300",
-            dot: "bg-red-500",
-        };
+        return { bg: "bg-red-50", text: "text-red-600", border: "border-red-200", dot: "bg-red-500" };
     }
 
-    // Проверяем наличие входа и выхода
-    const hasEntry = day.first_in !== null && day.first_in !== undefined;
-    const hasExit = day.last_out !== null && day.last_out !== undefined;
-    const hasBoth = hasEntry && hasExit;
-    const hasOnlyOne = (hasEntry && !hasExit) || (!hasEntry && hasExit);
+    const hasEntry = day.first_in != null;
+    const hasExit  = day.last_out != null;
 
-    // Если есть только вход или только выход (частичный день) - желтый
-    if (hasOnlyOne) {
-        return {
-            bg: "bg-amber-50",
-            text: "text-amber-700",
-            border: "border-amber-300",
-            dot: "bg-amber-500",
-        };
+    if ((hasEntry && !hasExit) || (!hasEntry && hasExit)) {
+        return { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200", dot: "bg-orange-400" };
     }
 
-    // Если есть и вход и выход
-    if (hasBoth) {
-        // Если опоздал (late) - желтый
+    if (hasEntry && hasExit) {
         if (day.arrival_status === "late") {
-            return {
-                bg: "bg-amber-50",
-                text: "text-amber-700",
-                border: "border-amber-300",
-                dot: "bg-amber-500",
-            };
+            return { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-400" };
         }
-        // Если не опоздал - зеленый
-        return {
-            bg: "bg-green-50",
-            text: "text-green-700",
-            border: "border-green-300",
-            dot: "bg-green-500",
-        };
+        return { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" };
     }
 
-    return {
-        bg: "bg-slate-50",
-        text: "text-slate-400",
-        border: "border-slate-200",
-        dot: "",
-    };
+    return { bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "" };
 };
 
 const EmployeeReport = () => {
@@ -427,7 +392,7 @@ const EmployeeReport = () => {
                 <div className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-2 min-h-0">
                     {loadingEmployees || isSearching ? (
                         <div className="flex justify-center items-center py-8">
-                            <Loader2 className="w-5 h-5 animate-spin text-mainbg" />
+                            <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
                         </div>
                     ) : employees.length === 0 ? (
                         <div className="text-center py-4 text-slate-400 text-sm">
@@ -450,11 +415,11 @@ const EmployeeReport = () => {
                                     className={cn(
                                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group text-left",
                                         isActive
-                                            ? "bg-slate-50/80 text-slate-500"
-                                            : "hover:bg-slate-50/60 text-slate-700",
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "hover:bg-slate-50 text-slate-700",
                                     )}
                                 >
-                                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-200 group-hover:border-mainbg/50 transition-colors">
+                                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-slate-200 group-hover:border-blue-300 transition-colors">
                                         <img
                                             src={
                                                 employee.image_path ||
@@ -516,7 +481,7 @@ const EmployeeReport = () => {
                 {loading ? (
                     <div className="flex-1 flex justify-center items-center">
                         <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="w-8 h-8 animate-spin text-mainbg" />
+                            <div className="w-7 h-7 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
                             <p className="text-slate-500 text-sm">
                                 Загрузка данных...
                             </p>
@@ -699,7 +664,7 @@ const EmployeeReport = () => {
                                             !salaryExcelYear ||
                                             !salaryExcelMonth
                                         }
-                                        className="rounded-xl bg-mainbg hover:bg-mainbg/90 text-white"
+                                        className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
                                     >
                                         {salaryExcelDownloading ? (
                                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -959,19 +924,19 @@ const EmployeeReport = () => {
                                                             isSelected &&
                                                                 !isFuture &&
                                                                 !isOtherMonth &&
-                                                                "ring-2 ring-mainbg ring-offset-1 md:ring-offset-2 shadow-lg md:shadow-xl scale-105 md:scale-110 z-20",
+                                                                "ring-2 ring-blue-500 ring-offset-1 md:ring-offset-2 shadow-lg md:shadow-xl scale-105 md:scale-110 z-20",
                                                             isToday &&
                                                                 !isSelected &&
                                                                 !isFuture &&
                                                                 !isOtherMonth &&
-                                                                "ring-2 ring-gray-400 ring-offset-1",
+                                                                "ring-2 ring-slate-400 ring-offset-1",
                                                         )}
                                                     >
                                                         <span
                                                             className={cn(
                                                                 "text-xs md:text-sm font-bold leading-none",
                                                                 isSelected &&
-                                                                    "text-mainbg text-sm md:text-base",
+                                                                    "text-blue-600 text-sm md:text-base",
                                                             )}
                                                         >
                                                             {date.getDate()}
@@ -1001,134 +966,115 @@ const EmployeeReport = () => {
                                 </CardHeader>
                                 <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
                                     {selectedDayData ? (
-                                        <div className="space-y-4">
-                                            <div>
-                                                <p className="font-semibold text-slate-900">
-                                                    {new Date(
-                                                        selectedDayData.day_date,
-                                                    ).toLocaleDateString(
-                                                        "ru-RU",
-                                                        {
-                                                            day: "numeric",
-                                                            month: "long",
-                                                            year: "numeric",
-                                                        },
-                                                    )}
+                                        <div className="space-y-3">
+                                            {/* Date + status badge */}
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="font-semibold text-slate-900 text-sm">
+                                                    {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
                                                 </p>
-                                            </div>
-                                            <div>
-                                                <Badge
-                                                    className={cn(
-                                                        "border",
-                                                        getStatusColor(
-                                                            selectedDayData,
-                                                        ).bg,
-                                                        getStatusColor(
-                                                            selectedDayData,
-                                                        ).text,
-                                                        getStatusColor(
-                                                            selectedDayData,
-                                                        ).border,
-                                                    )}
-                                                >
-                                                    {selectedDayData.day_status ===
-                                                    "complete"
+                                                <span className={cn(
+                                                    "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0",
+                                                    getStatusColor(selectedDayData).bg,
+                                                    getStatusColor(selectedDayData).text,
+                                                    getStatusColor(selectedDayData).border,
+                                                )}>
+                                                    {selectedDayData.day_status === "complete"
                                                         ? "Полный день"
-                                                        : selectedDayData.day_status ===
-                                                            "partial_in"
-                                                          ? "Частичный (вход)"
-                                                          : selectedDayData.day_status ===
-                                                              "partial_out"
-                                                            ? "Частичный (выход)"
-                                                            : "Отсутствие"}
-                                                </Badge>
+                                                        : selectedDayData.day_status === "partial_in"
+                                                        ? "Частичный (вход)"
+                                                        : selectedDayData.day_status === "partial_out"
+                                                        ? "Частичный (выход)"
+                                                        : "Отсутствие"}
+                                                </span>
                                             </div>
-                                            <div>
-                                                <p className="text-sm text-slate-500 mb-1">
-                                                    Описание
-                                                </p>
-                                                <p className="text-sm text-slate-900">
-                                                    {
-                                                        selectedDayData.status_description
-                                                    }
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-slate-500 mb-1">
-                                                    Вход
-                                                </p>
-                                                <p className="text-sm font-medium text-slate-900">
-                                                    {selectedDayData.first_in
-                                                        ? new Date(
-                                                              selectedDayData.first_in,
-                                                          ).toLocaleTimeString(
-                                                              "ru-RU",
-                                                              {
-                                                                  hour: "2-digit",
-                                                                  minute: "2-digit",
-                                                              },
-                                                          )
-                                                        : "—"}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-slate-500 mb-1">
-                                                    Выход
-                                                </p>
-                                                <p className="text-sm font-medium text-slate-900">
-                                                    {selectedDayData.last_out
-                                                        ? new Date(
-                                                              selectedDayData.last_out,
-                                                          ).toLocaleTimeString(
-                                                              "ru-RU",
-                                                              {
-                                                                  hour: "2-digit",
-                                                                  minute: "2-digit",
-                                                              },
-                                                          )
-                                                        : "—"}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-slate-500 mb-1">
-                                                    Отработано
-                                                </p>
-                                                <p className="text-sm font-semibold text-slate-900">
-                                                    {
-                                                        selectedDayData.worked_time_formatted
-                                                    }
-                                                </p>
-                                            </div>
-                                            {selectedDayData.late_minutes >
-                                                0 && (
-                                                <div>
-                                                    <p className="text-sm text-slate-500 mb-1">
-                                                        Опоздание
-                                                    </p>
-                                                    <p className="text-sm font-semibold text-red-600">
-                                                        {formatTime(
-                                                            selectedDayData.late_minutes,
-                                                        )}
+
+                                            {/* Description */}
+                                            {selectedDayData.status_description && (
+                                                <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                                                    <p className="text-[12px] text-slate-500 leading-relaxed">
+                                                        {selectedDayData.status_description}
                                                     </p>
                                                 </div>
                                             )}
-                                            {selectedDayData.overtime_minutes >
-                                                0 && (
-                                                <div>
-                                                    <p className="text-sm text-slate-500 mb-1">
-                                                        Переработка
+
+                                            {/* Time row */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="bg-emerald-50 rounded-lg px-3 py-2 border border-emerald-100">
+                                                    <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide mb-0.5">Вход</p>
+                                                    <p className="text-sm font-semibold text-emerald-700">
+                                                        {selectedDayData.first_in
+                                                            ? new Date(selectedDayData.first_in).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+                                                            : "—"}
                                                     </p>
-                                                    <p className="text-sm font-semibold text-green-600">
-                                                        {formatTime(
-                                                            selectedDayData.overtime_minutes,
-                                                        )}
+                                                </div>
+                                                <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                                                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide mb-0.5">Выход</p>
+                                                    <p className="text-sm font-semibold text-slate-700">
+                                                        {selectedDayData.last_out
+                                                            ? new Date(selectedDayData.last_out).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+                                                            : "—"}
                                                     </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Work hours */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <div className="rounded-lg px-3 py-2 border border-slate-100">
+                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Отработано</p>
+                                                    <p className="text-sm font-bold text-blue-600">
+                                                        {selectedDayData.worked_time_formatted}
+                                                    </p>
+                                                </div>
+                                                <div className="rounded-lg px-3 py-2 border border-slate-100">
+                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">План смены</p>
+                                                    <p className="text-sm font-bold text-slate-600">
+                                                        {selectedDayData.shift_time_formatted}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Penalties */}
+                                            {selectedDayData.late_minutes > 0 && (
+                                                <div className="rounded-lg px-3 py-2 border border-amber-100 bg-amber-50">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">Опоздание</p>
+                                                        <p className="text-sm font-semibold text-amber-700">{formatTime(selectedDayData.late_minutes)}</p>
+                                                    </div>
+                                                    {selectedDayData.late_minutes_penalty > 0 && (
+                                                        <div className="flex justify-between items-center mt-1">
+                                                            <p className="text-[10px] text-red-500 font-medium">Штраф</p>
+                                                            <p className="text-xs font-semibold text-red-600">{formatTime(selectedDayData.late_minutes_penalty)}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {selectedDayData.early_leave_minutes > 0 && (
+                                                <div className="rounded-lg px-3 py-2 border border-orange-100 bg-orange-50">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-[10px] text-orange-600 font-medium uppercase tracking-wide">Ранний уход</p>
+                                                        <p className="text-sm font-semibold text-orange-700">{formatTime(selectedDayData.early_leave_minutes)}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedDayData.overtime_minutes > 0 && (
+                                                <div className="rounded-lg px-3 py-2 border border-emerald-100 bg-emerald-50">
+                                                    <div className="flex justify-between items-center">
+                                                        <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">Переработка</p>
+                                                        <p className="text-sm font-semibold text-emerald-700">{formatTime(selectedDayData.overtime_minutes)}</p>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 text-slate-500">
-                                            Выберите день в календаре
+                                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-[13px] text-slate-400">Выберите день в календаре</p>
                                         </div>
                                     )}
                                 </CardContent>
