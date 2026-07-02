@@ -212,9 +212,24 @@ const AdminTerminals = () => {
                         <td className="px-4 py-3 font-medium text-slate-900">{t.terminal_name}</td>
                         <td className="px-4 py-3 text-slate-500 text-[13px]">{t.object_name}</td>
                         <td className="px-4 py-3">
-                            <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                {DIRECTION_TYPES[t.direction_type] ?? t.direction_type}
-                            </span>
+                            {t.direction_type === "1" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    Только вход
+                                </span>
+                            ) : t.direction_type === "2" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                    Только выход
+                                </span>
+                            ) : t.direction_type === "3" ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    Вход + выход
+                                </span>
+                            ) : (
+                                <span className="text-slate-400 text-[12px]">—</span>
+                            )}
                         </td>
                         <td className="px-4 py-3 text-slate-500 font-mono text-[11px]">{t.static_ip_address || "—"}</td>
                         <td className="px-4 py-3 text-slate-500 text-[13px]">
