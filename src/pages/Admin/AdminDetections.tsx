@@ -249,10 +249,15 @@ const AdminDetections = () => {
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     Вход
                                 </span>
-                            ) : (
+                            ) : row.attendanceType === 2 ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
                                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                                     Выход
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-50 text-yellow-600 border border-yellow-100">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                                    Без статуса
                                 </span>
                             )}
                         </td>
