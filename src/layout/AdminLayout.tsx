@@ -18,6 +18,7 @@ const PAGE_META: Record<string, { title: string; sub: string }> = {
     "/admin/terminals":      { title: "Терминалы",                 sub: "Управление FaceID-устройствами"         },
     "/admin/object-users":   { title: "Привязки сотрудник → объект", sub: "Назначение персонала по объектам"    },
     "/admin/object-telegram":{ title: "Telegram уведомления",      sub: "Чаты привязанные к объектам"           },
+    "/admin/detections":     { title: "Детекции",                  sub: "История распознаваний FaceID"           },
 };
 
 const AdminLayout = ({ className }: AdminLayoutProps) => {

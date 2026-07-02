@@ -406,6 +406,27 @@ export const SuperAdminUpdateObjectTelegram = async (id: number, data: Record<st
 export const SuperAdminDeleteObjectTelegram = async (id: number) =>
     DeleteData(`superadmin/object-telegram/${id}`);
 
+// Detections
+export const SuperAdminGetDetections = async (params: {
+    page?: number;
+    limit?: number;
+    object_id?: number;
+    faceid_user_id?: number;
+    attendance_type?: number;
+    date_from?: string;
+    date_to?: string;
+}) => {
+    const p = new URLSearchParams();
+    if (params.page)             p.append("page",             String(params.page));
+    if (params.limit)            p.append("limit",            String(params.limit));
+    if (params.object_id)        p.append("object_id",        String(params.object_id));
+    if (params.faceid_user_id)   p.append("faceid_user_id",   String(params.faceid_user_id));
+    if (params.attendance_type)  p.append("attendance_type",  String(params.attendance_type));
+    if (params.date_from)        p.append("date_from",        params.date_from);
+    if (params.date_to)          p.append("date_to",          params.date_to);
+    return GetDataSimple(`superadmin/detections?${p.toString()}`);
+};
+
 // ─── End SuperAdmin API ───────────────────────────────────────────────────────
 
 export const GetDashboardAttendance = async (

@@ -20,6 +20,7 @@ import AdminEmployees from "@/pages/Admin/AdminEmployees";
 import AdminTerminals from "@/pages/Admin/AdminTerminals";
 import AdminObjectUsers from "@/pages/Admin/AdminObjectUsers";
 import AdminObjectTelegram from "@/pages/Admin/AdminObjectTelegram";
+import AdminDetections from "@/pages/Admin/AdminDetections";
 
 const router = createBrowserRouter([
     {
@@ -111,6 +112,10 @@ const router = createBrowserRouter([
             {
                 path: "object-telegram",
                 element: <AdminObjectTelegram />,
+            },
+            {
+                path: "detections",
+                element: <AdminDetections />,
             },
         ],
     },
