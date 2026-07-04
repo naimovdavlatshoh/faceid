@@ -9,6 +9,7 @@ import {
     GetDataSimple,
     PostSimple,
     DownloadEmployeePayrollExcel,
+    DownloadEmployeePayrollExcelById,
 } from "@/services/data";
 import { Download, Loader2, X } from "lucide-react";
 import {
@@ -61,6 +62,14 @@ type DayData = {
     late_minutes_penalty: number;
     early_leave_minutes: number;
     overtime_minutes: number;
+    // v2
+    early_arrival_minutes?: number;
+    break_minutes?: number;
+    intervals_count?: number;
+    is_day_off?: boolean;
+    start_time?: string | null;
+    end_time?: string | null;
+    late_tolerance_minutes?: number | null;
 };
 
 type Statistics = {
@@ -90,6 +99,15 @@ type Statistics = {
     minute_rate: number;
     final_salary: number;
     calculation_details: string;
+    // v2: расширенная статистика
+    early_arrival_days?: number;
+    total_early_arrival_minutes?: number;
+    overtime_salary?: number;
+    penalty_deduction?: number;
+    early_arrival_salary?: number;
+    total_salary?: number;
+    advance_deduction?: number;
+    net_salary?: number;
 };
 
 type EmployeeReportData = {
@@ -113,50 +131,114 @@ interface ApiResponse {
     result: ApiUser[];
 }
 
-const getStatusColor = (day: DayData | undefined) => {
-    const none = { bg: "bg-slate-50", text: "text-slate-300", border: "border-slate-100", dot: "", indicator: "" as const };
+// Тихая система статусов дня: одна «полоска-индикатор» в календаре +
+// деликатный бейдж. Никаких заливок во всю ячейку и эмодзи.
+type DayTone = {
+    key:
+        | "none"
+        | "present"
+        | "overtime"
+        | "late"
+        | "early"
+        | "late_early"
+        | "partial"
+        | "absent";
+    label: string;
+    bar: string; // цвет нижней полоски в ячейке календаря
+    dot: string; // цвет точки в бейдже
+    badge: string; // классы бейджа (фон + текст)
+    cell: string; // мягкий тон ячейки (в основном нейтральный)
+};
 
-    if (!day) return none;
+const TONE_NONE: DayTone = {
+    key: "none",
+    label: "Нет данных",
+    bar: "bg-transparent",
+    dot: "bg-slate-300",
+    badge: "bg-slate-100 text-slate-500",
+    cell: "",
+};
 
-    // Отсутствие
+const getDayTone = (day: DayData | undefined): DayTone => {
+    if (!day) return TONE_NONE;
+
     if (day.day_status === "absent") {
-        return { bg: "bg-red-50", text: "text-red-600", border: "border-red-200", dot: "bg-red-500", indicator: "" as const };
+        return {
+            key: "absent",
+            label: "Отсутствие",
+            bar: "bg-rose-400",
+            dot: "bg-rose-500",
+            badge: "bg-rose-50 text-rose-600",
+            cell: "bg-rose-50/40",
+        };
     }
 
     const hasEntry = day.first_in != null;
-    const hasExit  = day.last_out != null;
+    const hasExit = day.last_out != null;
 
-    // Частичный день
     if ((hasEntry && !hasExit) || (!hasEntry && hasExit)) {
-        return { bg: "bg-orange-50", text: "text-orange-600", border: "border-orange-200", dot: "bg-orange-400", indicator: "" as const };
+        return {
+            key: "partial",
+            label: "Частичный день",
+            bar: "bg-amber-400",
+            dot: "bg-amber-500",
+            badge: "bg-amber-50 text-amber-700",
+            cell: "",
+        };
     }
 
     if (hasEntry && hasExit) {
-        const late  = day.arrival_status === "late";
+        const late = day.arrival_status === "late";
         const early = day.departure_status === "early";
-        const over  = day.departure_status === "overtime";
+        const over = day.departure_status === "overtime";
 
-        // Опоздал И рано ушел — самый плохой вариант
-        if (late && early) {
-            return { bg: "bg-red-50", text: "text-red-500", border: "border-red-200", dot: "bg-red-400", indicator: "" as const };
-        }
-        // Опоздал, но ушел вовремя/с переработкой
-        if (late) {
-            return { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-400", indicator: "" as const };
-        }
-        // Пришел вовремя, но рано ушел
-        if (early) {
-            return { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200", dot: "bg-yellow-400", indicator: "" as const };
-        }
-        // Пришел вовремя + переработка — отлично
-        if (over) {
-            return { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", indicator: "star" as const };
-        }
-        // Пришел вовремя, ушел вовремя — хорошо
-        return { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", indicator: "" as const };
+        if (late && early)
+            return {
+                key: "late_early",
+                label: "Опоздал и ушёл раньше",
+                bar: "bg-rose-400",
+                dot: "bg-rose-500",
+                badge: "bg-rose-50 text-rose-600",
+                cell: "",
+            };
+        if (late)
+            return {
+                key: "late",
+                label: "Опоздание",
+                bar: "bg-amber-400",
+                dot: "bg-amber-500",
+                badge: "bg-amber-50 text-amber-700",
+                cell: "",
+            };
+        if (early)
+            return {
+                key: "early",
+                label: "Ранний уход",
+                bar: "bg-orange-400",
+                dot: "bg-orange-500",
+                badge: "bg-orange-50 text-orange-600",
+                cell: "",
+            };
+        if (over)
+            return {
+                key: "overtime",
+                label: "Переработка",
+                bar: "bg-emerald-500",
+                dot: "bg-emerald-500",
+                badge: "bg-emerald-50 text-emerald-700",
+                cell: "",
+            };
+        return {
+            key: "present",
+            label: "Вовремя",
+            bar: "bg-emerald-400",
+            dot: "bg-emerald-500",
+            badge: "bg-emerald-50 text-emerald-700",
+            cell: "",
+        };
     }
 
-    return none;
+    return TONE_NONE;
 };
 
 const EmployeeReport = () => {
@@ -187,6 +269,10 @@ const EmployeeReport = () => {
         () => String(new Date().getMonth() + 1)
     );
     const [salaryExcelDownloading, setSalaryExcelDownloading] = useState(false);
+    // Область выгрузки: этот сотрудник (report-by-id) или все (report)
+    const [salaryExcelScope, setSalaryExcelScope] = useState<"self" | "all">(
+        "self"
+    );
 
     const currentDate = useMemo(() => {
         return new Date(selectedYear, selectedMonth - 1, 1);
@@ -218,6 +304,39 @@ const EmployeeReport = () => {
         const dateStr = `${year}-${month}-${day}`;
         return daysMap.get(dateStr);
     }, [selectedDay, daysMap]);
+
+    // Разбор расчётного листа (v2). Для старых ответов — безопасные фолбэки.
+    const salary = useMemo(() => {
+        const st = reportData?.statistics;
+        if (!st) return null;
+        const finalSalary = st.final_salary ?? 0;
+        const overtimeSalary = st.overtime_salary ?? 0;
+        const penalty = st.penalty_deduction ?? 0;
+        const totalSalary =
+            st.total_salary ?? finalSalary + overtimeSalary - penalty;
+        const advance = st.advance_deduction ?? 0;
+        const netSalary = st.net_salary ?? Math.max(0, totalSalary - advance);
+        return {
+            finalSalary,
+            overtimeSalary,
+            penalty,
+            totalSalary,
+            advance,
+            netSalary,
+            earlyArrivalSalary: st.early_arrival_salary ?? 0,
+        };
+    }, [reportData]);
+
+    const workedPct = useMemo(() => {
+        const st = reportData?.statistics;
+        if (!st || !st.total_shift_minutes) return 0;
+        return Math.min(
+            100,
+            Math.round(
+                (st.total_worked_minutes / st.total_shift_minutes) * 100,
+            ),
+        );
+    }, [reportData]);
 
     const fetchEmployees = async () => {
         try {
@@ -272,13 +391,22 @@ const EmployeeReport = () => {
         const year = salaryExcelYear;
         const month = Number(salaryExcelMonth);
         if (!year || !month) return;
+        // «Этот сотрудник» доступен только когда открыт конкретный отчёт
+        const byId = salaryExcelScope === "self" && id;
         try {
             setSalaryExcelDownloading(true);
-            const blob = await DownloadEmployeePayrollExcel(year, month);
+            const blob = byId
+                ? await DownloadEmployeePayrollExcelById(
+                      parseInt(id),
+                      year,
+                      month
+                  )
+                : await DownloadEmployeePayrollExcel(year, month);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `payroll_${year}_${String(month).padStart(2, "0")}.xlsx`;
+            const namePart = byId ? `employee_${id}` : "all";
+            link.download = `payroll_${namePart}_${year}_${String(month).padStart(2, "0")}.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -364,13 +492,11 @@ const EmployeeReport = () => {
         fetchData();
     }, [id, selectedYear, selectedMonth]);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("ru-RU", {
-            style: "currency",
-            currency: "UZS",
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
+    // Компактная сумма без символа валюты — "3 000 000"
+    const formatSum = (amount: number = 0) =>
+        new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 }).format(
+            amount,
+        );
 
     const formatTime = (minutes: number) => {
         const hours = Math.floor(minutes / 60);
@@ -378,12 +504,19 @@ const EmployeeReport = () => {
         return `${hours}ч ${mins}м`;
     };
 
+    // Компактно: "8ч 05м" всегда с ведущим нулём у минут
+    const fmtHM = (minutes: number = 0) => {
+        const h = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        return `${h}ч ${String(m).padStart(2, "0")}м`;
+    };
+
     // Не показываем полный экран загрузки, список сотрудников должен оставаться видимым
 
     return (
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 md:h-[calc(100vh-100px)] overflow-hidden">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:min-h-[calc(100vh-100px)] md:items-start">
             {/* Employees Sidebar - hidden on mobile, use dropdown in main instead */}
-            <div className="hidden md:flex w-72 bg-white border-r border-slate-200 flex-shrink-0 flex-col h-full">
+            <div className="hidden md:flex w-72 bg-white border-r border-slate-200 flex-shrink-0 flex-col md:sticky md:top-0 md:h-[calc(100vh-100px)]">
                 <div className="p-4 border-b border-slate-200 flex-shrink-0 space-y-3">
                     <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
                         Сотрудники
@@ -479,7 +612,7 @@ const EmployeeReport = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col gap-4 md:gap-5 min-h-0 h-full overflow-hidden">
+            <div className="flex-1 flex flex-col gap-4 md:gap-5 min-w-0 md:min-h-[calc(100vh-100px)]">
                 {/* Mobile: employee selector — combobox with search */}
                 <div className="md:hidden flex-shrink-0">
                     <SearchableCombobox
@@ -587,21 +720,22 @@ const EmployeeReport = () => {
                 ) : (
                     <>
                         {/* Header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4 flex-shrink-0">
-                            <div className="min-w-0 flex items-center justify-between w-full">
-                                <h1 className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-900 truncate">
-                                    {reportData.name} -{" "}
-                                    {reportData.position_name}
+                        <div className="flex items-start justify-between gap-3 flex-shrink-0">
+                            <div className="min-w-0">
+                                <h1 className="truncate text-lg font-semibold tracking-tight text-slate-900 sm:text-xl md:text-2xl">
+                                    {reportData.name}
                                 </h1>
-                                <Button
-                                    className="rounded-xl"
-                                    onClick={() =>
-                                        setSalaryExcelModalOpen(true)
-                                    }
-                                >
-                                    <Download className="w-4 h-4" /> Зарплата
-                                </Button>
+                                <p className="mt-0.5 truncate text-[13px] text-slate-500">
+                                    {reportData.position_name || "—"}
+                                </p>
                             </div>
+                            <Button
+                                variant="outline"
+                                className="shrink-0 rounded-xl border-slate-200 text-slate-700"
+                                onClick={() => setSalaryExcelModalOpen(true)}
+                            >
+                                <Download className="mr-2 h-4 w-4" /> Excel
+                            </Button>
                         </div>
 
                         {/* Modal: Скачать Excel (зарплата) */}
@@ -614,6 +748,38 @@ const EmployeeReport = () => {
                             size="md"
                         >
                             <div className="space-y-4">
+                                {/* Область выгрузки */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-slate-700">
+                                        Область
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                                        {[
+                                            { key: "self" as const, label: "Этот сотрудник" },
+                                            { key: "all" as const, label: "Все сотрудники" },
+                                        ].map((opt) => (
+                                            <button
+                                                key={opt.key}
+                                                type="button"
+                                                onClick={() =>
+                                                    setSalaryExcelScope(opt.key)
+                                                }
+                                                disabled={
+                                                    opt.key === "self" && !id
+                                                }
+                                                className={cn(
+                                                    "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40",
+                                                    salaryExcelScope === opt.key
+                                                        ? "bg-white text-slate-900 shadow-sm ring-1 ring-slate-200"
+                                                        : "text-slate-500 hover:text-slate-700",
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-2">
                                         <label className="text-sm font-medium text-slate-700">
@@ -703,77 +869,153 @@ const EmployeeReport = () => {
 
                         {/* Statistics */}
                         <div className="flex flex-col gap-3 flex-shrink-0">
-                            {/* Row 1: Attendance */}
-                            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                                {[
-                                    { label: "Всего дней",   value: reportData.statistics.total_days,        color: "text-slate-700",   bg: "bg-white",          border: "border-slate-200" },
-                                    { label: "Полных",       value: reportData.statistics.complete_days,     color: "text-emerald-600", bg: "bg-emerald-50",     border: "border-emerald-100" },
-                                    { label: "Частичных",    value: reportData.statistics.partial_days,      color: "text-orange-600",  bg: "bg-orange-50",      border: "border-orange-100" },
-                                    { label: "Отсутствий",   value: reportData.statistics.absent_days,       color: "text-red-600",     bg: "bg-red-50",         border: "border-red-100" },
-                                    { label: "Опозданий",    value: reportData.statistics.late_days,         color: "text-amber-600",   bg: "bg-amber-50",       border: "border-amber-100" },
-                                    { label: "Ранних уходов",value: reportData.statistics.early_leave_days,  color: "text-yellow-700",  bg: "bg-yellow-50",      border: "border-yellow-100" },
-                                    { label: "Переработок",  value: reportData.statistics.overtime_days,     color: "text-blue-600",    bg: "bg-blue-50",        border: "border-blue-100" },
-                                ].map((s) => (
-                                    <div key={s.label} className={cn("rounded-xl border p-3 shadow-sm", s.bg, s.border)}>
-                                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1 truncate">{s.label}</p>
-                                        <p className={cn("text-xl font-bold leading-none", s.color)}>{s.value}</p>
+                            {/* Посещаемость */}
+                            <div className="rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+                                {/* Отработано / план */}
+                                <div className="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-5">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                            Отработано
+                                        </span>
+                                        <span className="text-xl font-bold tabular-nums text-slate-900">
+                                            {fmtHM(reportData.statistics.total_worked_minutes)}
+                                        </span>
+                                        <span className="text-[13px] tabular-nums text-slate-400">
+                                            / {fmtHM(reportData.statistics.total_shift_minutes)}
+                                        </span>
                                     </div>
-                                ))}
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-1.5 w-40 overflow-hidden rounded-full bg-slate-100">
+                                            <div
+                                                className="h-full rounded-full bg-dark-blue-500 transition-[width] duration-500"
+                                                style={{ width: `${workedPct}%` }}
+                                            />
+                                        </div>
+                                        <span className="w-9 text-right text-[12px] font-semibold tabular-nums text-slate-500">
+                                            {workedPct}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Дни по статусам */}
+                                <div className="grid grid-cols-3 gap-y-3 px-4 py-3 sm:grid-cols-4 lg:grid-cols-8 md:px-5">
+                                    {[
+                                        { label: "Всего",        value: reportData.statistics.total_days,                    dot: "bg-slate-300" },
+                                        { label: "Полных",       value: reportData.statistics.complete_days,                 dot: "bg-emerald-500" },
+                                        { label: "Частичных",    value: reportData.statistics.partial_days,                  dot: "bg-amber-400" },
+                                        { label: "Отсутствий",   value: reportData.statistics.absent_days,                   dot: "bg-rose-400" },
+                                        { label: "Вовремя",      value: reportData.statistics.on_time_days,                  dot: "bg-emerald-500" },
+                                        { label: "Опозданий",    value: reportData.statistics.late_days,                     dot: "bg-amber-400" },
+                                        { label: "Ранний уход",  value: reportData.statistics.early_leave_days,              dot: "bg-orange-400" },
+                                        { label: "Переработок",  value: reportData.statistics.overtime_days,                 dot: "bg-emerald-500" },
+                                    ].map((s) => (
+                                        <div key={s.label} className="min-w-0">
+                                            <p className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                                                <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", s.dot)} />
+                                                <span className="truncate">{s.label}</span>
+                                            </p>
+                                            <p className="text-lg font-bold leading-none tabular-nums text-slate-800">
+                                                {s.value ?? 0}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Итоги по минутам */}
+                                <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 px-4 py-2.5 text-[11px] md:px-5">
+                                    {[
+                                        { label: "Опоздания",     main: fmtHM(reportData.statistics.total_late_minutes),        sub: reportData.statistics.total_late_penalty_minutes > 0 ? `штраф ${reportData.statistics.total_late_penalty_minutes}м` : null, subTone: "text-rose-500" },
+                                        { label: "Ранний уход",   main: fmtHM(reportData.statistics.total_early_leave_minutes),  sub: null, subTone: "" },
+                                        { label: "Переработка",   main: fmtHM(reportData.statistics.total_overtime_minutes),     sub: null, subTone: "" },
+                                        { label: "Перерывы",      main: fmtHM(reportData.statistics.total_break_minutes),        sub: null, subTone: "" },
+                                        { label: "Ранний приход", main: fmtHM(reportData.statistics.total_early_arrival_minutes ?? 0), sub: reportData.statistics.early_arrival_days ? `${reportData.statistics.early_arrival_days} дн.` : null, subTone: "text-slate-400" },
+                                    ].map((t) => (
+                                        <span key={t.label} className="inline-flex items-baseline gap-1.5">
+                                            <span className="text-slate-400">{t.label}</span>
+                                            <span className="font-semibold tabular-nums text-slate-700">{t.main}</span>
+                                            {t.sub && <span className={cn("tabular-nums", t.subTone)}>· {t.sub}</span>}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Row 2: Time + Salary */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                                {/* Время */}
-                                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Отработано</p>
-                                    <p className="text-base font-bold text-blue-700 leading-tight">
-                                        {Math.floor(reportData.statistics.total_worked_minutes / 60)}ч {reportData.statistics.total_worked_minutes % 60}м
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5">
-                                        из {Math.floor(reportData.statistics.total_shift_minutes / 60)}ч {reportData.statistics.total_shift_minutes % 60}м
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Опозданий</p>
-                                    <p className="text-base font-bold text-amber-700 leading-tight">
-                                        {Math.floor(reportData.statistics.total_late_minutes / 60)}ч {reportData.statistics.total_late_minutes % 60}м
-                                    </p>
-                                    <p className="text-[10px] text-red-400 mt-0.5">
-                                        штраф: {reportData.statistics.total_late_penalty_minutes} мин
-                                    </p>
-                                </div>
-                                <div className="rounded-xl border border-yellow-100 bg-yellow-50 p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Ранних уходов</p>
-                                    <p className="text-base font-bold text-yellow-700 leading-tight">
-                                        {Math.floor(reportData.statistics.total_early_leave_minutes / 60)}ч {reportData.statistics.total_early_leave_minutes % 60}м
-                                    </p>
-                                </div>
-                                {/* Зарплата */}
-                                <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Оклад</p>
-                                    <p className="text-base font-bold text-slate-700 leading-tight truncate">
-                                        {formatCurrency(reportData.statistics.salary_amount)}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5 truncate">{reportData.statistics.salary_type_name}</p>
-                                </div>
-                                <div className="rounded-xl border border-indigo-100 bg-indigo-50 p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Ставка/час</p>
-                                    <p className="text-base font-bold text-indigo-700 leading-tight truncate">
-                                        {formatCurrency(reportData.statistics.hourly_rate)}
-                                    </p>
-                                    <p className="text-[10px] text-slate-400 mt-0.5">{reportData.statistics.minute_rate} сум/мин</p>
-                                </div>
-                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 shadow-sm">
-                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Заработано</p>
-                                    <p className="text-base font-bold text-emerald-700 leading-tight truncate">
-                                        {formatCurrency(reportData.statistics.final_salary)}
-                                    </p>
+                            {/* Расчётный лист — фокусная тёмная панель */}
+                            <div className="overflow-hidden rounded-2xl bg-slate-900 shadow-sm ring-1 ring-slate-900/5">
+                                <div className="flex flex-col gap-4 p-4 md:flex-row md:items-stretch md:p-5">
+                                    {/* К выплате */}
+                                    <div className="flex shrink-0 flex-col justify-center md:w-56 md:border-r md:border-white/10 md:pr-5">
+                                        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                                            К выплате
+                                        </p>
+                                        <p className="mt-1 text-3xl font-bold leading-none tabular-nums text-white">
+                                            {formatSum(salary?.netSalary)}
+                                            <span className="ml-1.5 text-base font-medium text-slate-400">сум</span>
+                                        </p>
+                                        {salary && salary.advance > 0 && (
+                                            <p className="mt-2 text-[11px] tabular-nums text-slate-400">
+                                                удержан аванс{" "}
+                                                <span className="font-semibold text-rose-300">
+                                                    −{formatSum(salary.advance)}
+                                                </span>
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Разбор расчёта */}
+                                    <div className="flex min-w-0 flex-1 flex-col justify-center">
+                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+                                            {[
+                                                { label: "Заработано",  value: formatSum(salary?.finalSalary),  sign: "", tone: "text-slate-100" },
+                                                { label: "Переработка", value: formatSum(salary?.overtimeSalary), sign: "+", tone: "text-emerald-300", hideZero: true, raw: salary?.overtimeSalary },
+                                                { label: "Штраф",       value: formatSum(salary?.penalty),        sign: "−", tone: "text-rose-300",    hideZero: true, raw: salary?.penalty },
+                                            ].map((c) =>
+                                                c.hideZero && !c.raw ? null : (
+                                                    <div key={c.label} className="rounded-lg bg-white/5 px-3 py-1.5">
+                                                        <p className="text-[10px] uppercase tracking-wide text-slate-400">{c.label}</p>
+                                                        <p className={cn("text-sm font-semibold tabular-nums", c.tone)}>
+                                                            {c.sign}{c.value}
+                                                        </p>
+                                                    </div>
+                                                ),
+                                            )}
+                                            <span className="px-0.5 text-slate-500">=</span>
+                                            <div className="rounded-lg bg-white/10 px-3 py-1.5">
+                                                <p className="text-[10px] uppercase tracking-wide text-slate-300">Итого начислено</p>
+                                                <p className="text-sm font-semibold tabular-nums text-white">
+                                                    {formatSum(salary?.totalSalary)}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Оклад / ставки */}
+                                        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/10 pt-3 text-[11px]">
+                                            <span className="inline-flex items-baseline gap-1.5">
+                                                <span className="text-slate-500">Оклад</span>
+                                                <span className="font-semibold tabular-nums text-slate-200">
+                                                    {formatSum(reportData.statistics.salary_amount)}
+                                                </span>
+                                                <span className="text-slate-500">· {reportData.statistics.salary_type_name}</span>
+                                            </span>
+                                            <span className="inline-flex items-baseline gap-1.5">
+                                                <span className="text-slate-500">Ставка/час</span>
+                                                <span className="font-semibold tabular-nums text-slate-200">
+                                                    {formatSum(reportData.statistics.hourly_rate)}
+                                                </span>
+                                            </span>
+                                            <span className="inline-flex items-baseline gap-1.5">
+                                                <span className="text-slate-500">Ставка/мин</span>
+                                                <span className="font-semibold tabular-nums text-slate-200">
+                                                    {formatSum(reportData.statistics.minute_rate)}
+                                                </span>
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Calendar and Details */}
-                        <div className="grid gap-4 md:gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+                        <div className="grid gap-4 md:gap-6 lg:grid-cols-3 items-start">
                             {/* Calendar */}
                             <Card className="bg-white rounded-xl md:rounded-xl border border-slate-200/80 shadow-sm lg:col-span-2 min-w-0">
                                 <CardHeader className="px-4 md:px-6 py-3 md:py-6">
@@ -867,8 +1109,8 @@ const EmployeeReport = () => {
                                                       selectedDay.getDate() ===
                                                           date.getDate()
                                                     : false;
-                                                const colors =
-                                                    getStatusColor(dayData);
+                                                const tone =
+                                                    getDayTone(dayData);
                                                 const isToday =
                                                     new Date().toDateString() ===
                                                     date.toDateString();
@@ -895,50 +1137,55 @@ const EmployeeReport = () => {
                                                         currentMonth ||
                                                     dateYear !== currentYear;
 
+                                                const disabled =
+                                                    isFuture || isOtherMonth;
+                                                const hasStatus =
+                                                    !!dayData &&
+                                                    tone.key !== "none";
+
                                                 return (
                                                     <button
                                                         {...props}
-                                                        disabled={
-                                                            isFuture ||
-                                                            isOtherMonth
-                                                        }
+                                                        disabled={disabled}
                                                         className={cn(
-                                                            "relative w-full h-full rounded-lg md:rounded-xl transition-all duration-200 flex flex-col items-center justify-center gap-0.5 p-1 min-h-[2.25rem] md:min-h-[3rem] aspect-square",
-                                                            isFuture ||
-                                                                isOtherMonth
-                                                                ? "bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-50"
+                                                            "group relative flex aspect-square min-h-[2.5rem] w-full flex-col items-center justify-center overflow-hidden rounded-lg transition-colors duration-150 md:min-h-[3.5rem] md:rounded-xl",
+                                                            disabled
+                                                                ? "cursor-not-allowed text-slate-300"
                                                                 : cn(
-                                                                      colors.bg,
-                                                                      colors.text,
-                                                                      colors.border,
-                                                                      "border md:border-2",
-                                                                      "hover:shadow-lg hover:scale-105 hover:z-10",
+                                                                      "text-slate-700 hover:bg-slate-50 active:scale-[0.98]",
+                                                                      tone.cell,
                                                                   ),
                                                             isSelected &&
-                                                                !isFuture &&
-                                                                !isOtherMonth &&
-                                                                "ring-2 ring-blue-500 ring-offset-1 md:ring-offset-2 shadow-lg md:shadow-xl scale-105 md:scale-110 z-20",
+                                                                !disabled &&
+                                                                "bg-dark-blue-50 ring-2 ring-dark-blue-500 ring-offset-1",
                                                             isToday &&
                                                                 !isSelected &&
-                                                                !isFuture &&
-                                                                !isOtherMonth &&
-                                                                "ring-2 ring-slate-400 ring-offset-1",
+                                                                !disabled &&
+                                                                "ring-1 ring-inset ring-slate-300",
                                                         )}
                                                     >
                                                         <span
                                                             className={cn(
-                                                                "text-xs md:text-sm font-bold leading-none",
-                                                                isSelected &&
-                                                                    "text-blue-600 text-sm md:text-base",
+                                                                "text-xs font-semibold leading-none tabular-nums md:text-sm",
+                                                                disabled
+                                                                    ? "text-slate-300"
+                                                                    : isSelected
+                                                                      ? "text-dark-blue-700"
+                                                                      : "text-slate-700",
                                                             )}
                                                         >
                                                             {date.getDate()}
                                                         </span>
-                                                        {colors.indicator === "star" ? (
-                                                            <span className="text-[8px] md:text-[10px] leading-none mt-0.5">⭐</span>
-                                                        ) : colors.dot ? (
-                                                            <div className={cn("w-1 h-1 md:w-1.5 md:h-1.5 rounded-full mt-0.5", colors.dot)} />
-                                                        ) : null}
+                                                        {/* Тонкая полоска-индикатор статуса дня */}
+                                                        {!disabled &&
+                                                            hasStatus && (
+                                                                <span
+                                                                    className={cn(
+                                                                        "absolute inset-x-1.5 bottom-0 h-[3px] rounded-t-full",
+                                                                        tone.bar,
+                                                                    )}
+                                                                />
+                                                            )}
                                                     </button>
                                                 );
                                             },
@@ -957,49 +1204,60 @@ const EmployeeReport = () => {
                                 <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
                                     {selectedDayData ? (
                                         <div className="space-y-3">
-                                            {/* Date + status badge */}
+                                            {/* Дата + бейдж статуса */}
                                             <div className="flex items-start justify-between gap-2">
-                                                <p className="font-semibold text-slate-900 text-sm">
-                                                    {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
-                                                </p>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-900">
+                                                        {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}
+                                                    </p>
+                                                    <p className="text-[11px] capitalize text-slate-400">
+                                                        {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { weekday: "long" })}
+                                                    </p>
+                                                </div>
                                                 <span className={cn(
-                                                    "inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border shrink-0",
-                                                    getStatusColor(selectedDayData).bg,
-                                                    getStatusColor(selectedDayData).text,
-                                                    getStatusColor(selectedDayData).border,
+                                                    "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium",
+                                                    getDayTone(selectedDayData).badge,
                                                 )}>
-                                                    {selectedDayData.day_status === "complete"
-                                                        ? "Полный день"
-                                                        : selectedDayData.day_status === "partial_in"
-                                                        ? "Частичный (вход)"
-                                                        : selectedDayData.day_status === "partial_out"
-                                                        ? "Частичный (выход)"
-                                                        : "Отсутствие"}
+                                                    <span className={cn("h-1.5 w-1.5 rounded-full", getDayTone(selectedDayData).dot)} />
+                                                    {getDayTone(selectedDayData).label}
                                                 </span>
                                             </div>
 
-                                            {/* Description */}
+                                            {/* Описание */}
                                             {selectedDayData.status_description && (
-                                                <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                                                    <p className="text-[12px] text-slate-500 leading-relaxed">
+                                                <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                                                    <p className="text-[12px] leading-relaxed text-slate-500">
                                                         {selectedDayData.status_description}
                                                     </p>
                                                 </div>
                                             )}
 
-                                            {/* Time row */}
+                                            {/* График смены */}
+                                            {selectedDayData.start_time && selectedDayData.end_time && (
+                                                <p className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-slate-400">
+                                                    <span>График</span>
+                                                    <span className="font-semibold tabular-nums text-slate-600">
+                                                        {selectedDayData.start_time.slice(0, 5)}–{selectedDayData.end_time.slice(0, 5)}
+                                                    </span>
+                                                    {selectedDayData.late_tolerance_minutes != null && (
+                                                        <span>· допуск {selectedDayData.late_tolerance_minutes} мин</span>
+                                                    )}
+                                                </p>
+                                            )}
+
+                                            {/* Вход / выход */}
                                             <div className="grid grid-cols-2 gap-2">
-                                                <div className="bg-emerald-50 rounded-lg px-3 py-2 border border-emerald-100">
-                                                    <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide mb-0.5">Вход</p>
-                                                    <p className="text-sm font-semibold text-emerald-700">
+                                                <div className="rounded-lg border border-slate-100 px-3 py-2">
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Вход</p>
+                                                    <p className="text-sm font-semibold tabular-nums text-slate-800">
                                                         {selectedDayData.first_in
                                                             ? new Date(selectedDayData.first_in).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
                                                             : "—"}
                                                     </p>
                                                 </div>
-                                                <div className="bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                                                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide mb-0.5">Выход</p>
-                                                    <p className="text-sm font-semibold text-slate-700">
+                                                <div className="rounded-lg border border-slate-100 px-3 py-2">
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Выход</p>
+                                                    <p className="text-sm font-semibold tabular-nums text-slate-800">
                                                         {selectedDayData.last_out
                                                             ? new Date(selectedDayData.last_out).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
                                                             : "—"}
@@ -1007,55 +1265,50 @@ const EmployeeReport = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Work hours */}
+                                            {/* Отработано / план */}
                                             <div className="grid grid-cols-2 gap-2">
-                                                <div className="rounded-lg px-3 py-2 border border-slate-100">
-                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Отработано</p>
-                                                    <p className="text-sm font-bold text-blue-600">
+                                                <div className="rounded-lg border border-slate-100 px-3 py-2">
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Отработано</p>
+                                                    <p className="text-sm font-bold tabular-nums text-dark-blue-600">
                                                         {selectedDayData.worked_time_formatted}
                                                     </p>
                                                 </div>
-                                                <div className="rounded-lg px-3 py-2 border border-slate-100">
-                                                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">План смены</p>
-                                                    <p className="text-sm font-bold text-slate-600">
+                                                <div className="rounded-lg border border-slate-100 px-3 py-2">
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">План смены</p>
+                                                    <p className="text-sm font-bold tabular-nums text-slate-600">
                                                         {selectedDayData.shift_time_formatted}
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            {/* Penalties */}
-                                            {selectedDayData.late_minutes > 0 && (
-                                                <div className="rounded-lg px-3 py-2 border border-amber-100 bg-amber-50">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="text-[10px] text-amber-600 font-medium uppercase tracking-wide">Опоздание</p>
-                                                        <p className="text-sm font-semibold text-amber-700">{formatTime(selectedDayData.late_minutes)}</p>
-                                                    </div>
-                                                    {selectedDayData.late_minutes_penalty > 0 && (
-                                                        <div className="flex justify-between items-center mt-1">
-                                                            <p className="text-[10px] text-red-500 font-medium">Штраф</p>
-                                                            <p className="text-xs font-semibold text-red-600">{formatTime(selectedDayData.late_minutes_penalty)}</p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                            {/* Отклонения — цвет только в точке-индикаторе */}
+                                            {(() => {
+                                                const rows = [
+                                                    selectedDayData.late_minutes > 0 && { key: "late", dot: "bg-amber-400", label: "Опоздание", value: formatTime(selectedDayData.late_minutes), extra: selectedDayData.late_minutes_penalty > 0 ? `штраф ${formatTime(selectedDayData.late_minutes_penalty)}` : null },
+                                                    selectedDayData.early_leave_minutes > 0 && { key: "early", dot: "bg-orange-400", label: "Ранний уход", value: formatTime(selectedDayData.early_leave_minutes), extra: null },
+                                                    selectedDayData.overtime_minutes > 0 && { key: "over", dot: "bg-emerald-500", label: "Переработка", value: formatTime(selectedDayData.overtime_minutes), extra: null },
+                                                    (selectedDayData.early_arrival_minutes ?? 0) > 0 && { key: "earlyarr", dot: "bg-sky-400", label: "Ранний приход", value: formatTime(selectedDayData.early_arrival_minutes ?? 0), extra: null },
+                                                    (selectedDayData.break_minutes ?? 0) > 0 && { key: "break", dot: "bg-slate-400", label: "Перерывы", value: formatTime(selectedDayData.break_minutes ?? 0), extra: (selectedDayData.intervals_count ?? 0) > 0 ? `${selectedDayData.intervals_count} инт.` : null },
+                                                ].filter(Boolean) as { key: string; dot: string; label: string; value: string; extra: string | null }[];
 
-                                            {selectedDayData.early_leave_minutes > 0 && (
-                                                <div className="rounded-lg px-3 py-2 border border-orange-100 bg-orange-50">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="text-[10px] text-orange-600 font-medium uppercase tracking-wide">Ранний уход</p>
-                                                        <p className="text-sm font-semibold text-orange-700">{formatTime(selectedDayData.early_leave_minutes)}</p>
+                                                if (rows.length === 0) return null;
+                                                return (
+                                                    <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
+                                                        {rows.map((r) => (
+                                                            <div key={r.key} className="flex items-center justify-between px-3 py-2">
+                                                                <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                                                                    <span className={cn("h-1.5 w-1.5 rounded-full", r.dot)} />
+                                                                    {r.label}
+                                                                </span>
+                                                                <span className="flex items-baseline gap-1.5">
+                                                                    {r.extra && <span className="text-[10px] tabular-nums text-slate-400">{r.extra}</span>}
+                                                                    <span className="text-sm font-semibold tabular-nums text-slate-800">{r.value}</span>
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                </div>
-                                            )}
-
-                                            {selectedDayData.overtime_minutes > 0 && (
-                                                <div className="rounded-lg px-3 py-2 border border-emerald-100 bg-emerald-50">
-                                                    <div className="flex justify-between items-center">
-                                                        <p className="text-[10px] text-emerald-600 font-medium uppercase tracking-wide">Переработка</p>
-                                                        <p className="text-sm font-semibold text-emerald-700">{formatTime(selectedDayData.overtime_minutes)}</p>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                );
+                                            })()}
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center py-12 text-center">

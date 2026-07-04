@@ -259,8 +259,13 @@ export const GetEmployeeReport = async (
     month: number,
     faceid_user_id: number
 ) => {
+    // Старый запрос (v1) — оставлен для отката
+    // const response = await GetDataSimple(
+    //     `api/payroll/employee-report-by-id?year=${year}&month=${month}&faceid_user_id=${faceid_user_id}`
+    // );
+    // Новый запрос (v2): отчёт по одному сотруднику
     const response = await GetDataSimple(
-        `api/payroll/employee-report-by-id?year=${year}&month=${month}&faceid_user_id=${faceid_user_id}`
+        `api/payroll/v2/report-by-id?faceid_user_id=${faceid_user_id}&month=${month}&year=${year}`
     );
     return response;
 };
@@ -290,8 +295,19 @@ export const DownloadEmployeePayrollExcel = async (
     month: number
 ) => {
     const token = getToken();
+    // Старый запрос (v1) — оставлен для отката
+    // const response = await axios.get(
+    //     BASE_URL + `api/payroll/employee-excel?year=${year}&month=${month}`,
+    //     {
+    //         responseType: "blob",
+    //         headers: {
+    //             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    //         },
+    //     }
+    // );
+    // Новый запрос (v2): Excel по всем сотрудникам
     const response = await axios.get(
-        BASE_URL + `api/payroll/employee-excel?year=${year}&month=${month}`,
+        BASE_URL + `api/payroll/v2/excel/report?month=${month}&year=${year}`,
         {
             responseType: "blob",
             headers: {
@@ -301,6 +317,74 @@ export const DownloadEmployeePayrollExcel = async (
     );
     return response.data;
 };
+
+// Новый запрос (v2): Excel по одному сотруднику
+export const DownloadEmployeePayrollExcelById = async (
+    faceid_user_id: number,
+    year: number,
+    month: number
+) => {
+    const token = getToken();
+    const response = await axios.get(
+        BASE_URL +
+            `api/payroll/v2/excel/report-by-id?faceid_user_id=${faceid_user_id}&month=${month}&year=${year}`,
+        {
+            responseType: "blob",
+            headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+        }
+    );
+    return response.data;
+};
+
+// ─── Advances (Авансы) API ─────────────────────────────────────────────────────
+
+export interface AdvancePayload {
+    faceid_user_id: number;
+    amount: number;
+    payment_method: number; // 1=Наличные, 2=Карта
+    month: number; // 1–12
+    year: number; // 2025–2100
+    comment?: string;
+}
+
+export interface AdvanceFilters {
+    page?: number;
+    limit?: number;
+    faceid_user_id?: number;
+    month?: number;
+    year?: number;
+    payment_method?: number;
+}
+
+// Список авансов (все фильтры необязательны)
+export const GetAdvances = async (filters: AdvanceFilters = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            qs.append(key, String(value));
+        }
+    });
+    const query = qs.toString();
+    return GetDataSimple(`api/advances${query ? `?${query}` : ""}`);
+};
+
+// Один аванс
+export const GetAdvance = async (id: number) =>
+    GetDataSimple(`api/advances/${id}`);
+
+// Создать аванс
+export const CreateAdvance = async (data: AdvancePayload) =>
+    PostDataTokenJson("api/advances", data);
+
+// Обновить аванс (те же поля, что и при создании)
+export const UpdateAdvance = async (id: number, data: AdvancePayload) =>
+    PostDataTokenJson(`api/advances/${id}`, data);
+
+// Удалить аванс (мягкое удаление на бэкенде)
+export const DeleteAdvance = async (id: number) =>
+    DeleteData(`api/advances/${id}`);
 
 // ─── SuperAdmin API ───────────────────────────────────────────────────────────
 

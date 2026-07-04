@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { SiAnalogue } from "react-icons/si";
-import { FaUserFriends, FaUserCog } from "react-icons/fa";
+import { FaUserFriends, FaUserCog, FaWallet } from "react-icons/fa";
 import { IoTimer } from "react-icons/io5";
 import { MdBarChart } from "react-icons/md";
 
@@ -16,6 +16,7 @@ const navigation = [
     { name: "Статистика сотрудников",href: "/users/report",icon: MdBarChart    },
     { name: "Смены",                 href: "/shifts",      icon: IoTimer       },
     { name: "Должности",             href: "/positions",   icon: FaUserCog     },
+    { name: "Авансы",                href: "/advances",    icon: FaWallet      },
 ];
 
 const Sidebar = ({ className, onClose }: SidebarProps) => {

@@ -5,20 +5,20 @@ import {
     FiUserCheck,
     FiUsers,
     FiUserX,
-    FiDownload,
+    // FiDownload,
 } from "react-icons/fi";
 import { MdOutlineEventAvailable } from "react-icons/md";
-import { GetDailyAttendance, DownloadAttendanceExcel } from "@/services/data";
+import { GetDailyAttendance } from "@/services/data";
 import { DatePicker } from "@/components/ui/date-picker";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import CustomModal from "@/components/ui/custom-modal";
+// import {
+//     Select,
+//     SelectContent,
+//     SelectItem,
+//     SelectTrigger,
+//     SelectValue,
+// } from "@/components/ui/select";
+// import { Button } from "@/components/ui/button";
+// import CustomModal from "@/components/ui/custom-modal";
 import CustomPagination from "@/components/ui/custom-pagination";
 import { Link } from "react-router-dom";
 
@@ -92,20 +92,20 @@ type AttendanceItem = AttendanceData["attendance"][number];
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const months = [
-    { name: "Январь",   value: "01" },
-    { name: "Февраль",  value: "02" },
-    { name: "Март",     value: "03" },
-    { name: "Апрель",   value: "04" },
-    { name: "Май",      value: "05" },
-    { name: "Июнь",     value: "06" },
-    { name: "Июль",     value: "07" },
-    { name: "Август",   value: "08" },
-    { name: "Сентябрь", value: "09" },
-    { name: "Октябрь",  value: "10" },
-    { name: "Ноябрь",   value: "11" },
-    { name: "Декабрь",  value: "12" },
-];
+// const months = [
+//     { name: "Январь",   value: "01" },
+//     { name: "Февраль",  value: "02" },
+//     { name: "Март",     value: "03" },
+//     { name: "Апрель",   value: "04" },
+//     { name: "Май",      value: "05" },
+//     { name: "Июнь",     value: "06" },
+//     { name: "Июль",     value: "07" },
+//     { name: "Август",   value: "08" },
+//     { name: "Сентябрь", value: "09" },
+//     { name: "Октябрь",  value: "10" },
+//     { name: "Ноябрь",   value: "11" },
+//     { name: "Декабрь",  value: "12" },
+// ];
 
 const statusCfg: Record<AttendanceItem["status"], { label: string; badge: string; dot: string }> = {
     present: { label: "На месте",    badge: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" },
@@ -141,10 +141,10 @@ const Dashboard = () => {
     const [error,          setError]          = useState<string | null>(null);
     const [selectedDate,   setSelectedDate]   = useState<string>(today());
     const [modalImage,     setModalImage]     = useState<string | null>(null);
-    const [selectedYear,   setSelectedYear]   = useState<number>(new Date().getFullYear());
-    const [selectedMonth,  setSelectedMonth]  = useState<string>(String(new Date().getMonth() + 1).padStart(2, "0"));
-    const [downloading,    setDownloading]    = useState(false);
-    const [excelModalOpen, setExcelModalOpen] = useState(false);
+    // const [selectedYear,   setSelectedYear]   = useState<number>(new Date().getFullYear());
+    // const [selectedMonth,  setSelectedMonth]  = useState<string>(String(new Date().getMonth() + 1).padStart(2, "0"));
+    // const [downloading,    setDownloading]    = useState(false);
+    // const [excelModalOpen, setExcelModalOpen] = useState(false);
     const [currentPage,    setCurrentPage]    = useState(1);
 
     const selectedDateValue = useMemo(() => {
@@ -183,28 +183,28 @@ const Dashboard = () => {
         };
     }, [modalImage]);
 
-    const handleDownloadExcel = async () => {
-        if (!selectedMonth || !selectedYear) return;
-        const monthYear = `${selectedYear}-${selectedMonth}`;
-        try {
-            setDownloading(true);
-            const blob = await DownloadAttendanceExcel(monthYear);
-            const url  = window.URL.createObjectURL(blob);
-            const a    = document.createElement("a");
-            a.href     = url;
-            a.download = `attendance_${monthYear}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            setExcelModalOpen(false);
-        } catch (err: any) {
-            setExcelModalOpen(false);
-            setError(err?.response?.data?.message || "Не удалось загрузить Excel файл");
-        } finally {
-            setDownloading(false);
-        }
-    };
+    // const handleDownloadExcel = async () => {
+    //     if (!selectedMonth || !selectedYear) return;
+    //     const monthYear = `${selectedYear}-${selectedMonth}`;
+    //     try {
+    //         setDownloading(true);
+    //         const blob = await DownloadAttendanceExcel(monthYear);
+    //         const url  = window.URL.createObjectURL(blob);
+    //         const a    = document.createElement("a");
+    //         a.href     = url;
+    //         a.download = `attendance_${monthYear}.xlsx`;
+    //         document.body.appendChild(a);
+    //         a.click();
+    //         document.body.removeChild(a);
+    //         window.URL.revokeObjectURL(url);
+    //         setExcelModalOpen(false);
+    //     } catch (err: any) {
+    //         setExcelModalOpen(false);
+    //         setError(err?.response?.data?.message || "Не удалось загрузить Excel файл");
+    //     } finally {
+    //         setDownloading(false);
+    //     }
+    // };
 
     // ── Derived ──────────────────────────────────────────────────────────────
     const summary = useMemo(() => {
@@ -283,7 +283,7 @@ const Dashboard = () => {
                             placeholder="Выберите дату"
                             className="h-9 text-[13px] rounded-lg"
                         />
-                        <CustomModal
+                        {/* <CustomModal
                             trigger={
                                 <Button
                                     onClick={() => setExcelModalOpen(true)}
@@ -336,7 +336,7 @@ const Dashboard = () => {
                                     </Button>
                                 </div>
                             </div>
-                        </CustomModal>
+                        </CustomModal> */}
                     </div>
                 </div>
             </div>

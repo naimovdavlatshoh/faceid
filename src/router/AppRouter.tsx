@@ -11,6 +11,7 @@ import CreateUser from "@/pages/Users/CreateUser";
 import Login from "../pages/Auth/Login";
 import Account from "@/pages/Users/Account";
 import EmployeeReport from "@/pages/Users/EmployeeReport";
+import Advances from "@/pages/Advances/Advances";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
             {
                 path: "positions",
                 element: <Positions />,
+            },
+            {
+                path: "advances",
+                element: <Advances />,
             },
             {
                 path: "shifts",

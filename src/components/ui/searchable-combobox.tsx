@@ -121,7 +121,10 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                             value={searchTerm}
                             onValueChange={handleSearchChange}
                         />
-                        <CommandList>
+                        {/* stopPropagation: чтобы scroll-lock Dialog не блокировал прокрутку списка колёсиком */}
+                        <CommandList
+                            onWheel={(e) => e.stopPropagation()}
+                        >
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-6">
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
