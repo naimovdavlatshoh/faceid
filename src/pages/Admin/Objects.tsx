@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
     SuperAdminGetObjects,
     SuperAdminCreateObject,
     SuperAdminUpdateObject,
     SuperAdminDeleteObject,
+    SuperAdminGetDashboard,
 } from "@/services/data";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+import { MdWifi, MdWifiOff } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +36,23 @@ interface ObjectItem {
     is_overtime_control: string;
     is_telegram_notification: string;
     is_parent_notification: string;
+    is_early_arrival_count_enabled: string;
     is_active: string;
     created_at: string;
+}
+
+interface ObjectTerminalItem {
+    terminal_id: string;
+    terminal_name: string;
+    EhomeID: string;
+    status: string; // "online" | иное => оффлайн
+}
+
+interface ObjectTerminalCount {
+    object_id: string;
+    object_name: string;
+    terminals_count: number;
+    terminals: ObjectTerminalItem[];
 }
 
 const emptyForm = {
@@ -49,6 +68,7 @@ const emptyForm = {
     is_overtime_control: 0,
     is_telegram_notification: 0,
     is_parent_notification: 0,
+    is_early_arrival_count_enabled: 0,
 };
 
 type FormData = typeof emptyForm;
@@ -82,6 +102,10 @@ const Toggle = ({
 
 const AdminObjects = () => {
     const [objects, setObjects] = useState<ObjectItem[]>([]);
+    const [terminalsByObject, setTerminalsByObject] = useState<
+        Record<string, ObjectTerminalCount>
+    >({});
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [open, setOpen] = useState(false);
     const [editId, setEditId] = useState<string | null>(null);
@@ -90,8 +114,22 @@ const AdminObjects = () => {
 
     const load = () => {
         setLoading(true);
-        SuperAdminGetObjects()
-            .then((res) => setObjects(res.result ?? []))
+        Promise.all([
+            SuperAdminGetObjects(),
+            // статусы терминалов приходят из общего дашборда; не роняем страницу, если недоступны
+            SuperAdminGetDashboard().catch(() => null),
+        ])
+            .then(([objRes, dashRes]) => {
+                setObjects(objRes.result ?? []);
+                const map: Record<string, ObjectTerminalCount> = {};
+                (
+                    (dashRes?.objects_terminals_count ??
+                        []) as ObjectTerminalCount[]
+                ).forEach((o) => {
+                    map[String(o.object_id)] = o;
+                });
+                setTerminalsByObject(map);
+            })
             .catch(() => toast.error("Не удалось загрузить объекты"))
             .finally(() => setLoading(false));
     };
@@ -119,6 +157,9 @@ const AdminObjects = () => {
             is_overtime_control: Number(obj.is_overtime_control),
             is_telegram_notification: Number(obj.is_telegram_notification),
             is_parent_notification: Number(obj.is_parent_notification),
+            is_early_arrival_count_enabled: Number(
+                obj.is_early_arrival_count_enabled,
+            ),
         });
         setOpen(true);
     };
@@ -160,6 +201,15 @@ const AdminObjects = () => {
     const setField = (key: keyof FormData, value: string | number) =>
         setForm((prev) => ({ ...prev, [key]: value }));
 
+    // Общая сводка по терминалам (для шапки)
+    const allTerminals = Object.values(terminalsByObject).flatMap(
+        (o) => o.terminals,
+    );
+    const totalOnline = allTerminals.filter(
+        (t) => t.status === "online",
+    ).length;
+    const totalOffline = allTerminals.length - totalOnline;
+
     return (
         <div className="space-y-5 pb-8">
             <AdminPageHeader
@@ -167,30 +217,164 @@ const AdminObjects = () => {
                 subtitle="Управление объектами системы"
                 count={objects.length}
                 onAdd={openCreate}
+                extra={
+                    allTerminals.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                <MdWifi className="w-3.5 h-3.5" />
+                                {totalOnline} онлайн
+                            </span>
+                            {totalOffline > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
+                                    <MdWifiOff className="w-3.5 h-3.5" />
+                                    {totalOffline} оффлайн
+                                </span>
+                            )}
+                        </div>
+                    )
+                }
             />
 
             <AdminTable
                 loading={loading}
-                headers={["Название", "Адрес", "iSUP", "Контроль времени", "Переработки", "Telegram", "Уведомл. родит.", "Создан", "Действия"]}
+                headers={["Название", "Адрес", "iSUP", "Контроль времени", "Переработки", "Ранний приход", "Telegram", "Уведомл. родит.", "Терминалы", "Создан", "Действия"]}
             >
-                {objects.map((obj) => (
-                    <tr key={obj.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-4 py-3 font-medium text-slate-900">{obj.object_name}</td>
-                        <td className="px-4 py-3 text-slate-500 text-[13px]">{obj.object_address || "—"}</td>
-                        <td className="px-4 py-3"><FlagBadge value={obj.is_isup} /></td>
-                        <td className="px-4 py-3"><FlagBadge value={obj.is_time_control} /></td>
-                        <td className="px-4 py-3"><FlagBadge value={obj.is_overtime_control} /></td>
-                        <td className="px-4 py-3"><FlagBadge value={obj.is_telegram_notification} /></td>
-                        <td className="px-4 py-3"><FlagBadge value={obj.is_parent_notification} /></td>
-                        <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
-                            {obj.created_at ? new Date(obj.created_at).toLocaleDateString("ru-RU") : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                            <ActionButtons onEdit={() => openEdit(obj)} onDelete={() => handleDelete(obj.id)} />
-                        </td>
-                    </tr>
-                ))}
-                {objects.length === 0 && <EmptyRow colSpan={9} text="Объекты не найдены" />}
+                {objects.map((obj) => {
+                    const term = terminalsByObject[String(obj.id)];
+                    const total = term?.terminals_count ?? 0;
+                    const online = term
+                        ? term.terminals.filter((t) => t.status === "online")
+                              .length
+                        : 0;
+                    const offline = total - online;
+                    const isExpanded = expandedId === obj.id;
+
+                    return (
+                        <Fragment key={obj.id}>
+                            <tr className="hover:bg-slate-50/60 transition-colors">
+                                <td className="px-4 py-3 font-medium text-slate-900">{obj.object_name}</td>
+                                <td className="px-4 py-3 text-slate-500 text-[13px]">{obj.object_address || "—"}</td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_isup} /></td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_time_control} /></td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_overtime_control} /></td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_early_arrival_count_enabled} /></td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_telegram_notification} /></td>
+                                <td className="px-4 py-3"><FlagBadge value={obj.is_parent_notification} /></td>
+                                <td className="px-4 py-3">
+                                    {total === 0 ? (
+                                        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-300">
+                                            <MdWifiOff className="w-3.5 h-3.5" /> Нет
+                                        </span>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setExpandedId(
+                                                    isExpanded ? null : obj.id,
+                                                )
+                                            }
+                                            className={cn(
+                                                "group inline-flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg border text-[11px] font-semibold transition-colors",
+                                                offline > 0
+                                                    ? "bg-red-50 text-red-600 border-red-100 hover:bg-red-100/70"
+                                                    : "bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100/70",
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    "w-1.5 h-1.5 rounded-full",
+                                                    offline > 0
+                                                        ? "bg-red-500"
+                                                        : "bg-emerald-500",
+                                                )}
+                                            />
+                                            {online}/{total}
+                                            <ChevronDown
+                                                className={cn(
+                                                    "w-3.5 h-3.5 transition-transform",
+                                                    isExpanded && "rotate-180",
+                                                )}
+                                            />
+                                        </button>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
+                                    {obj.created_at ? new Date(obj.created_at).toLocaleDateString("ru-RU") : "—"}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <ActionButtons onEdit={() => openEdit(obj)} onDelete={() => handleDelete(obj.id)} />
+                                </td>
+                            </tr>
+
+                            {isExpanded && total > 0 && term && (
+                                <tr className="bg-slate-50/50">
+                                    <td colSpan={11} className="px-4 py-3">
+                                        <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
+                                            {term.terminals.map((t) => {
+                                                const on =
+                                                    t.status === "online";
+                                                return (
+                                                    <div
+                                                        key={t.terminal_id}
+                                                        className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white border border-slate-100"
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <span
+                                                                className={cn(
+                                                                    "w-5 h-5 rounded flex items-center justify-center shrink-0",
+                                                                    on
+                                                                        ? "bg-emerald-100 text-emerald-600"
+                                                                        : "bg-slate-200 text-slate-400",
+                                                                )}
+                                                            >
+                                                                {on ? (
+                                                                    <MdWifi className="w-3 h-3" />
+                                                                ) : (
+                                                                    <MdWifiOff className="w-3 h-3" />
+                                                                )}
+                                                            </span>
+                                                            <div className="min-w-0">
+                                                                <p className="text-[12px] text-slate-700 truncate">
+                                                                    {
+                                                                        t.terminal_name
+                                                                    }
+                                                                </p>
+                                                                <p className="text-[10px] text-slate-400 truncate font-mono">
+                                                                    {t.EhomeID}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <span
+                                                            className={cn(
+                                                                "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border shrink-0",
+                                                                on
+                                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                                    : "bg-red-50 text-red-600 border-red-100",
+                                                            )}
+                                                        >
+                                                            <span
+                                                                className={cn(
+                                                                    "w-1.5 h-1.5 rounded-full",
+                                                                    on
+                                                                        ? "bg-emerald-500"
+                                                                        : "bg-red-500",
+                                                                )}
+                                                            />
+                                                            {on
+                                                                ? "Онлайн"
+                                                                : "Оффлайн"}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </Fragment>
+                    );
+                })}
+                {objects.length === 0 && <EmptyRow colSpan={11} text="Объекты не найдены" />}
             </AdminTable>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -265,7 +449,7 @@ const AdminObjects = () => {
                                 onChange={(v) => setField("is_static_ip", v)}
                             />
                             <Toggle
-                                label="iSUP"
+                                label="is_ISUP"
                                 value={form.is_isup}
                                 onChange={(v) => setField("is_isup", v)}
                             />
@@ -278,6 +462,13 @@ const AdminObjects = () => {
                                 label="Контроль переработок"
                                 value={form.is_overtime_control}
                                 onChange={(v) => setField("is_overtime_control", v)}
+                            />
+                            <Toggle
+                                label="Суммировать ранний приход"
+                                value={form.is_early_arrival_count_enabled}
+                                onChange={(v) =>
+                                    setField("is_early_arrival_count_enabled", v)
+                                }
                             />
                             <Toggle
                                 label="Telegram уведомления"
