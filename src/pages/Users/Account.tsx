@@ -34,6 +34,47 @@ import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 
+async function prepareFaceImage(
+    file: File,
+    {
+        maxLongSide = 720,
+        targetBytes = 200 * 1024,
+        minQuality = 0.7,
+        maxSourcePixels = 40_000_000,
+    } = {},
+): Promise<File> {
+    const bitmap = await createImageBitmap(file);
+    if (bitmap.width * bitmap.height > maxSourcePixels) {
+        bitmap.close?.();
+        throw new Error("Изображение слишком большое по разрешению");
+    }
+    const longSide = Math.max(bitmap.width, bitmap.height);
+    const scale = Math.min(1, maxLongSide / longSide);
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+        bitmap.close?.();
+        throw new Error("Canvas 2D context недоступен");
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const toBlob = (q: number): Promise<Blob | null> =>
+        new Promise((res) => canvas.toBlob(res, "image/jpeg", q));
+    let blob: Blob | null = null;
+    for (let q = 0.9; q >= minQuality - 1e-9; q -= 0.05) {
+        blob = await toBlob(q);
+        if (blob && blob.size <= targetBytes) break;
+    }
+    if (!blob) throw new Error("Не удалось обработать изображение");
+    return new File([blob], "face.jpg", { type: "image/jpeg" });
+}
+
 const Account = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -183,8 +224,8 @@ const Account = () => {
             return;
         }
 
-        if (file.size > 3 * 1024 * 1024) {
-            toast.error("Размер файла не должен превышать 3 МБ");
+        if (file.size > 20 * 1024 * 1024) {
+            toast.error("Размер файла не должен превышать 20 МБ");
             // Reset input value
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
@@ -204,8 +245,17 @@ const Account = () => {
         try {
             setIsUploading(true);
 
+            let prepared: File;
+            try {
+                prepared = await prepareFaceImage(file);
+            } catch (prepareError) {
+                console.error("Error preparing image:", prepareError);
+                toast.error("Не удалось обработать изображение");
+                return;
+            }
+
             const formData = new FormData();
-            formData.append("image", file);
+            formData.append("image", prepared);
 
             // Agar user rasmi bo'lsa updateimage, aks holda uploadimage ishlatiladi
             const apiEndpoint = hasExistingImage
@@ -214,7 +264,7 @@ const Account = () => {
 
             await PostDataToken(apiEndpoint, formData);
 
-            const url = URL.createObjectURL(file);
+            const url = URL.createObjectURL(prepared);
             setAvatarSrc(url);
             setHasExistingImage(true);
 
@@ -478,7 +528,7 @@ const Account = () => {
 
                                 {/* File Info */}
                                 <div className="text-center text-sm text-slate-500 ">
-                                    <p>*.jpeg, *.jpg макс 200 Кб</p>
+                                    <p>*.jpg, *.png — сожмётся автоматически</p>
                                 </div>
                                 {/* <div className="flex items-center space-x-2">
                                     <Switch id="airplane-mode" />
