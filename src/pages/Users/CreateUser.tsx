@@ -20,8 +20,10 @@ import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
 import { toast } from "sonner";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const CreateUser = () => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         fullName: "",
         salary: "",
@@ -69,7 +71,7 @@ const CreateUser = () => {
                 }));
             } catch (error) {
                 console.error("Error fetching data:", error);
-                toast.error("Ошибка загрузки данных");
+                toast.error(t("createUser.loadError"));
             }
         };
 
@@ -130,7 +132,7 @@ const CreateUser = () => {
                 }));
             } catch (error) {
                 console.error("Error fetching shifts:", error);
-                toast.error("Ошибка загрузки смен");
+                toast.error(t("createUser.shiftsLoadError"));
             }
         }
     };
@@ -144,7 +146,7 @@ const CreateUser = () => {
             !formData.salary.trim() ||
             !formData.positionId
         ) {
-            toast.error("Пожалуйста, заполните все обязательные поля");
+            toast.error(t("createUser.fillRequired"));
             return;
         }
 
@@ -184,7 +186,7 @@ const CreateUser = () => {
 
             await PostDataTokenJson("api/faceid/user/create", submitData);
 
-            toast.success("Сотрудник успешно создан");
+            toast.success(t("createUser.created"));
 
             navigate("/users");
 
@@ -235,7 +237,7 @@ const CreateUser = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-semibold text-slate-900 ">
-                        Создать нового сотрудника
+                        {t("createUser.title")}
                     </h1>
                 </div>
             </div>
@@ -243,9 +245,9 @@ const CreateUser = () => {
             {/* Breadcrumb */}
             <CustomBreadcrumb
                 items={[
-                    { label: "Панель управления", href: "/" },
-                    { label: "Сотрудники", href: "/users" },
-                    { label: "Создать", isActive: true },
+                    { label: t("common.controlPanel"), href: "/" },
+                    { label: t("nav.employees"), href: "/users" },
+                    { label: t("createUser.crumbCreate"), isActive: true },
                 ]}
             />
 
@@ -253,7 +255,7 @@ const CreateUser = () => {
                 <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-slate-100 ">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold text-slate-900 ">
-                            Данные сотрудника
+                            {t("createUser.cardTitle")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -265,12 +267,12 @@ const CreateUser = () => {
                                             htmlFor="fullName"
                                             className="text-sm font-medium text-slate-700 "
                                         >
-                                            Имя
+                                            {t("createUser.name")}
                                         </Label>
                                         <Input
                                             id="fullName"
                                             type="text"
-                                            placeholder="Введите имя"
+                                            placeholder={t("createUser.namePlaceholder")}
                                             value={formData.fullName}
                                             onChange={(e) =>
                                                 handleInputChange(
@@ -284,8 +286,8 @@ const CreateUser = () => {
                                     {/* Salary Type */}
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Тип зарплаты"
-                                            placeholder="Выберите тип зарплаты"
+                                            label={t("createUser.salaryType")}
+                                            placeholder={t("createUser.salaryTypePlaceholder")}
                                             value={formData.salaryType}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -294,15 +296,10 @@ const CreateUser = () => {
                                                 )
                                             }
                                             options={[
-                                                { value: "1", label: "Ойлик" },
-                                                // {
-                                                //     value: "2",
-                                                //     label: "Хафталик",
-                                                // },
-                                                // { value: "3", label: "Кунлик" },
+                                                { value: "1", label: t("createUser.salaryMonthly") },
                                                 {
                                                     value: "4",
-                                                    label: "Соатлик",
+                                                    label: t("createUser.salaryHourly"),
                                                 },
                                             ]}
                                             required
@@ -312,7 +309,7 @@ const CreateUser = () => {
                                     {/* day off type */}
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-slate-700 ">
-                                            Тип выходного
+                                            {t("createUser.dayOffType")}
                                         </Label>
                                         <Select
                                             value={formData.dayOffType}
@@ -341,17 +338,17 @@ const CreateUser = () => {
                                             }}
                                         >
                                             <SelectTrigger className="h-12 rounded-xl">
-                                                <SelectValue placeholder="Выберите тип выходного" />
+                                                <SelectValue placeholder={t("createUser.dayOffTypePlaceholder")} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="0">
-                                                    Гибридный (по датам)
+                                                    {t("createUser.dayOffHybrid")}
                                                 </SelectItem>
                                                 <SelectItem value="1">
-                                                    Стандарт (по дням недели)
+                                                    {t("createUser.dayOffStandard")}
                                                 </SelectItem>
                                                 <SelectItem value="2">
-                                                    Без выходных
+                                                    {t("createUser.dayOffNone")}
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -361,18 +358,17 @@ const CreateUser = () => {
                                     "2" ? null : formData.dayOffType === "1" ? (
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium text-slate-700 ">
-                                                Дни недели выходных (можно
-                                                несколько)
+                                                {t("createUser.weekdaysLabel")}
                                             </Label>
                                             <div className="flex flex-wrap gap-2">
                                                 {[
-                                                    { v: "1", l: "Пн" },
-                                                    { v: "2", l: "Вт" },
-                                                    { v: "3", l: "Ср" },
-                                                    { v: "4", l: "Чт" },
-                                                    { v: "5", l: "Пт" },
-                                                    { v: "6", l: "Сб" },
-                                                    { v: "7", l: "Вс" },
+                                                    { v: "1" },
+                                                    { v: "2" },
+                                                    { v: "3" },
+                                                    { v: "4" },
+                                                    { v: "5" },
+                                                    { v: "6" },
+                                                    { v: "7" },
                                                 ].map((d) => {
                                                     const active =
                                                         formData.dayOffWeekdays.includes(
@@ -409,7 +405,7 @@ const CreateUser = () => {
                                                                 )
                                                             }
                                                         >
-                                                            {d.l}
+                                                            {t(`days.short.${d.v}`)}
                                                         </Button>
                                                     );
                                                 })}
@@ -418,13 +414,13 @@ const CreateUser = () => {
                                     ) : (
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium text-slate-700 ">
-                                                Даты выходных (1-27)
+                                                {t("createUser.datesLabel")}
                                             </Label>
                                             <div className="flex gap-2 items-center">
                                                 <Input
                                                     id="dayoff-input"
                                                     type="number"
-                                                    placeholder="напр. 6"
+                                                    placeholder={t("createUser.datePlaceholder")}
                                                     className="h-10 rounded-xl w-32"
                                                 />
                                                 <Button
@@ -448,7 +444,7 @@ const CreateUser = () => {
                                                             num > max
                                                         ) {
                                                             toast.error(
-                                                                `Недопустимое значение (1-${max})`
+                                                                t("createUser.invalidValue", { max })
                                                             );
                                                             return;
                                                         }
@@ -471,7 +467,7 @@ const CreateUser = () => {
                                                         input.value = "";
                                                     }}
                                                 >
-                                                    Добавить
+                                                    {t("common.add")}
                                                 </Button>
                                                 {formData.dayOffItems.length >
                                                     0 && (
@@ -522,8 +518,8 @@ const CreateUser = () => {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Смена"
-                                            placeholder="Выберите смену"
+                                            label={t("createUser.shift")}
+                                            placeholder={t("createUser.shiftPlaceholder")}
                                             value={formData.shiftId}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -547,8 +543,8 @@ const CreateUser = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <SearchableCombobox
-                                            label="Должность"
-                                            placeholder="Выберите должность"
+                                            label={t("createUser.position")}
+                                            placeholder={t("createUser.positionPlaceholder")}
                                             value={formData.positionId}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -579,7 +575,7 @@ const CreateUser = () => {
                                             htmlFor="salary"
                                             className="text-sm font-medium text-slate-700 "
                                         >
-                                            Зарплата
+                                            {t("createUser.salary")}
                                         </Label>
                                         <Input
                                             id="salary"
@@ -606,7 +602,7 @@ const CreateUser = () => {
                                         variant="outline"
                                         className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                                     >
-                                        Назад
+                                        {t("common.back")}
                                     </Button>
                                 </Link>
                                 <Button
@@ -617,10 +613,10 @@ const CreateUser = () => {
                                     {isCreating ? (
                                         <div className="flex items-center space-x-2">
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            <span>Создание...</span>
+                                            <span>{t("createUser.submitting")}</span>
                                         </div>
                                     ) : (
-                                        "Создать сотрудника"
+                                        t("createUser.submit")
                                     )}
                                 </Button>
                             </div>

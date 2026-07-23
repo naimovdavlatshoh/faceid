@@ -43,6 +43,7 @@ import DeleteShiftModal from "./DeleteShiftModal";
 import { GrEdit } from "react-icons/gr";
 import { CiTrash } from "react-icons/ci";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import ShiftDaysModal from "./ShiftDaysModal";
 
 interface Shift {
@@ -66,6 +67,7 @@ interface ApiResponse {
 }
 
 const Shifts = () => {
+    const { t } = useTranslation();
     const [shifts, setShifts] = useState<Shift[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -90,7 +92,7 @@ const Shifts = () => {
             setTotalPages(data.pages);
         } catch (error) {
             console.error("Error fetching shifts:", error);
-            toast.error("Ошибка загрузки смен");
+            toast.error(t("shifts.loadError"));
         } finally {
             setLoading(false);
         }
@@ -176,22 +178,22 @@ const Shifts = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
-                            Смены
+                            {t("shifts.title")}
                         </h1>
                     </div>
                     <div className="flex space-x-3 flex-shrink-0">
                         <Link to="/shifts/create" className="block w-full sm:w-auto">
                             <Button className="w-full sm:w-auto px-4 py-2 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-200">
                                 <IoMdAdd className="w-4 h-4" />
-                                Добавить
+                                {t("common.add")}
                             </Button>
                         </Link>
                     </div>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Смены", isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.shifts"), isActive: true },
                     ]}
                 />
             </div>
@@ -202,7 +204,7 @@ const Shifts = () => {
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full min-w-0">
                             <SearchInput
-                                placeholder="Поиск по названию смены..."
+                                placeholder={t("shifts.searchPlaceholder")}
                                 value={searchTerm}
                                 onChange={setSearchTerm}
                             />
@@ -220,25 +222,25 @@ const Shifts = () => {
                                     />
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Смена
+                                    {t("shifts.colShift")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Тип смены
+                                    {t("shifts.colType")}
                                 </TableHead>
                                 <TableHead className="text-slate-500">
-                                    Переработка (мин)
+                                    {t("shifts.colOvertime")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Допуск опоздания (мин)
+                                    {t("shifts.colLateTolerance")}
                                 </TableHead>
                                 {/* <TableHead className="text-slate-500 ">
                                     Статус
                                 </TableHead> */}
                                 <TableHead className="text-slate-500 ">
-                                    Дата создания
+                                    {t("common.createdAt")}
                                 </TableHead>
                                 <TableHead className=" text-slate-500 ">
-                                    Действия
+                                    {t("common.actions")}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -250,8 +252,8 @@ const Shifts = () => {
                                         className="text-center py-8 text-slate-500 "
                                     >
                                         {searchTerm
-                                            ? "Смены не найдены"
-                                            : "Нет смен"}
+                                            ? t("shifts.notFound")
+                                            : t("shifts.empty")}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -295,10 +297,10 @@ const Shifts = () => {
                                             {shift.shift_type_name}
                                         </TableCell>
                                         <TableCell className="text-slate-600 ">
-                                            {shift.overtime_after_minutes} мин
+                                            {shift.overtime_after_minutes} {t("common.minutesShort")}
                                         </TableCell>
                                         <TableCell className="text-slate-600 ">
-                                            {shift.late_tolerance_minutes} мин
+                                            {shift.late_tolerance_minutes} {t("common.minutesShort")}
                                         </TableCell>
                                         {/* <TableCell>
                                             <span
@@ -342,7 +344,7 @@ const Shifts = () => {
                                                         }
                                                     >
                                                         <GrEdit className="w-4 h-4" />{" "}
-                                                        Редактировать
+                                                        {t("common.edit")}
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         className="text-red-600"
@@ -353,7 +355,7 @@ const Shifts = () => {
                                                         }
                                                     >
                                                         <CiTrash className="w-4 h-4" />
-                                                        <span>Удалить</span>
+                                                        <span>{t("common.delete")}</span>
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -367,7 +369,7 @@ const Shifts = () => {
                 <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
                         <label htmlFor="" className="text-slate-500 text-sm whitespace-nowrap">
-                            Строк на странице:
+                            {t("common.rowsPerPage")}
                         </label>
                         <Select
                             value={itemsPerPage.toString()}

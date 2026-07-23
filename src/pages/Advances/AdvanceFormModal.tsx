@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import CustomModal from "@/components/ui/custom-modal";
 import { CustomTextarea } from "@/components/ui/custom-form";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ const AdvanceFormModal = ({
     onSuccess,
     advance,
 }: AdvanceFormModalProps) => {
+    const { t } = useTranslation();
     const isEdit = !!advance;
 
     const [employeeId, setEmployeeId] = useState("");
@@ -91,7 +93,7 @@ const AdvanceFormModal = ({
             setEmployees(response.data?.result || []);
         } catch (error) {
             console.error("Error searching employees:", error);
-            toast.error("Ошибка поиска сотрудников");
+            toast.error(t("advances.searchError"));
             setEmployees([]);
         } finally {
             setLoadingEmployees(false);
@@ -140,15 +142,15 @@ const AdvanceFormModal = ({
     const handleSubmit = async () => {
         const amountNum = Number(amount);
         if (!employeeId) {
-            toast.error("Выберите сотрудника");
+            toast.error(t("advances.chooseEmployee"));
             return;
         }
         if (!amountNum || amountNum < 1) {
-            toast.error("Введите сумму аванса (не меньше 1)");
+            toast.error(t("advances.enterAmount"));
             return;
         }
         if (comment.length > 255) {
-            toast.error("Комментарий не должен превышать 255 символов");
+            toast.error(t("advances.commentTooLong"));
             return;
         }
 
@@ -165,10 +167,10 @@ const AdvanceFormModal = ({
             setIsSubmitting(true);
             if (isEdit && advance) {
                 await UpdateAdvance(advance.id, payload);
-                toast.success("Аванс обновлён");
+                toast.success(t("advances.updated"));
             } else {
                 await CreateAdvance(payload);
-                toast.success("Аванс добавлен");
+                toast.success(t("advances.added"));
             }
             onSuccess();
             onOpenChange(false);
@@ -177,7 +179,7 @@ const AdvanceFormModal = ({
             toast.error(
                 error?.response?.data?.error ||
                     error?.response?.data?.message ||
-                    "Ошибка сохранения аванса"
+                    t("advances.saveError")
             );
         } finally {
             setIsSubmitting(false);
@@ -189,27 +191,27 @@ const AdvanceFormModal = ({
             showTrigger={false}
             open={open}
             onOpenChange={onOpenChange}
-            title={isEdit ? "Редактировать аванс" : "Добавить аванс"}
+            title={isEdit ? t("advances.editTitle") : t("advances.addTitle")}
             onConfirm={handleSubmit}
             onCancel={() => onOpenChange(false)}
             confirmText={
                 isSubmitting
-                    ? "Сохранение..."
+                    ? t("common.saving")
                     : isEdit
-                      ? "Сохранить"
-                      : "Добавить"
+                      ? t("common.save")
+                      : t("common.add")
             }
-            cancelText="Отмена"
+            cancelText={t("common.cancel")}
             confirmBg="bg-maintx"
             confirmBgHover="bg-maintx/80"
             size="md"
         >
             <div className="space-y-4">
                 <SearchableCombobox
-                    label="Сотрудник"
-                    placeholder="Выберите сотрудника"
-                    searchPlaceholder="Поиск сотрудников..."
-                    emptyMessage="Сотрудники не найдены"
+                    label={t("advances.employee")}
+                    placeholder={t("advances.selectEmployee")}
+                    searchPlaceholder={t("advances.searchEmployeePlaceholder")}
+                    emptyMessage={t("advances.employeeNotFound")}
                     value={employeeId}
                     onChange={setEmployeeId}
                     onSearch={handleEmployeeSearch}
@@ -223,13 +225,13 @@ const AdvanceFormModal = ({
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                        Сумма аванса
+                        {t("advances.amountLabel")}
                         <span className="text-red-500 ml-1">*</span>
                     </label>
                     <div className="relative">
                         <Input
                             inputMode="numeric"
-                            placeholder="Например, 500 000"
+                            placeholder={t("advances.amountPlaceholder")}
                             value={groupThousands(amount)}
                             onChange={(e) =>
                                 setAmount(e.target.value.replace(/\D/g, ""))
@@ -237,14 +239,14 @@ const AdvanceFormModal = ({
                             className="w-full h-12 rounded-xl pr-12"
                         />
                         <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                            сум
+                            {t("common.sum")}
                         </span>
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                        Способ выплаты
+                        {t("advances.methodLabel")}
                         <span className="text-red-500 ml-1">*</span>
                     </label>
                     <Select
@@ -252,12 +254,12 @@ const AdvanceFormModal = ({
                         onValueChange={setPaymentMethod}
                     >
                         <SelectTrigger className="w-full h-12 rounded-xl">
-                            <SelectValue placeholder="Выберите способ" />
+                            <SelectValue placeholder={t("advances.methodPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
                             {PAYMENT_METHODS.map((m) => (
                                 <SelectItem key={m.value} value={m.value}>
-                                    {m.name}
+                                    {t(m.labelKey)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -267,17 +269,17 @@ const AdvanceFormModal = ({
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-900">
-                            Месяц
+                            {t("advances.month")}
                             <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Select value={month} onValueChange={setMonth}>
                             <SelectTrigger className="w-full h-12 rounded-xl">
-                                <SelectValue placeholder="Месяц" />
+                                <SelectValue placeholder={t("advances.monthPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {ADVANCE_MONTHS.map((m) => (
                                     <SelectItem key={m.value} value={m.value}>
-                                        {m.name}
+                                        {t(m.labelKey)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -285,12 +287,12 @@ const AdvanceFormModal = ({
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-900">
-                            Год
+                            {t("advances.year")}
                             <span className="text-red-500 ml-1">*</span>
                         </label>
                         <Select value={year} onValueChange={setYear}>
                             <SelectTrigger className="w-full h-12 rounded-xl">
-                                <SelectValue placeholder="Год" />
+                                <SelectValue placeholder={t("advances.yearPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {ADVANCE_YEARS.map((y) => (
@@ -304,8 +306,8 @@ const AdvanceFormModal = ({
                 </div>
 
                 <CustomTextarea
-                    label="Комментарий"
-                    placeholder="Необязательно, до 255 символов"
+                    label={t("advances.commentLabel")}
+                    placeholder={t("advances.commentPlaceholder")}
                     value={comment}
                     onChange={setComment}
                     rows={2}

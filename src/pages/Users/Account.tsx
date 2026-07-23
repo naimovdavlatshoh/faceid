@@ -32,6 +32,7 @@ import {
 } from "@/services/data";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
+import { useTranslation, Trans } from "react-i18next";
 import { formatNumber, parseNumber } from "@/utils/formatters";
 
 async function prepareFaceImage(
@@ -76,6 +77,7 @@ async function prepareFaceImage(
 }
 
 const Account = () => {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
@@ -225,7 +227,7 @@ const Account = () => {
         }
 
         if (file.size > 20 * 1024 * 1024) {
-            toast.error("Размер файла не должен превышать 20 МБ");
+            toast.error(t("account.imageTooLarge"));
             // Reset input value
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
@@ -234,7 +236,7 @@ const Account = () => {
         }
 
         if (!file.type.startsWith("image/")) {
-            toast.error("Пожалуйста, выберите изображение");
+            toast.error(t("account.selectImage"));
             // Reset input value
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
@@ -250,7 +252,7 @@ const Account = () => {
                 prepared = await prepareFaceImage(file);
             } catch (prepareError) {
                 console.error("Error preparing image:", prepareError);
-                toast.error("Не удалось обработать изображение");
+                toast.error(t("account.prepareFail"));
                 return;
             }
 
@@ -268,13 +270,13 @@ const Account = () => {
             setAvatarSrc(url);
             setHasExistingImage(true);
 
-            toast.success("Изображение успешно загружено");
+            toast.success(t("account.imageUploaded"));
         } catch (error: any) {
             console.error("Error uploading image:", error);
             toast.error(
                 error.response?.data?.error ||
                     error.response?.data?.message ||
-                    "Ошибка загрузки изображения",
+                    t("account.imageUploadError"),
             );
         } finally {
             setIsUploading(false);
@@ -374,7 +376,7 @@ const Account = () => {
             !formData.salary.trim() ||
             !formData.positionId
         ) {
-            toast.error("Пожалуйста, заполните все обязательные поля");
+            toast.error(t("createUser.fillRequired"));
             return;
         }
 
@@ -414,13 +416,13 @@ const Account = () => {
 
             await PostDataTokenJson(`api/faceid/user/update/${id}`, submitData);
 
-            toast.success("Данные успешно обновлены");
+            toast.success(t("account.updated"));
         } catch (error: any) {
             console.error("Error updating user:", error);
             toast.error(
                 error.response?.data?.error ||
                     error.response?.data?.message ||
-                    "Ошибка обновления данных",
+                    t("account.updateError"),
             );
         } finally {
             setIsSubmitting(false);
@@ -433,8 +435,8 @@ const Account = () => {
         try {
             setIsDeleting(true);
             await DeleteFaceIdUser(parseInt(id));
-            toast.success("Сотрудник удалён", {
-                description: `${formData.fullName} успешно удалён.`,
+            toast.success(t("account.deleted"), {
+                description: t("account.deletedDesc", { name: formData.fullName }),
                 duration: 2500,
             });
             navigate("/users");
@@ -442,7 +444,7 @@ const Account = () => {
             console.error("Error deleting user:", error);
             toast.error(
                 error?.response?.data?.message ||
-                    "Не удалось удалить сотрудника",
+                    t("account.deleteFail"),
             );
         } finally {
             setIsDeleting(false);
@@ -460,7 +462,7 @@ const Account = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-semibold text-slate-900 ">
-                        Аккаунт
+                        {t("account.title")}
                     </h1>
                 </div>
             </div>
@@ -468,8 +470,8 @@ const Account = () => {
             {/* Breadcrumb */}
             <CustomBreadcrumb
                 items={[
-                    { label: "Панель управления", href: "/" },
-                    { label: "Пользователи", href: "/users" },
+                    { label: t("common.controlPanel"), href: "/" },
+                    { label: t("account.crumbUsers"), href: "/users" },
                     { label: formData.fullName, isActive: true },
                 ]}
             />
@@ -488,7 +490,7 @@ const Account = () => {
                                     }`}
                                     onClick={handleAvatarClick}
                                     role="button"
-                                    aria-label="Загрузить фото"
+                                    aria-label={t("account.uploadPhoto")}
                                 >
                                     {isUploading ? (
                                         <div className="w-full h-full rounded-full bg-slate-100  flex items-center justify-center">
@@ -511,7 +513,7 @@ const Account = () => {
                                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center text-white">
                                                 <MdCameraAlt className="w-6 h-6 mb-1" />
                                                 <span className="text-xs">
-                                                    Загрузить фото
+                                                    {t("account.uploadPhoto")}
                                                 </span>
                                             </div>
                                         </>
@@ -528,7 +530,7 @@ const Account = () => {
 
                                 {/* File Info */}
                                 <div className="text-center text-sm text-slate-500 ">
-                                    <p>*.jpg, *.png — сожмётся автоматически</p>
+                                    <p>{t("account.photoHint")}</p>
                                 </div>
                                 {/* <div className="flex items-center space-x-2">
                                     <Switch id="airplane-mode" />
@@ -541,7 +543,7 @@ const Account = () => {
                                     disabled={isDeleting}
                                     className="mt-4 w-3/4 rounded-xl bg-red-100 text-red-600 py-3 font-medium hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Удалить пользователя
+                                    {t("account.deleteUser")}
                                 </button>
                             </div>
                         </CardContent>
@@ -550,19 +552,19 @@ const Account = () => {
                     <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm ">
                         <CardHeader>
                             <CardTitle className="text-base font-semibold text-slate-900 ">
-                                Информация
+                                {t("account.info")}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-500">Смена</span>
+                                <span className="text-slate-500">{t("account.shift")}</span>
                                 <span className="text-slate-900  font-medium">
                                     {formData.displayShiftName || "—"}
                                 </span>
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-500">
-                                    Тип зарплаты
+                                    {t("account.salaryType")}
                                 </span>
                                 <span className="text-slate-900  font-medium">
                                     {formData.displaySalaryTypeText || "—"}
@@ -570,7 +572,7 @@ const Account = () => {
                             </div>
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-500">
-                                    Тип выходного
+                                    {t("account.dayOffType")}
                                 </span>
                                 <span className="text-slate-900  font-medium">
                                     {formData.displayDayOffTypeText || "—"}
@@ -579,11 +581,11 @@ const Account = () => {
                             {dayOffItemsList.length > 0 && (
                                 <div className="pt-1">
                                     <span className="text-xs text-slate-500">
-                                        Выходные
+                                        {t("account.daysOff")}
                                     </span>
                                     <div className="mt-2 text-sm text-slate-900 ">
                                         {(() => {
-                                            const t = formData.dayOffType;
+                                            const offType = formData.dayOffType;
                                             const hasMonthly =
                                                 Array.isArray(dayOffItemsRaw) &&
                                                 dayOffItemsRaw.some(
@@ -598,36 +600,23 @@ const Account = () => {
                                                 );
 
                                             const isWeekly =
-                                                String(t) === "1" || hasWeekly;
+                                                String(offType) === "1" ||
+                                                hasWeekly;
 
-                                            // Explicit monthly text with ordinals when type is 0
                                             if (
-                                                String(t) === "0" &&
+                                                String(offType) === "0" &&
                                                 dayOffItemsList.length > 0
                                             ) {
-                                                const parts =
-                                                    dayOffItemsList.map(
-                                                        (n) => `${n}-го`,
-                                                    );
-                                                const humanList =
-                                                    parts.length === 1
-                                                        ? parts[0]
-                                                        : parts.length === 2
-                                                          ? `${parts[0]} и ${parts[1]}`
-                                                          : `${parts
-                                                                .slice(0, -1)
-                                                                .join(
-                                                                    ", ",
-                                                                )} и ${
-                                                                parts[
-                                                                    parts.length -
-                                                                        1
-                                                                ]
-                                                            }`;
                                                 return (
                                                     <span>
-                                                        {humanList} числа
-                                                        каждого месяца
+                                                        {t(
+                                                            "account.daysOffMonthlyOrdinal",
+                                                            {
+                                                                list: dayOffItemsList.join(
+                                                                    ", ",
+                                                                ),
+                                                            },
+                                                        )}
                                                     </span>
                                                 );
                                             }
@@ -635,36 +624,33 @@ const Account = () => {
                                             if (hasMonthly) {
                                                 return (
                                                     <span>
-                                                        Каждого месяца:{" "}
-                                                        {dayOffItemsList.join(
-                                                            ", ",
+                                                        {t(
+                                                            "account.daysOffMonthly",
+                                                            {
+                                                                list: dayOffItemsList.join(
+                                                                    ", ",
+                                                                ),
+                                                            },
                                                         )}
                                                     </span>
                                                 );
                                             }
 
                                             if (isWeekly) {
-                                                const map: Record<
-                                                    number,
-                                                    string
-                                                > = {
-                                                    1: "Пн",
-                                                    2: "Вт",
-                                                    3: "Ср",
-                                                    4: "Чт",
-                                                    5: "Пт",
-                                                    6: "Сб",
-                                                    7: "Вс",
-                                                };
                                                 const names =
-                                                    dayOffItemsList.map(
-                                                        (n) =>
-                                                            map[n] || String(n),
+                                                    dayOffItemsList.map((n) =>
+                                                        t(`days.short.${n}`),
                                                     );
                                                 return (
                                                     <span>
-                                                        Выходные дни:{" "}
-                                                        {names.join(", ")}
+                                                        {t(
+                                                            "account.daysOffWeekly",
+                                                            {
+                                                                list: names.join(
+                                                                    ", ",
+                                                                ),
+                                                            },
+                                                        )}
                                                     </span>
                                                 );
                                             }
@@ -686,7 +672,7 @@ const Account = () => {
                 <Card className="bg-white  rounded-2xl shadow-lg border lg:col-span-2 border-slate-100  flex flex-col">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold text-slate-900 ">
-                            Данные пользователя
+                            {t("account.userData")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1">
@@ -702,12 +688,12 @@ const Account = () => {
                                             htmlFor="fullName"
                                             className="text-sm font-medium text-slate-700 "
                                         >
-                                            Имя
+                                            {t("createUser.name")}
                                         </Label>
                                         <Input
                                             id="fullName"
                                             type="text"
-                                            placeholder="Введите имя"
+                                            placeholder={t("createUser.namePlaceholder")}
                                             value={formData.fullName}
                                             onChange={(e) =>
                                                 handleInputChange(
@@ -721,8 +707,8 @@ const Account = () => {
                                     {/* Salary Type */}
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Тип зарплаты"
-                                            placeholder="Выберите тип зарплаты"
+                                            label={t("createUser.salaryType")}
+                                            placeholder={t("createUser.salaryTypePlaceholder")}
                                             value={formData.salaryType}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -731,15 +717,10 @@ const Account = () => {
                                                 )
                                             }
                                             options={[
-                                                { value: "1", label: "Ойлик" },
-                                                // {
-                                                //     value: "2",
-                                                //     label: "Хафталик",
-                                                // },
-                                                // { value: "3", label: "Кунлик" },
+                                                { value: "1", label: t("createUser.salaryMonthly") },
                                                 {
                                                     value: "4",
-                                                    label: "Соатлик",
+                                                    label: t("createUser.salaryHourly"),
                                                 },
                                             ]}
                                         />
@@ -748,7 +729,7 @@ const Account = () => {
                                     {/* day off type */}
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium text-slate-700 ">
-                                            Тип выходного
+                                            {t("createUser.dayOffType")}
                                         </Label>
                                         <Select
                                             value={formData.dayOffType}
@@ -777,17 +758,17 @@ const Account = () => {
                                             }}
                                         >
                                             <SelectTrigger className="h-12 rounded-xl">
-                                                <SelectValue placeholder="Выберите тип выходного" />
+                                                <SelectValue placeholder={t("createUser.dayOffTypePlaceholder")} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="0">
-                                                    Гибридный (по датам)
+                                                    {t("createUser.dayOffHybrid")}
                                                 </SelectItem>
                                                 <SelectItem value="1">
-                                                    Стандарт (по дням недели)
+                                                    {t("createUser.dayOffStandard")}
                                                 </SelectItem>
                                                 <SelectItem value="2">
-                                                    Без выходных
+                                                    {t("createUser.dayOffNone")}
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -797,18 +778,17 @@ const Account = () => {
                                     "2" ? null : formData.dayOffType === "1" ? (
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium text-slate-700 ">
-                                                Дни недели выходных (можно
-                                                несколько)
+                                                {t("createUser.weekdaysLabel")}
                                             </Label>
                                             <div className="flex flex-wrap gap-2">
                                                 {[
-                                                    { v: "1", l: "Пн" },
-                                                    { v: "2", l: "Вт" },
-                                                    { v: "3", l: "Ср" },
-                                                    { v: "4", l: "Чт" },
-                                                    { v: "5", l: "Пт" },
-                                                    { v: "6", l: "Сб" },
-                                                    { v: "7", l: "Вс" },
+                                                    { v: "1" },
+                                                    { v: "2" },
+                                                    { v: "3" },
+                                                    { v: "4" },
+                                                    { v: "5" },
+                                                    { v: "6" },
+                                                    { v: "7" },
                                                 ].map((d) => {
                                                     const active =
                                                         formData.dayOffWeekdays.includes(
@@ -845,7 +825,7 @@ const Account = () => {
                                                                 )
                                                             }
                                                         >
-                                                            {d.l}
+                                                            {t(`days.short.${d.v}`)}
                                                         </Button>
                                                     );
                                                 })}
@@ -854,13 +834,13 @@ const Account = () => {
                                     ) : (
                                         <div className="space-y-2">
                                             <Label className="text-sm font-medium text-slate-700 ">
-                                                Даты выходных (1-27)
+                                                {t("createUser.datesLabel")}
                                             </Label>
                                             <div className="flex gap-2 items-center">
                                                 <Input
                                                     id="dayoff-input"
                                                     type="number"
-                                                    placeholder="напр. 6"
+                                                    placeholder={t("createUser.datePlaceholder")}
                                                     className="h-10 rounded-xl w-24"
                                                 />
                                                 <Button
@@ -884,7 +864,7 @@ const Account = () => {
                                                             num > max
                                                         ) {
                                                             toast.error(
-                                                                `Недопустимое значение (1-${max})`,
+                                                                t("createUser.invalidValue", { max }),
                                                             );
                                                             return;
                                                         }
@@ -958,8 +938,8 @@ const Account = () => {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <CustomCombobox
-                                            label="Смена"
-                                            placeholder="Выберите смену"
+                                            label={t("createUser.shift")}
+                                            placeholder={t("createUser.shiftPlaceholder")}
                                             value={formData.shiftId}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -983,8 +963,8 @@ const Account = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <SearchableCombobox
-                                            label="Должность"
-                                            placeholder="Выберите должность"
+                                            label={t("createUser.position")}
+                                            placeholder={t("createUser.positionPlaceholder")}
                                             value={formData.positionId}
                                             onChange={(value) =>
                                                 handleInputChange(
@@ -1015,7 +995,7 @@ const Account = () => {
                                             htmlFor="salary"
                                             className="text-sm font-medium text-slate-700 "
                                         >
-                                            Зарплата
+                                            {t("createUser.salary")}
                                         </Label>
                                         <Input
                                             id="salary"
@@ -1042,7 +1022,7 @@ const Account = () => {
                                 variant="outline"
                                 className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                             >
-                                Назад
+                                {t("common.back")}
                             </Button>
                         </Link>
                         <Button
@@ -1054,10 +1034,10 @@ const Account = () => {
                             {isSubmitting ? (
                                 <div className="flex items-center space-x-2">
                                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span>Обновление...</span>
+                                    <span>{t("account.submitting")}</span>
                                 </div>
                             ) : (
-                                "Обновить данные"
+                                t("account.submit")
                             )}
                         </Button>
                     </CardFooter>
@@ -1069,9 +1049,9 @@ const Account = () => {
                 showTrigger={false}
                 open={isDeleteOpen}
                 onOpenChange={setIsDeleteOpen}
-                title="Подтверждение удаления"
-                confirmText={isDeleting ? "Удаление..." : "Удалить"}
-                cancelText="Отмена"
+                title={t("common.confirmDeleteTitle")}
+                confirmText={isDeleting ? t("common.deleting") : t("common.delete")}
+                cancelText={t("common.cancel")}
                 confirmBg="bg-red-500"
                 confirmBgHover="bg-red-500/70"
                 onConfirm={handleConfirmDelete}
@@ -1085,25 +1065,25 @@ const Account = () => {
                             onClick={handleCancelDelete}
                             disabled={isDeleting}
                         >
-                            Отмена
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             onClick={handleConfirmDelete}
                             disabled={isDeleting}
                             className="bg-red-500 hover:bg-red-500/70 text-white"
                         >
-                            {isDeleting ? "Удаление..." : "Удалить"}
+                            {isDeleting ? t("common.deleting") : t("common.delete")}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-2">
                     <p className="text-sm text-slate-600 ">
-                        Вы уверены, что хотите удалить сотрудника{" "}
-                        <span className="font-semibold text-slate-900 ">
-                            {formData.fullName}
-                        </span>
-                        ? Это действие нельзя отменить.
+                        <Trans
+                            i18nKey="account.deleteConfirm"
+                            values={{ name: formData.fullName }}
+                            components={{ 1: <span className="font-semibold text-slate-900 " /> }}
+                        />
                     </p>
                 </div>
             </CustomModal>

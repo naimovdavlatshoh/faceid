@@ -32,6 +32,7 @@ import CustomModal from "@/components/ui/custom-modal";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation, Trans } from "react-i18next";
 import { IoMdAdd } from "react-icons/io";
 import { HiDotsVertical } from "react-icons/hi";
 import { GrEdit } from "react-icons/gr";
@@ -63,6 +64,7 @@ interface EmployeeOption {
 const ALL = "all";
 
 const Advances = () => {
+    const { t } = useTranslation();
     const [advances, setAdvances] = useState<Advance[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -105,7 +107,7 @@ const Advances = () => {
             setTotal(data?.total || 0);
         } catch (error) {
             console.error("Error fetching advances:", error);
-            toast.error("Ошибка загрузки авансов");
+            toast.error(t("advances.loadError"));
             setAdvances([]);
         } finally {
             setLoading(false);
@@ -201,7 +203,7 @@ const Advances = () => {
         if (!toDelete) return;
         try {
             await DeleteAdvance(toDelete.id);
-            toast.success("Аванс удалён");
+            toast.success(t("advances.deleted"));
             // если удалили последний элемент на странице — вернёмся назад
             const nextPage =
                 advances.length === 1 && currentPage > 1
@@ -212,7 +214,7 @@ const Advances = () => {
         } catch (error: any) {
             console.error("Error deleting advance:", error);
             toast.error(
-                error?.response?.data?.error || "Ошибка удаления аванса"
+                error?.response?.data?.error || t("advances.deleteError")
             );
         } finally {
             setDeleteOpen(false);
@@ -232,20 +234,20 @@ const Advances = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
-                            Авансы
+                            {t("advances.title")}
                         </h1>
                     </div>
                     <Button
                         onClick={openCreate}
                         className="w-full sm:w-auto bg-black text-white duration-300 hover:bg-black/70 rounded-xl"
                     >
-                        <IoMdAdd className="w-3 h-3" /> Добавить
+                        <IoMdAdd className="w-3 h-3" /> {t("common.add")}
                     </Button>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Авансы", isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.advances"), isActive: true },
                     ]}
                 />
             </div>
@@ -256,10 +258,10 @@ const Advances = () => {
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:flex lg:flex-wrap lg:items-end">
                             <div className="col-span-2 sm:col-span-2 lg:w-56">
                                 <SearchableCombobox
-                                    label="Сотрудник"
-                                    placeholder="Все сотрудники"
-                                    searchPlaceholder="Поиск сотрудников..."
-                                    emptyMessage="Сотрудники не найдены"
+                                    label={t("advances.employee")}
+                                    placeholder={t("advances.allEmployees")}
+                                    searchPlaceholder={t("advances.searchEmployeePlaceholder")}
+                                    emptyMessage={t("advances.employeeNotFound")}
                                     value={filterEmployee}
                                     onChange={setFilterEmployee}
                                     onSearch={handleEmployeeSearch}
@@ -272,7 +274,7 @@ const Advances = () => {
                             </div>
                             <div className="space-y-2 lg:w-36">
                                 <label className="text-sm font-medium text-gray-900">
-                                    Месяц
+                                    {t("advances.month")}
                                 </label>
                                 <Select
                                     value={filterMonth}
@@ -282,13 +284,13 @@ const Advances = () => {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={ALL}>Все</SelectItem>
+                                        <SelectItem value={ALL}>{t("common.all")}</SelectItem>
                                         {ADVANCE_MONTHS.map((m) => (
                                             <SelectItem
                                                 key={m.value}
                                                 value={m.value}
                                             >
-                                                {m.name}
+                                                {t(m.labelKey)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -296,7 +298,7 @@ const Advances = () => {
                             </div>
                             <div className="space-y-2 lg:w-28">
                                 <label className="text-sm font-medium text-gray-900">
-                                    Год
+                                    {t("advances.year")}
                                 </label>
                                 <Select
                                     value={filterYear}
@@ -306,7 +308,7 @@ const Advances = () => {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={ALL}>Все</SelectItem>
+                                        <SelectItem value={ALL}>{t("common.all")}</SelectItem>
                                         {ADVANCE_YEARS.map((y) => (
                                             <SelectItem
                                                 key={y}
@@ -320,7 +322,7 @@ const Advances = () => {
                             </div>
                             <div className="space-y-2 lg:w-40">
                                 <label className="text-sm font-medium text-gray-900">
-                                    Способ
+                                    {t("advances.method")}
                                 </label>
                                 <Select
                                     value={filterMethod}
@@ -330,13 +332,13 @@ const Advances = () => {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value={ALL}>Все</SelectItem>
+                                        <SelectItem value={ALL}>{t("common.all")}</SelectItem>
                                         {PAYMENT_METHODS.map((m) => (
                                             <SelectItem
                                                 key={m.value}
                                                 value={m.value}
                                             >
-                                                {m.name}
+                                                {t(m.labelKey)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -349,7 +351,7 @@ const Advances = () => {
                                 onClick={resetFilters}
                                 className="rounded-xl h-12 lg:h-10 shrink-0"
                             >
-                                Сбросить фильтры
+                                {t("advances.resetFilters")}
                             </Button>
                         )}
                     </div>
@@ -359,25 +361,25 @@ const Advances = () => {
                         <TableHeader className="bg-slate-50/80">
                             <TableRow>
                                 <TableHead className="text-slate-500">
-                                    Сотрудник
+                                    {t("advances.employee")}
                                 </TableHead>
                                 <TableHead className="text-slate-500">
-                                    Период
+                                    {t("advances.colPeriod")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 text-right">
-                                    Сумма
+                                    {t("advances.colAmount")}
                                 </TableHead>
                                 <TableHead className="text-slate-500">
-                                    Способ
+                                    {t("advances.method")}
                                 </TableHead>
                                 <TableHead className="text-slate-500">
-                                    Комментарий
+                                    {t("advances.colComment")}
                                 </TableHead>
                                 <TableHead className="text-slate-500">
-                                    Создан
+                                    {t("advances.colCreated")}
                                 </TableHead>
                                 <TableHead className="text-right text-slate-500">
-                                    Действия
+                                    {t("common.actions")}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -391,7 +393,7 @@ const Advances = () => {
                                         <div className="flex items-center justify-center space-x-2">
                                             <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
                                             <span className="text-slate-500">
-                                                Загрузка...
+                                                {t("common.loading")}
                                             </span>
                                         </div>
                                     </TableCell>
@@ -403,8 +405,8 @@ const Advances = () => {
                                         className="text-center py-8 text-slate-500"
                                     >
                                         {hasActiveFilters
-                                            ? "Авансы по выбранным фильтрам не найдены"
-                                            : "Нет авансов"}
+                                            ? t("advances.notFoundFiltered")
+                                            : t("advances.empty")}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -473,7 +475,7 @@ const Advances = () => {
                                                     >
                                                         <GrEdit className="w-4 h-4" />
                                                         <span>
-                                                            Редактировать
+                                                            {t("common.edit")}
                                                         </span>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -483,7 +485,7 @@ const Advances = () => {
                                                         }
                                                     >
                                                         <CiTrash className="w-4 h-4" />
-                                                        <span>Удалить</span>
+                                                        <span>{t("common.delete")}</span>
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -497,7 +499,7 @@ const Advances = () => {
                 <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
                         <label className="text-slate-500 text-sm whitespace-nowrap">
-                            Строк на странице:
+                            {t("common.rowsPerPage")}
                         </label>
                         <Select
                             value={itemsPerPage.toString()}
@@ -514,7 +516,7 @@ const Advances = () => {
                             </SelectContent>
                         </Select>
                         <span className="text-slate-400 text-sm whitespace-nowrap ml-2">
-                            Всего: {total}
+                            {t("common.total")} {total}
                         </span>
                     </div>
                     <CustomPagination
@@ -538,9 +540,9 @@ const Advances = () => {
                 showTrigger={false}
                 open={deleteOpen}
                 onOpenChange={setDeleteOpen}
-                title="Подтверждение удаления"
-                confirmText="Удалить"
-                cancelText="Отмена"
+                title={t("common.confirmDeleteTitle")}
+                confirmText={t("common.delete")}
+                cancelText={t("common.cancel")}
                 confirmBg="bg-red-500"
                 confirmBgHover="bg-red-500/70"
                 onConfirm={handleConfirmDelete}
@@ -553,15 +555,17 @@ const Advances = () => {
             >
                 <div className="space-y-2">
                     <p className="text-sm text-slate-600">
-                        Удалить аванс{" "}
-                        <span className="font-semibold text-slate-900">
-                            {toDelete ? formatSum(toDelete.amount) : ""} сум
-                        </span>{" "}
-                        для{" "}
-                        <span className="font-semibold text-slate-900">
-                            {toDelete?.employee_name}
-                        </span>
-                        ? Это действие нельзя отменить.
+                        <Trans
+                            i18nKey="advances.deleteConfirm"
+                            values={{
+                                amount: toDelete ? formatSum(toDelete.amount) : "",
+                                name: toDelete?.employee_name,
+                            }}
+                            components={{
+                                1: <span className="font-semibold text-slate-900" />,
+                                3: <span className="font-semibold text-slate-900" />,
+                            }}
+                        />
                     </p>
                 </div>
             </CustomModal>

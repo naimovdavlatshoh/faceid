@@ -125,6 +125,19 @@ Payments, Products, Attendance, `DeleteFaceIdUser`, и весь блок `SuperA
   расширение), поле формы — `image`.
 - **UI-компоненты** — переиспользовать из `components/ui` (shadcn/Radix), не плодить
   собственные аналоги.
+- **Локализация (i18n)** — `react-i18next`. Все тексты кабинета клиента идут через
+  `const { t } = useTranslation()` + `t("namespace.key")`; словари —
+  `src/i18n/locales/{ru,uz}.ts` (ключи вложены по страницам: `common`, `nav`, `login`,
+  `dashboard`, `users`, `createUser`, `account`, `shifts`, `positions`, `advances`,
+  `report`, `combobox`, `days`, `months`, ...). **Не хардкодить строки** — добавляй ключ
+  в **оба** файла (`uz.ts` типизирован `Resources = typeof ru`, tsc поймает расхождение).
+  Разметку внутри текста (жирный `<span>` в подтверждениях удаления) верстать через
+  `<Trans i18nKey=... components={{1: <span/>}}/>`. Даты словами — хелперы
+  `src/i18n/dateFormat.ts` (`formatFullDate`/`formatDayMonth`/`formatWeekday`): для `ru`
+  через `Intl` (`ru-RU`), для `uz` — из словарей `months`/`days` (латиница). Числовые
+  даты в таблицах (`toLocaleDateString("ru-RU")` → `dd.mm.yyyy`) не трогаем — формат
+  языконезависим. Переключатель языка — `components/LanguageSwitcher.tsx` в `Navbar`;
+  выбор хранится в `localStorage["lang"]` (default `ru`). Узбекский — **латиница**.
 
 ---
 
@@ -142,6 +155,17 @@ Payments, Products, Attendance, `DeleteFaceIdUser`, и весь блок `SuperA
   согласования).
 - **Нет глобального стора** — состояние дублируется по страницам; для сложных
   экранов возможна рассинхронизация. Пока приемлемо.
+- **`npm run lint` не работает** — в `.eslintrc.cjs` ссылки `@typescript-eslint/recommended`
+  без префикса `plugin:` → eslint падает с «couldn't find the config». Плагин
+  `eslint-plugin-react-hooks` в конфиге не подключён, поэтому `exhaustive-deps` не
+  проверяется. Реальный гейт качества — `npm run build` (`tsc && vite build`). **Не
+  чинил** (вне задачи) — при желании: `plugin:@typescript-eslint/recommended`.
+- **i18n — переведён только кабинет клиента.** Суперадминка (`/admin`, `pages/Admin/*`,
+  `layout/Admin*`, `components/AddUserModal.tsx`, `components/admin/*`) осталась на
+  русском по решению заказчика. Технические `throw new Error(...)` в `prepareFaceImage`
+  (`Account.tsx`) не локализованы — уходят только в `console`, в UI не видны.
+- **`uz-Latn` в `Intl`** намеренно не используется (ненадёжная поддержка в браузерах) —
+  узбекские даты словами собираются из собственных словарей `months`/`days`.
 
 ---
 
@@ -149,5 +173,6 @@ Payments, Products, Attendance, `DeleteFaceIdUser`, и весь блок `SuperA
 
 | Дата | Что и зачем | Файлы |
 |---|---|---|
+| 2026-07-23 | **Локализация кабинета клиента (RU + узбекская латиница)** на `react-i18next`. Добавлены зависимости `i18next` + `react-i18next`. Инфраструктура: `src/i18n/index.ts` (init, языки `ru`/`uz`, fallback `ru`, чтение/запись `localStorage["lang"]`), `locales/ru.ts` + `locales/uz.ts` (uz типизирован `Resources = typeof ru`), `dateFormat.ts` (даты словами по языку), `components/LanguageSwitcher.tsx` (глобус RU/UZ в `Navbar`). Все хардкод-строки кабинета вынесены в `t(...)` (страницы Auth/Dashboard/Users/Shifts/Position/Advances + модалки + `layout/Sidebar,Navbar` + `components/ui/searchable-combobox`). Числовые даты в таблицах и `services/data.ts` (только комментарии) не трогали. Проверено сборкой (`tsc && vite build`) и в браузере (переключение RU↔UZ на логине). `/admin` **не** локализован (по решению заказчика). См. §5 (i18n) и §6. | `src/i18n/*`, `src/components/LanguageSwitcher.tsx`, `src/main.tsx`, `src/layout/{Navbar,Sidebar}.tsx`, `src/components/ui/searchable-combobox.tsx`, `src/pages/{Auth/Login,Dashboard,Users/*,Shifts/*,Position/*,Advances/*}`, `package.json` |
 | 2026-07-10 | **Клиентское сжатие фото сотрудника** перед загрузкой (разгрузка бэкенда / memory_limit PHP). Добавлена модульная функция `prepareFaceImage`: `createImageBitmap` → даунскейл до 720px по длинной стороне → canvas с белым фоном → подбор качества JPEG 0.9→0.7 до ≤200 КБ → `File("face.jpg", image/jpeg)`. Добавлена защита памяти вкладки: при разрешении > 40 Мпикс — ранний throw (иначе большой исходник может уронить вкладку). В `handleAvatarChange`: лимит исходника 3 МБ → **20 МБ**, сжатие в отдельном try/catch (при ошибке toast + return), в FormData и превью идёт сжатый файл. Подсказка под аватаром обновлена. Эндпоинты не менялись (`uploadimage`/`updateimage`, поле `image`). | `src/pages/Users/Account.tsx` |
 | 2026-07-10 | Создана карта фронтенд-проекта (правило 8): стек, роли/localStorage, структура, слой API, договорённости, аномалии. | `skill/PROJECT.md` |

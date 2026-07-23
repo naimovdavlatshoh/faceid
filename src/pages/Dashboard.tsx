@@ -8,7 +8,9 @@ import {
     // FiDownload,
 } from "react-icons/fi";
 import { MdOutlineEventAvailable } from "react-icons/md";
+import { useTranslation } from "react-i18next";
 import { GetDailyAttendance } from "@/services/data";
+import { formatFullDate } from "@/i18n/dateFormat";
 import { DatePicker } from "@/components/ui/date-picker";
 // import {
 //     Select,
@@ -107,18 +109,10 @@ type AttendanceItem = AttendanceData["attendance"][number];
 //     { name: "Декабрь",  value: "12" },
 // ];
 
-const statusCfg: Record<AttendanceItem["status"], { label: string; badge: string; dot: string }> = {
-    present: { label: "На месте",    badge: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" },
-    late:    { label: "Опоздал",     badge: "bg-amber-50  text-amber-700  border-amber-100",    dot: "bg-amber-400"  },
-    absent:  { label: "Отсутствует", badge: "bg-red-50    text-red-600    border-red-100",       dot: "bg-red-400"    },
-};
-
-const statLabels: Record<keyof AttendanceData["statistics"], string> = {
-    on_time: "Вовремя",
-    late:    "Опоздали",
-    absent:  "Отсутствуют",
-    day_off: "Выходной",
-    present: "На месте",
+const statusCfg: Record<AttendanceItem["status"], { badge: string; dot: string }> = {
+    present: { badge: "bg-emerald-50 text-emerald-700 border-emerald-100", dot: "bg-emerald-500" },
+    late:    { badge: "bg-amber-50  text-amber-700  border-amber-100",    dot: "bg-amber-400"  },
+    absent:  { badge: "bg-red-50    text-red-600    border-red-100",       dot: "bg-red-400"    },
 };
 
 const statBarColor: Record<string, string> = {
@@ -136,6 +130,7 @@ const today = () => fmt(new Date());
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Dashboard = () => {
+    const { t, i18n } = useTranslation();
     const [loading,        setLoading]        = useState(true);
     const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(null);
     const [error,          setError]          = useState<string | null>(null);
@@ -163,7 +158,7 @@ const Dashboard = () => {
                 const data = await GetDailyAttendance(selectedDate, currentPage);
                 setAttendanceData(data);
             } catch (err: any) {
-                setError(err?.response?.data?.message || "Не удалось загрузить данные посещаемости");
+                setError(err?.response?.data?.message || t("dashboard.loadError"));
             } finally {
                 setLoading(false);
             }
@@ -213,27 +208,27 @@ const Dashboard = () => {
         const s     = attendanceData.statistics ?? { on_time: 0, late: 0, absent: 0, day_off: 0, present: 0 };
         const pct   = (n: number) => (total > 0 ? `${Math.round((n / total) * 100)}%` : "0%");
         return [
-            { label: "Все сотрудники",  value: total,       icon: FiUsers,              pct: `Всего ${total}`,    color: "text-blue-600",    bg: "bg-blue-50"    },
-            { label: "Пришли вовремя",  value: s.on_time,   icon: FiUserCheck,          pct: pct(s.on_time),      color: "text-emerald-600", bg: "bg-emerald-50" },
-            { label: "Опоздавшие",      value: s.late,      icon: FiClock,              pct: pct(s.late),         color: "text-amber-600",   bg: "bg-amber-50"   },
-            { label: "Не пришли",       value: s.absent,    icon: FiUserX,              pct: pct(s.absent),       color: "text-red-600",     bg: "bg-red-50"     },
-            { label: "На выходном",     value: s.day_off,   icon: MdOutlineEventAvailable, pct: pct(s.day_off),  color: "text-slate-600",   bg: "bg-slate-100"  },
+            { label: t("dashboard.stat.allEmployees"), value: total,     icon: FiUsers,                 pct: t("dashboard.stat.allEmployeesPct", { count: total }), color: "text-blue-600",    bg: "bg-blue-50"    },
+            { label: t("dashboard.stat.onTime"),       value: s.on_time, icon: FiUserCheck,             pct: pct(s.on_time),                                       color: "text-emerald-600", bg: "bg-emerald-50" },
+            { label: t("dashboard.stat.late"),         value: s.late,    icon: FiClock,                 pct: pct(s.late),                                          color: "text-amber-600",   bg: "bg-amber-50"   },
+            { label: t("dashboard.stat.absent"),       value: s.absent,  icon: FiUserX,                 pct: pct(s.absent),                                        color: "text-red-600",     bg: "bg-red-50"     },
+            { label: t("dashboard.stat.dayOff"),       value: s.day_off, icon: MdOutlineEventAvailable, pct: pct(s.day_off),                                       color: "text-slate-600",   bg: "bg-slate-100"  },
         ];
-    }, [attendanceData]);
+    }, [attendanceData, t]);
 
     const formattedDate = useMemo(() => {
         if (!attendanceData?.date) return "";
         const p = new Date(attendanceData.date);
         if (Number.isNaN(p.getTime())) return "";
-        try { return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "long", year: "numeric" }).format(p); }
+        try { return formatFullDate(p); }
         catch { return ""; }
-    }, [attendanceData]);
+    }, [attendanceData, i18n.language]);
 
     // ── Loading / error states ────────────────────────────────────────────────
     if (loading) return (
         <div className="h-[70vh] flex flex-col items-center justify-center gap-3">
             <div className="w-7 h-7 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
-            <p className="text-[12px] text-slate-400 font-medium">Загрузка данных...</p>
+            <p className="text-[12px] text-slate-400 font-medium">{t("common.loadingData")}</p>
         </div>
     );
 
@@ -242,14 +237,14 @@ const Dashboard = () => {
             <p className="text-red-500 text-[14px]">{error}</p>
             <button onClick={() => setSelectedDate(today())}
                 className="px-4 py-2 bg-blue-600 text-white text-[13px] rounded-lg hover:bg-blue-700 transition-colors">
-                Попробовать снова
+                {t("common.tryAgain")}
             </button>
         </div>
     );
 
     if (!attendanceData) return (
         <div className="h-[70vh] flex items-center justify-center">
-            <p className="text-slate-400 text-[14px]">Нет данных для отображения</p>
+            <p className="text-slate-400 text-[14px]">{t("common.noData")}</p>
         </div>
     );
 
@@ -266,13 +261,13 @@ const Dashboard = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">
-                            Посещаемость за день
+                            {t("dashboard.dayAttendance")}
                         </p>
                         <h1 className="text-[18px] font-semibold text-slate-900 mt-0.5">
                             {formattedDate}
                         </h1>
                         <p className="text-[12px] text-slate-400 mt-0.5">
-                            Всего сотрудников:{" "}
+                            {t("dashboard.totalEmployees")}{" "}
                             <span className="font-semibold text-slate-700">{totalSafe}</span>
                         </p>
                     </div>
@@ -280,7 +275,7 @@ const Dashboard = () => {
                         <DatePicker
                             date={selectedDateValue}
                             onSelect={(d) => d && setSelectedDate(fmt(d))}
-                            placeholder="Выберите дату"
+                            placeholder={t("common.selectDate")}
                             className="h-9 text-[13px] rounded-lg"
                         />
                         {/* <CustomModal
@@ -366,17 +361,17 @@ const Dashboard = () => {
                 <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm lg:col-span-2 overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                         <div>
-                            <p className="text-[13px] font-semibold text-slate-800">Список сотрудников</p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">Смена и статус каждого сотрудника</p>
+                            <p className="text-[13px] font-semibold text-slate-800">{t("dashboard.employeeList")}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">{t("dashboard.employeeListSub")}</p>
                         </div>
                         <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
-                            {listSafe.length} записей
+                            {t("dashboard.recordsCount", { count: listSafe.length })}
                         </span>
                     </div>
 
                     <div className="divide-y divide-slate-100">
                         {listSafe.length === 0 ? (
-                            <p className="py-14 text-center text-[13px] text-slate-400">Нет данных для отображения</p>
+                            <p className="py-14 text-center text-[13px] text-slate-400">{t("common.noData")}</p>
                         ) : (
                             listSafe.map((item) => {
                                 const st  = statusCfg[item.status ?? "absent"] ?? statusCfg.absent;
@@ -411,14 +406,14 @@ const Dashboard = () => {
                                         <div className="flex items-center gap-4 sm:gap-6 shrink-0">
                                             <div className="text-[12px] space-y-0.5">
                                                 <p className="text-emerald-600">
-                                                    Вход: <span className="font-medium">{item.check_in_time ?? "—"}</span>
+                                                    {t("dashboard.checkIn")} <span className="font-medium">{item.check_in_time ?? "—"}</span>
                                                 </p>
                                                 <p className="text-blue-500">
-                                                    Выход: <span className="font-medium">{item.check_out_time ?? "—"}</span>
+                                                    {t("dashboard.checkOut")} <span className="font-medium">{item.check_out_time ?? "—"}</span>
                                                 </p>
                                                 {(item.late_minutes ?? 0) > 0 && (
                                                     <p className="text-red-500 font-semibold">
-                                                        Опозд.: {item.late_minutes_text ?? `${item.late_minutes} мин`}
+                                                        {t("dashboard.lateShort")} {item.late_minutes_text ?? t("dashboard.lateMinutes", { count: item.late_minutes })}
                                                     </p>
                                                 )}
                                             </div>
@@ -427,7 +422,7 @@ const Dashboard = () => {
                                                 st.badge
                                             )}>
                                                 <span className={cn("w-1.5 h-1.5 rounded-full", st.dot)} />
-                                                {st.label}
+                                                {t(`dashboard.status.${item.status ?? "absent"}`)}
                                             </span>
                                         </div>
                                     </div>
@@ -451,7 +446,7 @@ const Dashboard = () => {
                 <div className="space-y-4">
                     {/* Status distribution */}
                     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm px-5 py-5">
-                        <p className="text-[13px] font-semibold text-slate-800">По статусам</p>
+                        <p className="text-[13px] font-semibold text-slate-800">{t("dashboard.byStatus")}</p>
                         <div className="mt-4 space-y-4">
                             {Object.entries(statsSafe).map(([key, value]) => {
                                 const pct = totalSafe > 0 ? Math.round((Number(value) / totalSafe) * 100) : 0;
@@ -459,13 +454,13 @@ const Dashboard = () => {
                                 return (
                                     <div key={key}>
                                         <div className="flex items-center justify-between mb-1.5">
-                                            <span className="text-[12px] text-slate-600">{statLabels[key as keyof typeof statsSafe]}</span>
+                                            <span className="text-[12px] text-slate-600">{t(`dashboard.statLabels.${key}`)}</span>
                                             <span className="text-[12px] font-semibold text-slate-700 tabular-nums">{pct}%</span>
                                         </div>
                                         <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
                                             <div className={cn("h-full rounded-full transition-all", barColor)} style={{ width: `${pct}%` }} />
                                         </div>
-                                        <p className="mt-1 text-[11px] text-slate-400">{value} сотрудников</p>
+                                        <p className="mt-1 text-[11px] text-slate-400">{t("dashboard.employeesCount", { count: value })}</p>
                                     </div>
                                 );
                             })}
@@ -474,10 +469,10 @@ const Dashboard = () => {
 
                     {/* Risk group placeholder */}
                     <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm px-5 py-5">
-                        <p className="text-[13px] font-semibold text-slate-800">Группа риска</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Частые опоздания или отсутствие</p>
+                        <p className="text-[13px] font-semibold text-slate-800">{t("dashboard.riskGroup")}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{t("dashboard.riskGroupSub")}</p>
                         <div className="h-20 flex items-center justify-center">
-                            <span className="text-[12px] text-slate-300 font-medium">Скоро...</span>
+                            <span className="text-[12px] text-slate-300 font-medium">{t("dashboard.soon")}</span>
                         </div>
                     </div>
                 </div>
@@ -494,7 +489,7 @@ const Dashboard = () => {
                     <div className="relative w-72 h-72 sm:w-96 sm:h-96" onClick={(e) => e.stopPropagation()}>
                         <img
                             src={modalImage}
-                            alt="Увеличенное изображение"
+                            alt={t("dashboard.zoomedImage")}
                             className="w-full h-full object-cover rounded-full shadow-2xl ring-4 ring-white/20"
                         />
                         <button

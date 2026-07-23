@@ -3,6 +3,7 @@ import { CustomInput } from "@/components/ui/custom-form";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PostDataTokenJson } from "@/services/data";
+import { useTranslation } from "react-i18next";
 
 interface ApiPosition {
     position_id: number;
@@ -24,6 +25,7 @@ const UpdatePositionModal = ({
     position,
     onSuccess,
 }: UpdatePositionModalProps) => {
+    const { t } = useTranslation();
     const [positionName, setPositionName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -37,7 +39,7 @@ const UpdatePositionModal = ({
 
     const handleUpdatePosition = async () => {
         if (!positionName.trim()) {
-            toast.error("Пожалуйста, введите название должности");
+            toast.error(t("positions.nameRequired"));
             return;
         }
 
@@ -53,8 +55,8 @@ const UpdatePositionModal = ({
                 }
             );
 
-            toast.success("Должность успешно обновлена!", {
-                description: `${positionName} была обновлена в системе.`,
+            toast.success(t("positions.updated"), {
+                description: t("positions.updatedDesc", { name: positionName }),
                 duration: 3000,
             });
 
@@ -79,11 +81,11 @@ const UpdatePositionModal = ({
             showTrigger={false}
             open={open}
             onOpenChange={onOpenChange}
-            title="Редактировать должность"
+            title={t("positions.editTitle")}
             onConfirm={handleUpdatePosition}
             onCancel={handleCancel}
-            confirmText={isSubmitting ? "Сохранение..." : "Сохранить изменения"}
-            cancelText="Отмена"
+            confirmText={isSubmitting ? t("positions.saving") : t("common.saveChanges")}
+            cancelText={t("common.cancel")}
             size="md"
             confirmBg="bg-maintx"
             confirmBgHover="bg-maintx/80"
@@ -91,8 +93,8 @@ const UpdatePositionModal = ({
         >
             <div className="space-y-4">
                 <CustomInput
-                    label="Название должности"
-                    placeholder="Введите название должности"
+                    label={t("positions.nameLabel")}
+                    placeholder={t("positions.namePlaceholder")}
                     value={positionName}
                     onChange={(value) => setPositionName(value)}
                     required

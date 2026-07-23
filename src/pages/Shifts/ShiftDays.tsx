@@ -9,18 +9,11 @@ import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { ProgressAuto } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { GetDataSimple, PostDataTokenJson } from "@/services/data";
+import { useTranslation } from "react-i18next";
 // import { PostDataTokenJson } from "@/services/data";
 
-// Day names in Russian
-const DAY_NAMES = [
-    "Понедельник",
-    "Вторник",
-    "Среда",
-    "Четверг",
-    "Пятница",
-    "Суббота",
-    "Воскресенье",
-];
+// 7 элементов недели (1..7) — подписи берутся из словаря days.full
+const DAY_NAMES = ["1", "2", "3", "4", "5", "6", "7"];
 
 interface DaySchedule {
     day_of_week: number;
@@ -64,9 +57,10 @@ interface ShiftsResponse {
 }
 
 const ShiftDays = () => {
+    const { t } = useTranslation();
     const { id, name } = useParams<{ id: string; name: string }>();
     const shiftId = id ? parseInt(id) : 1;
-    const shiftName = name || "Смена";
+    const shiftName = name || t("nav.shifts");
 
     const [days, setDays] = useState<DaySchedule[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -177,7 +171,7 @@ const ShiftDays = () => {
             }
         } catch (error) {
             console.error("Error fetching shift schedule:", error);
-            toast.error("Ошибка загрузки расписания смены");
+            toast.error(t("shifts.loadScheduleError"));
             initializeDefaultDays();
         } finally {
             setLoading(false);
@@ -245,7 +239,7 @@ const ShiftDays = () => {
 
     const handleStandardBlur = (field: "start" | "end", value: string) => {
         if (value && !validateTime(value)) {
-            toast.error("Неверный формат времени (например 18:45)");
+            toast.error(t("shifts.timeFormatExample"));
             if (field === "start") setStandardStart("");
             else setStandardEnd("");
         }
@@ -267,7 +261,7 @@ const ShiftDays = () => {
         value: string
     ) => {
         if (value && !validateTime(value)) {
-            toast.error("Неверный формат времени (например 09:30)");
+            toast.error(t("shifts.timeFormatDay"));
             handleTimeChange(dayIndex, field, "");
         }
     };
@@ -285,9 +279,7 @@ const ShiftDays = () => {
                     !validateTime(standardStart) ||
                     !validateTime(standardEnd)
                 ) {
-                    toast.error(
-                        "Заполните корректное время для стандартной смены"
-                    );
+                    toast.error(t("shifts.fillStandardTime"));
                     return;
                 }
             } else {
@@ -297,9 +289,9 @@ const ShiftDays = () => {
                 );
                 if (invalid.length > 0) {
                     const names = invalid
-                        .map((d) => DAY_NAMES[d.day_of_week - 1])
+                        .map((d) => t(`days.full.${d.day_of_week}`))
                         .join(", ");
-                    toast.error(`Пожалуйста, укажите время: ${names}`);
+                    toast.error(t("shifts.specifyTime", { names }));
                     return;
                 }
             }
@@ -337,7 +329,7 @@ const ShiftDays = () => {
             };
 
             await PostDataTokenJson(`api/shift/update/${shiftId}`, payload);
-            toast.success("Сохранено");
+            toast.success(t("common.saved"));
             navigate("/shifts");
         } catch (error: any) {
             console.error(error?.response?.data?.error || error);
@@ -367,15 +359,15 @@ const ShiftDays = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-semibold text-slate-900 ">
-                            Расписание: {shiftName}
+                            {t("shifts.scheduleTitle", { name: shiftName })}
                         </h1>
                     </div>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Смены", href: "/shifts" },
-                        { label: `Расписание: ${shiftName}`, isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.shifts"), href: "/shifts" },
+                        { label: t("shifts.scheduleTitle", { name: shiftName }), isActive: true },
                     ]}
                 />
             </div>
@@ -383,16 +375,16 @@ const ShiftDays = () => {
             <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm ">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold text-slate-900 ">
-                        Данные смены
+                        {t("shifts.cardData")}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Название смены</Label>
+                                <Label>{t("shifts.nameLabel")}</Label>
                                 <Input
-                                    placeholder="Например: Стандарт смена"
+                                    placeholder={t("shifts.namePlaceholder")}
                                     value={form.shiftName}
                                     onChange={(e) =>
                                         handleFormChange(
@@ -405,7 +397,7 @@ const ShiftDays = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Сверхурочные после (минуты)</Label>
+                                <Label>{t("shifts.overtimeLabel")}</Label>
                                 <Input
                                     type="number"
                                     placeholder="0"
@@ -421,7 +413,7 @@ const ShiftDays = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Тип смены</Label>
+                                <Label>{t("shifts.typeLabel")}</Label>
                                 <div className="flex gap-3">
                                     <Button
                                         type="button"
@@ -438,7 +430,7 @@ const ShiftDays = () => {
                                             )
                                         }
                                     >
-                                        Стандарт
+                                        {t("shifts.typeStandard")}
                                     </Button>
                                     <Button
                                         type="button"
@@ -455,7 +447,7 @@ const ShiftDays = () => {
                                             )
                                         }
                                     >
-                                        Гибридный
+                                        {t("shifts.typeHybrid")}
                                     </Button>
                                 </div>
                             </div>
@@ -463,7 +455,7 @@ const ShiftDays = () => {
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Опоздание (минуты)</Label>
+                                <Label>{t("shifts.lateLabel")}</Label>
                                 <Input
                                     type="number"
                                     placeholder="0"
@@ -481,7 +473,7 @@ const ShiftDays = () => {
                             {form.shiftTypeStr === "1" && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Начало</Label>
+                                        <Label>{t("shifts.start")}</Label>
                                         <Input
                                             type="text"
                                             placeholder="00:00"
@@ -503,7 +495,7 @@ const ShiftDays = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Конец</Label>
+                                        <Label>{t("shifts.end")}</Label>
                                         <Input
                                             type="text"
                                             placeholder="00:00"
@@ -532,15 +524,15 @@ const ShiftDays = () => {
                     {form.shiftTypeStr === "0" && (
                         <div className="space-y-4 pt-4 border-t">
                             <h3 className="text-lg font-semibold text-slate-900 ">
-                                Расписание по дням недели
+                                {t("shifts.weekSchedule")}
                             </h3>
                             <div className="space-y-3">
-                                {DAY_NAMES.map((dayName, index) => (
+                                {DAY_NAMES.map((_, index) => (
                                     <div
                                         key={index}
                                         className="p-4 rounded-xl border bg-slate-50 0"
                                     >
-                                        <Label>{dayName}</Label>
+                                        <Label>{t(`days.full.${index + 1}`)}</Label>
                                         <div className="grid grid-cols-2 gap-4 mt-2">
                                             <Input
                                                 type="text"
@@ -601,14 +593,14 @@ const ShiftDays = () => {
                             className="rounded-xl"
                             onClick={() => navigate("/shifts")}
                         >
-                            Назад
+                            {t("common.back")}
                         </Button>
                         <Button
                             onClick={handleSubmit}
                             disabled={isSubmitting}
                             className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6"
                         >
-                            {isSubmitting ? "Сохранение..." : "Сохранить"}
+                            {isSubmitting ? t("common.saving") : t("common.save")}
                         </Button>
                     </div>
                 </CardContent>

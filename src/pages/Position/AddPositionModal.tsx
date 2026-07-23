@@ -3,6 +3,7 @@ import { CustomInput } from "@/components/ui/custom-form";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PostDataTokenJson } from "@/services/data";
+import { useTranslation } from "react-i18next";
 
 interface AddPositionModalProps {
     open: boolean;
@@ -15,12 +16,13 @@ const AddPositionModal = ({
     onOpenChange,
     onSuccess,
 }: AddPositionModalProps) => {
+    const { t } = useTranslation();
     const [positionName, setPositionName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAddPosition = async () => {
         if (!positionName.trim()) {
-            toast.error("Пожалуйста, введите название должности");
+            toast.error(t("positions.nameRequired"));
             return;
         }
 
@@ -31,8 +33,8 @@ const AddPositionModal = ({
                 position_name: positionName.trim(),
             });
 
-            toast.success("Должность успешно создана!", {
-                description: `${positionName} была добавлена в систему.`,
+            toast.success(t("positions.created"), {
+                description: t("positions.createdDesc", { name: positionName }),
                 duration: 3000,
             });
 
@@ -59,11 +61,11 @@ const AddPositionModal = ({
             showTrigger={false}
             open={open}
             onOpenChange={onOpenChange}
-            title="Добавить новую должность"
+            title={t("positions.addTitle")}
             onConfirm={handleAddPosition}
             onCancel={handleCancel}
-            confirmText={isSubmitting ? "Создание..." : "Добавить должность"}
-            cancelText="Отмена"
+            confirmText={isSubmitting ? t("positions.creating") : t("positions.addSubmit")}
+            cancelText={t("common.cancel")}
             size="md"
             confirmBg="bg-maintx"
             confirmBgHover="bg-maintx/80"
@@ -71,8 +73,8 @@ const AddPositionModal = ({
         >
             <div className="space-y-4">
                 <CustomInput
-                    label="Название должности"
-                    placeholder="Введите название должности"
+                    label={t("positions.nameLabel")}
+                    placeholder={t("positions.namePlaceholder")}
                     value={positionName}
                     onChange={(value) => setPositionName(value)}
                     required

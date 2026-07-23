@@ -5,6 +5,7 @@ import { CustomCombobox } from "@/components/ui/custom-form";
 import CustomModal from "@/components/ui/custom-modal";
 import { GetDataSimple, PostDataTokenJson } from "@/services/data";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Object {
     object_id: number;
@@ -22,6 +23,7 @@ const AddShiftModal = ({
     onClose,
     onShiftCreated,
 }: AddShiftModalProps) => {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         shiftName: "",
         lateToleranceMinutes: "",
@@ -51,7 +53,7 @@ const AddShiftModal = ({
 
     const createShift = async () => {
         if (!formData.shiftName.trim() || !formData.objectId) {
-            toast.error("Пожалуйста, заполните все обязательные поля");
+            toast.error(t("shifts.addFillRequired"));
             return;
         }
 
@@ -71,12 +73,12 @@ const AddShiftModal = ({
 
             await PostDataTokenJson("api/shift/create", submitData);
 
-            toast.success("Смена успешно создана");
+            toast.success(t("shifts.created"));
             handleClose();
             onShiftCreated();
         } catch (error: any) {
             console.error("Error creating shift:", error);
-            toast.error(error.response?.data?.error || "Ошибка создания смены");
+            toast.error(error.response?.data?.error || t("shifts.createError"));
         } finally {
             setIsCreating(false);
         }
@@ -108,11 +110,11 @@ const AddShiftModal = ({
             open={isOpen}
             showTrigger={false}
             onOpenChange={(open) => !open && handleClose()}
-            title="Добавить смену"
+            title={t("shifts.addTitle")}
             onConfirm={createShift}
             onCancel={handleClose}
-            confirmText={isCreating ? "Создание..." : "Создать смену"}
-            cancelText="Отмена"
+            confirmText={isCreating ? t("shifts.creating") : t("shifts.createShiftSubmit")}
+            cancelText={t("common.cancel")}
             size="md"
         >
             <div className="space-y-4">
@@ -122,12 +124,12 @@ const AddShiftModal = ({
                         htmlFor="shiftName"
                         className="text-sm font-medium text-slate-700 "
                     >
-                        Название смены *
+                        {t("shifts.nameRequired")}
                     </Label>
                     <Input
                         id="shiftName"
                         type="text"
-                        placeholder="Введите название смены"
+                        placeholder={t("shifts.addNamePlaceholder")}
                         value={formData.shiftName}
                         onChange={(e) =>
                             handleInputChange("shiftName", e.target.value)
@@ -140,8 +142,8 @@ const AddShiftModal = ({
                 {/* Object Selection */}
                 <div className="space-y-2">
                     <CustomCombobox
-                        label="Объект"
-                        placeholder="Выберите объект"
+                        label={t("shifts.objectLabel")}
+                        placeholder={t("shifts.objectPlaceholder")}
                         value={formData.objectId}
                         onChange={(value) =>
                             handleInputChange("objectId", value)
@@ -152,7 +154,7 @@ const AddShiftModal = ({
                                 : [
                                       {
                                           value: "no-objects",
-                                          label: "Нет доступных объектов",
+                                          label: t("shifts.noObjects"),
                                       },
                                   ]
                         }
@@ -166,7 +168,7 @@ const AddShiftModal = ({
                         htmlFor="lateToleranceMinutes"
                         className="text-sm font-medium text-slate-700 "
                     >
-                        Допустимое опоздание (минуты)
+                        {t("shifts.allowedLate")}
                     </Label>
                     <Input
                         id="lateToleranceMinutes"
@@ -182,7 +184,7 @@ const AddShiftModal = ({
                         className="h-12 rounded-xl border-slate-200"
                     />
                     <p className="text-xs text-slate-500 ">
-                        0 - если не нужно считать опоздания
+                        {t("shifts.hintLate")}
                     </p>
                 </div>
 
@@ -192,7 +194,7 @@ const AddShiftModal = ({
                         htmlFor="overtimeAfterMinutes"
                         className="text-sm font-medium text-slate-700 "
                     >
-                        Переработка (минуты)
+                        {t("shifts.overtimeMinutes")}
                     </Label>
                     <Input
                         id="overtimeAfterMinutes"
@@ -208,7 +210,7 @@ const AddShiftModal = ({
                         className="h-12 rounded-xl border-slate-200 "
                     />
                     <p className="text-xs text-slate-500 ">
-                        0 - если не нужно считать переработку
+                        {t("shifts.hintOvertime")}
                     </p>
                 </div>
             </div>

@@ -7,16 +7,7 @@ import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { PostDataTokenJson } from "@/services/data";
 import { toast } from "sonner";
 import { Link, useNavigate } from "react-router-dom";
-
-const DAY_NAMES = [
-    "Понедельник",
-    "Вторник",
-    "Среда",
-    "Четверг",
-    "Пятница",
-    "Суббота",
-    "Воскресенье",
-];
+import { useTranslation } from "react-i18next";
 
 interface DaySchedule {
     day_of_week: number;
@@ -25,6 +16,7 @@ interface DaySchedule {
 }
 
 const CreateShift = () => {
+    const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [form, setForm] = useState({
@@ -147,9 +139,7 @@ const CreateShift = () => {
 
     const handleBlurTime = (field: string, value: string) => {
         if (value && !validateTime(value)) {
-            toast.error(
-                "Неверный формат времени (используйте 24 часа, например 18:45)"
-            );
+            toast.error(t("shifts.timeFormat24"));
             setForm((prev) => ({ ...prev, [field]: "" }));
         }
     };
@@ -160,7 +150,7 @@ const CreateShift = () => {
         value: string
     ) => {
         if (value && !validateTime(value)) {
-            toast.error("Неверный формат времени (например 09:30)");
+            toast.error(t("shifts.timeFormatDay"));
             setDaySchedules((prev) =>
                 prev.map((day, index) =>
                     index === dayIndex ? { ...day, [field]: "" } : day
@@ -172,7 +162,7 @@ const CreateShift = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.shiftName.trim()) {
-            toast.error("Пожалуйста, заполните обязательные поля");
+            toast.error(t("shifts.fillRequired"));
             return;
         }
 
@@ -210,7 +200,7 @@ const CreateShift = () => {
             };
 
             await PostDataTokenJson("api/shift/create", payload);
-            toast.success("Смена успешно создана");
+            toast.success(t("shifts.created"));
             navigate("/shifts");
 
             setForm({
@@ -242,14 +232,14 @@ const CreateShift = () => {
             <div className="space-y-4 mb-2">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <h1 className="text-2xl font-semibold text-slate-900 ">
-                        Создать смену
+                        {t("shifts.createTitle")}
                     </h1>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Смены", href: "/shifts" },
-                        { label: "Создать", isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.shifts"), href: "/shifts" },
+                        { label: t("shifts.crumbCreate"), isActive: true },
                     ]}
                 />
             </div>
@@ -257,7 +247,7 @@ const CreateShift = () => {
             <Card className="bg-white  rounded-xl border border-slate-200/80 shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold text-slate-900 ">
-                        Данные смены
+                        {t("shifts.cardData")}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -266,9 +256,9 @@ const CreateShift = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Название смены *</Label>
+                                    <Label>{t("shifts.nameRequired")}</Label>
                                     <Input
-                                        placeholder="Например: Стандарт смена"
+                                        placeholder={t("shifts.namePlaceholder")}
                                         value={form.shiftName}
                                         onChange={(e) =>
                                             handleChange(
@@ -281,7 +271,7 @@ const CreateShift = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Сверхурочные после (минуты)</Label>
+                                    <Label>{t("shifts.overtimeLabel")}</Label>
                                     <Input
                                         type="number"
                                         placeholder="0"
@@ -318,7 +308,7 @@ const CreateShift = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Тип смены</Label>
+                                    <Label>{t("shifts.typeLabel")}</Label>
                                     <div className="flex gap-3">
                                         <Button
                                             type="button"
@@ -332,7 +322,7 @@ const CreateShift = () => {
                                                 handleChange("shiftType", "1")
                                             }
                                         >
-                                            Стандарт
+                                            {t("shifts.typeStandard")}
                                         </Button>
                                         <Button
                                             type="button"
@@ -346,7 +336,7 @@ const CreateShift = () => {
                                                 handleChange("shiftType", "0")
                                             }
                                         >
-                                            Гибридный
+                                            {t("shifts.typeHybrid")}
                                         </Button>
                                     </div>
                                 </div>
@@ -354,7 +344,7 @@ const CreateShift = () => {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Опоздание (минуты)</Label>
+                                    <Label>{t("shifts.lateLabel")}</Label>
                                     <Input
                                         type="number"
                                         placeholder="0"
@@ -393,7 +383,7 @@ const CreateShift = () => {
                                 {form.shiftType === "1" && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Начало</Label>
+                                            <Label>{t("shifts.start")}</Label>
                                             <Input
                                                 type="text"
                                                 placeholder="00:00"
@@ -415,7 +405,7 @@ const CreateShift = () => {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Конец</Label>
+                                            <Label>{t("shifts.end")}</Label>
                                             <Input
                                                 type="text"
                                                 placeholder="00:00"
@@ -445,7 +435,7 @@ const CreateShift = () => {
                         {form.shiftType === "0" && (
                             <div className="space-y-4 pt-4 border-t">
                                 <h3 className="text-lg font-semibold text-slate-900">
-                                    Расписание по дням недели
+                                    {t("shifts.weekSchedule")}
                                 </h3>
                                 <div className="space-y-3">
                                     {daySchedules.map((day, index) => (
@@ -453,7 +443,7 @@ const CreateShift = () => {
                                             key={index}
                                             className="p-4 rounded-xl border bg-slate-50"
                                         >
-                                            <Label>{DAY_NAMES[index]}</Label>
+                                            <Label>{t(`days.full.${index + 1}`)}</Label>
                                             <div className="grid grid-cols-2 gap-4 mt-2">
                                                 <Input
                                                     type="text"
@@ -509,7 +499,7 @@ const CreateShift = () => {
                                     variant="outline"
                                     className="px-6 py-2 h-12 rounded-xl border-gray-300  text-slate-700  hover:bg-slate-50 "
                                 >
-                                    Назад
+                                    {t("common.back")}
                                 </Button>
                             </Link>
                             <Button
@@ -517,7 +507,7 @@ const CreateShift = () => {
                                 disabled={isSubmitting}
                                 className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6 py-2 h-12"
                             >
-                                {isSubmitting ? "Создание..." : "Создать смену"}
+                                {isSubmitting ? t("shifts.creating") : t("shifts.createSubmit")}
                             </Button>
                         </div>
                     </form>

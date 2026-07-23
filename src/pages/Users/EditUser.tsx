@@ -9,8 +9,10 @@ import { useState } from "react";
 import { GrEdit } from "react-icons/gr";
 
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 const EditUser = () => {
+    const { t } = useTranslation();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({
         name: "",
@@ -29,8 +31,8 @@ const EditUser = () => {
         console.log("Adding new user:", newUser);
 
         // Show success toast
-        toast.success("Пользователь успешно добавлен!", {
-            description: `${newUser.name} был добавлен в систему.`,
+        toast.success(t("editUser.added"), {
+            description: t("editUser.addedDesc", { name: newUser.name }),
             duration: 3000,
         });
 
@@ -49,8 +51,8 @@ const EditUser = () => {
 
     const handleCancel = () => {
         // Show info toast
-        toast.info("Создание пользователя отменено", {
-            description: "Изменения не были сохранены.",
+        toast.info(t("editUser.cancelled"), {
+            description: t("editUser.cancelledDesc"),
             duration: 2000,
         });
 
@@ -77,18 +79,18 @@ const EditUser = () => {
                 </button>
             }
             showTrigger={true}
-            title="Добавить нового пользователя"
+            title={t("editUser.title")}
             onConfirm={handleAddUser}
             onCancel={handleCancel}
-            confirmText="Добавить пользователя"
-            cancelText="Отмена"
+            confirmText={t("editUser.addUser")}
+            cancelText={t("common.cancel")}
             size="xl"
         >
             <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomInput
-                        label="Полное имя"
-                        placeholder="Введите полное имя"
+                        label={t("editUser.fullName")}
+                        placeholder={t("editUser.fullNamePlaceholder")}
                         value={newUser.name}
                         onChange={(value) =>
                             setNewUser({ ...newUser, name: value })
@@ -96,8 +98,8 @@ const EditUser = () => {
                         required
                     />
                     <CustomCombobox
-                        label="Отделение"
-                        placeholder="Выберите отдел"
+                        label={t("editUser.department")}
+                        placeholder={t("editUser.departmentPlaceholder")}
                         value={newUser.department}
                         onChange={(value) =>
                             setNewUser({ ...newUser, department: value })
@@ -115,8 +117,8 @@ const EditUser = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <CustomCombobox
-                        label="Роль"
-                        placeholder="Выберите роль"
+                        label={t("editUser.role")}
+                        placeholder={t("editUser.rolePlaceholder")}
                         value={newUser.role}
                         onChange={(value) =>
                             setNewUser({ ...newUser, role: value })
@@ -131,8 +133,8 @@ const EditUser = () => {
                     />
 
                     <CustomCombobox
-                        label="Статус"
-                        placeholder="Выберите статус"
+                        label={t("editUser.status")}
+                        placeholder={t("editUser.statusPlaceholder")}
                         value={newUser.status}
                         onChange={(value) =>
                             setNewUser({ ...newUser, status: value })
@@ -147,8 +149,8 @@ const EditUser = () => {
                 </div>
 
                 <CustomDatePicker
-                    label="Дата присоединения"
-                    placeholder="Выберите дату присоединения"
+                    label={t("editUser.joinDate")}
+                    placeholder={t("editUser.joinDatePlaceholder")}
                     value={newUser.joinDate}
                     onChange={(date) =>
                         setNewUser({ ...newUser, joinDate: date })
@@ -156,8 +158,8 @@ const EditUser = () => {
                 />
 
                 <CustomTextarea
-                    label="Био"
-                    placeholder="Введите биографию или описание пользователя"
+                    label={t("editUser.bio")}
+                    placeholder={t("editUser.bioPlaceholder")}
                     value={newUser.bio}
                     onChange={(value) => setNewUser({ ...newUser, bio: value })}
                     rows={3}

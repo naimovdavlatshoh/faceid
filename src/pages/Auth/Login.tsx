@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { HiEye, HiEyeOff } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PostData } from "@/services/data";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -16,6 +17,7 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const [statusbtn, setStatusbtn] = useState(false);
 
     const handleSubmit = (e?: React.FormEvent) => {
@@ -52,8 +54,8 @@ const Login = () => {
                             window.location.reload();
                         }, 20);
                         setTimeout(() => {
-                            toast.success("Успешный вход!", {
-                                description: "Добро пожаловать в систему",
+                            toast.success(t("login.successTitle"), {
+                                description: t("login.successDesc"),
                                 duration: 3000,
                             });
                         }, 50);
@@ -62,7 +64,7 @@ const Login = () => {
             })
             .catch((error) => {
                 setStatusbtn(false);
-                toast.error("Ошибка входа", {
+                toast.error(t("login.errorTitle"), {
                     description: error?.response?.data?.message,
                     duration: 3000,
                 });
@@ -82,7 +84,7 @@ const Login = () => {
                     {/* Welcome Content */}
                     <div className="max-w-md">
                         <h1 className="text-4xl font-semibold text-gray-900  mb-4">
-                            Привет, Добро пожаловать
+                            {t("login.welcome")}
                         </h1>
 
                         {/* 3D Illustration Placeholder */}
@@ -102,7 +104,7 @@ const Login = () => {
                     <div className="space-y-8">
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900  mb-2">
-                                Войти в аккаунт
+                                {t("login.title")}
                             </h2>
                         </div>
 
@@ -113,7 +115,7 @@ const Login = () => {
                                 </span>
                             </div>
                             <p className="text-sm text-blue-800 ">
-                                Введите логин и пароль
+                                {t("login.infoEnterCredentials")}
                             </p>
                         </div>
 
@@ -124,7 +126,7 @@ const Login = () => {
                                     htmlFor="text"
                                     className="text-sm font-medium text-gray-700 "
                                 >
-                                    Логин
+                                    {t("login.loginLabel")}
                                 </Label>
                                 <Input
                                     id="text"
@@ -149,7 +151,7 @@ const Login = () => {
                                         htmlFor="password"
                                         className="text-sm font-medium text-gray-700 "
                                     >
-                                        Пароль
+                                        {t("login.passwordLabel")}
                                     </Label>
                                 </div>
                                 <div className="relative bg-white text-gray-700">
@@ -201,7 +203,7 @@ const Login = () => {
                                     htmlFor="remember"
                                     className="text-sm text-gray-600  cursor-pointer"
                                 >
-                                    Запомнить меня
+                                    {t("login.rememberMe")}
                                 </Label>
                             </div>
 
@@ -216,7 +218,7 @@ const Login = () => {
                                 {statusbtn ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
-                                    "Войти"
+                                    t("login.signIn")
                                 )}
                             </Button>
                         </form>

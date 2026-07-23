@@ -7,10 +7,12 @@ import {
     SheetClose,
 } from "@/components/ui/sheet";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { PostSimple } from "@/services/data";
 import { toast } from "sonner";
 import { useIsMobile } from "@/components/hooks/use-mobile";
 import { Menu, LogOut, ChevronRight } from "lucide-react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface NavbarProps {
     className?: string;
@@ -27,6 +29,7 @@ interface ObjectItem {
 const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
     const navigate  = useNavigate();
     const isMobile  = useIsMobile();
+    const { t }     = useTranslation();
     const [objects, setObjects] = useState<ObjectItem[]>([]);
 
     useEffect(() => {
@@ -56,7 +59,7 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                 setTimeout(() => window.location.reload(), 100);
             });
         } catch (error: any) {
-            toast.error(error?.response?.data?.message || "Не удалось изменить объект");
+            toast.error(error?.response?.data?.message || t("navbar.changeObjectError"));
         }
     };
 
@@ -83,8 +86,9 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                 )}
             </div>
 
-            {/* Right: object switcher + avatar sheet */}
+            {/* Right: language + object switcher + avatar sheet */}
             <div className="flex items-center gap-2">
+                <LanguageSwitcher />
                 <Sheet>
                     <SheetTrigger asChild>
                         <button className="flex items-center gap-2.5 pl-3 border-l border-slate-200 hover:opacity-80 transition-opacity">
@@ -113,7 +117,7 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                                         {company}
                                     </p>
                                     <span className="text-[11px] text-slate-400 mt-0.5 block">
-                                        Менеджер
+                                        {t("common.manager")}
                                     </span>
                                 </div>
                             </div>
@@ -122,13 +126,13 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                         {/* Objects list */}
                         <div className="flex-1 overflow-y-auto px-4 py-4">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em] px-2 mb-3">
-                                Объекты
+                                {t("navbar.objects")}
                             </p>
                             <div className="space-y-1">
                                 {objects.length > 0 ? (
                                     objects.map((obj, idx) => {
                                         const id   = obj.object_id ?? obj.id;
-                                        const name = obj.object_name ?? obj.name ?? "Без названия";
+                                        const name = obj.object_name ?? obj.name ?? t("navbar.noName");
                                         const isCurrentObj = localStorage.getItem("object") === id?.toString();
                                         return (
                                             <div
@@ -160,7 +164,7 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                                     })
                                 ) : (
                                     <p className="text-[13px] text-slate-400 text-center py-6">
-                                        Нет объектов
+                                        {t("navbar.noObjects")}
                                     </p>
                                 )}
                             </div>
@@ -174,7 +178,7 @@ const Navbar = ({ className, onToggleSidebar }: NavbarProps) => {
                                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-[13px] font-medium transition-colors"
                                 >
                                     <LogOut className="w-4 h-4" />
-                                    Выйти из системы
+                                    {t("navbar.logout")}
                                 </button>
                             </SheetClose>
                         </div>

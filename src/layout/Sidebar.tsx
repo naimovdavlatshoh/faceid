@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { SiAnalogue } from "react-icons/si";
 import { FaUserFriends, FaUserCog, FaWallet } from "react-icons/fa";
 import { IoTimer } from "react-icons/io5";
@@ -11,16 +12,17 @@ interface SidebarProps {
 }
 
 const navigation = [
-    { name: "Посещаемость",          href: "/",            icon: SiAnalogue    },
-    { name: "Сотрудники",            href: "/users",       icon: FaUserFriends },
-    { name: "Статистика сотрудников",href: "/users/report",icon: MdBarChart    },
-    { name: "Смены",                 href: "/shifts",      icon: IoTimer       },
-    { name: "Должности",             href: "/positions",   icon: FaUserCog     },
-    { name: "Авансы",                href: "/advances",    icon: FaWallet      },
+    { key: "nav.attendance",     href: "/",            icon: SiAnalogue    },
+    { key: "nav.employees",      href: "/users",       icon: FaUserFriends },
+    { key: "nav.employeesStats", href: "/users/report",icon: MdBarChart    },
+    { key: "nav.shifts",         href: "/shifts",      icon: IoTimer       },
+    { key: "nav.positions",      href: "/positions",   icon: FaUserCog     },
+    { key: "nav.advances",       href: "/advances",    icon: FaWallet      },
 ];
 
 const Sidebar = ({ className, onClose }: SidebarProps) => {
     const location = useLocation();
+    const { t } = useTranslation();
 
     const isActive = (href: string) => {
         if (href === "/users/report") return location.pathname.startsWith("/users/report");
@@ -44,7 +46,7 @@ const Sidebar = ({ className, onClose }: SidebarProps) => {
                         {localStorage.getItem("company") || "FaceID"}
                     </p>
                     <span className="text-[11px] text-blue-400/80 font-medium mt-0.5 block">
-                        Менеджер
+                        {t("common.manager")}
                     </span>
                 </div>
             </div>
@@ -52,7 +54,7 @@ const Sidebar = ({ className, onClose }: SidebarProps) => {
             {/* Nav */}
             <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
                 <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.12em] px-2 mb-3">
-                    Навигация
+                    {t("nav.navigation")}
                 </p>
 
                 {navigation.map((item) => {
@@ -61,7 +63,7 @@ const Sidebar = ({ className, onClose }: SidebarProps) => {
 
                     return (
                         <Link
-                            key={item.name}
+                            key={item.key}
                             to={item.href}
                             onClick={onClose}
                             className={cn(
@@ -80,7 +82,7 @@ const Sidebar = ({ className, onClose }: SidebarProps) => {
                             )}>
                                 <Icon className="w-[15px] h-[15px]" />
                             </span>
-                            <span className="truncate">{item.name}</span>
+                            <span className="truncate">{t(item.key)}</span>
                         </Link>
                     );
                 })}

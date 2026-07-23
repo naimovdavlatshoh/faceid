@@ -14,6 +14,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 interface ComboboxOption {
@@ -37,9 +38,9 @@ interface SearchableComboboxProps {
 
 export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
     label,
-    placeholder = "Select option...",
-    searchPlaceholder = "Поиск...",
-    emptyMessage = "Ничего не найдено",
+    placeholder,
+    searchPlaceholder,
+    emptyMessage,
     value,
     onChange,
     onSearch,
@@ -48,6 +49,10 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
     required = false,
     className = "",
 }) => {
+    const { t } = useTranslation();
+    const placeholderText = placeholder ?? t("combobox.selectOption");
+    const searchPlaceholderText = searchPlaceholder ?? t("combobox.search");
+    const emptyMessageText = emptyMessage ?? t("combobox.nothingFound");
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const searchTimeoutRef = useRef<number | null>(null);
@@ -110,14 +115,14 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                         aria-expanded={open}
                         className="w-full justify-between h-12 rounded-xl hover:border-mainbg hover:bg-white"
                     >
-                        {selectedOption ? selectedOption.label : placeholder}
+                        {selectedOption ? selectedOption.label : placeholderText}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-xl">
                     <Command className="rounded-xl" shouldFilter={false}>
                         <CommandInput
-                            placeholder={searchPlaceholder}
+                            placeholder={searchPlaceholderText}
                             value={searchTerm}
                             onValueChange={handleSearchChange}
                         />
@@ -129,14 +134,14 @@ export const SearchableCombobox: React.FC<SearchableComboboxProps> = ({
                                 <div className="flex items-center justify-center py-6">
                                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                     <span className="text-sm text-gray-500">
-                                        Поиск...
+                                        {t("combobox.search")}
                                     </span>
                                 </div>
                             ) : options.length === 0 ? (
                                 <CommandEmpty>
                                     {searchTerm.length < 3
-                                        ? "Введите минимум 3 символа для поиска"
-                                        : emptyMessage}
+                                        ? t("combobox.minChars")
+                                        : emptyMessageText}
                                 </CommandEmpty>
                             ) : (
                                 <CommandGroup>

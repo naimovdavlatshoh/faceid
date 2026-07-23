@@ -23,22 +23,14 @@ import CustomModal from "@/components/ui/custom-modal";
 
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { formatDayMonth, formatWeekday } from "@/i18n/dateFormat";
 import { SearchableCombobox } from "@/components/ui/searchable-combobox";
 
-const MONTHS_PAYROLL = [
-    { name: "Январь", value: "1" },
-    { name: "Февраль", value: "2" },
-    { name: "Март", value: "3" },
-    { name: "Апрель", value: "4" },
-    { name: "Май", value: "5" },
-    { name: "Июнь", value: "6" },
-    { name: "Июль", value: "7" },
-    { name: "Август", value: "8" },
-    { name: "Сентябрь", value: "9" },
-    { name: "Октябрь", value: "10" },
-    { name: "Ноябрь", value: "11" },
-    { name: "Декабрь", value: "12" },
-];
+const MONTHS_PAYROLL = Array.from({ length: 12 }, (_, i) => ({
+    value: String(i + 1),
+    labelKey: `months.${i + 1}`,
+}));
 
 type DayStatus = "complete" | "partial_in" | "partial_out" | "absent";
 type ArrivalStatus = "on_time" | "late" | "unknown";
@@ -143,7 +135,7 @@ type DayTone = {
         | "late_early"
         | "partial"
         | "absent";
-    label: string;
+    labelKey: string;
     bar: string; // цвет нижней полоски в ячейке календаря
     dot: string; // цвет точки в бейдже
     badge: string; // классы бейджа (фон + текст)
@@ -152,7 +144,7 @@ type DayTone = {
 
 const TONE_NONE: DayTone = {
     key: "none",
-    label: "Нет данных",
+    labelKey: "report.tone.none",
     bar: "bg-transparent",
     dot: "bg-slate-300",
     badge: "bg-slate-100 text-slate-500",
@@ -165,7 +157,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
     if (day.day_status === "absent") {
         return {
             key: "absent",
-            label: "Отсутствие",
+            labelKey: "report.tone.absent",
             bar: "bg-rose-400",
             dot: "bg-rose-500",
             badge: "bg-rose-50 text-rose-600",
@@ -179,7 +171,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
     if ((hasEntry && !hasExit) || (!hasEntry && hasExit)) {
         return {
             key: "partial",
-            label: "Частичный день",
+            labelKey: "report.tone.partial",
             bar: "bg-amber-400",
             dot: "bg-amber-500",
             badge: "bg-amber-50 text-amber-700",
@@ -195,7 +187,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
         if (late && early)
             return {
                 key: "late_early",
-                label: "Опоздал и ушёл раньше",
+                labelKey: "report.tone.lateEarly",
                 bar: "bg-rose-400",
                 dot: "bg-rose-500",
                 badge: "bg-rose-50 text-rose-600",
@@ -204,7 +196,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
         if (late)
             return {
                 key: "late",
-                label: "Опоздание",
+                labelKey: "report.tone.late",
                 bar: "bg-amber-400",
                 dot: "bg-amber-500",
                 badge: "bg-amber-50 text-amber-700",
@@ -213,7 +205,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
         if (early)
             return {
                 key: "early",
-                label: "Ранний уход",
+                labelKey: "report.tone.early",
                 bar: "bg-orange-400",
                 dot: "bg-orange-500",
                 badge: "bg-orange-50 text-orange-600",
@@ -222,7 +214,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
         if (over)
             return {
                 key: "overtime",
-                label: "Переработка",
+                labelKey: "report.tone.overtime",
                 bar: "bg-emerald-500",
                 dot: "bg-emerald-500",
                 badge: "bg-emerald-50 text-emerald-700",
@@ -230,7 +222,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
             };
         return {
             key: "present",
-            label: "Вовремя",
+            labelKey: "report.tone.present",
             bar: "bg-emerald-400",
             dot: "bg-emerald-500",
             badge: "bg-emerald-50 text-emerald-700",
@@ -242,6 +234,7 @@ const getDayTone = (day: DayData | undefined): DayTone => {
 };
 
 const EmployeeReport = () => {
+    const { t } = useTranslation();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
@@ -371,7 +364,7 @@ const EmployeeReport = () => {
             setEmployees(response.data?.result || []);
         } catch (error) {
             console.error("Error searching employees:", error);
-            toast.error("Ошибка поиска сотрудников");
+            toast.error(t("report.searchError"));
             setEmployees([]);
         } finally {
             setIsSearching(false);
@@ -411,12 +404,12 @@ const EmployeeReport = () => {
             link.click();
             document.body.removeChild(link);
             window.URL.revokeObjectURL(url);
-            toast.success("Файл успешно скачан");
+            toast.success(t("report.fileDownloaded"));
             setSalaryExcelModalOpen(false);
         } catch (err: any) {
             console.error(err);
             toast.error(
-                err?.response?.data?.message || "Ошибка скачивания файла"
+                err?.response?.data?.message || t("report.fileDownloadError")
             );
         } finally {
             setSalaryExcelDownloading(false);
@@ -480,10 +473,10 @@ const EmployeeReport = () => {
             } catch (err: any) {
                 setError(
                     err?.response?.data?.message ||
-                        "Не удалось загрузить отчет сотрудника",
+                        t("report.loadError"),
                 );
                 console.error("Error fetching employee report:", err);
-                toast.error("Ошибка загрузки данных");
+                toast.error(t("report.loadDataError"));
             } finally {
                 setLoading(false);
             }
@@ -501,14 +494,14 @@ const EmployeeReport = () => {
     const formatTime = (minutes: number) => {
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
-        return `${hours}ч ${mins}м`;
+        return `${hours}${t("report.hourLetter")} ${mins}${t("report.minuteLetter")}`;
     };
 
     // Компактно: "8ч 05м" всегда с ведущим нулём у минут
     const fmtHM = (minutes: number = 0) => {
         const h = Math.floor(minutes / 60);
         const m = minutes % 60;
-        return `${h}ч ${String(m).padStart(2, "0")}м`;
+        return `${h}${t("report.hourLetter")} ${String(m).padStart(2, "0")}${t("report.minuteLetter")}`;
     };
 
     // Не показываем полный экран загрузки, список сотрудников должен оставаться видимым
@@ -519,12 +512,12 @@ const EmployeeReport = () => {
             <div className="hidden md:flex w-72 bg-white border-r border-slate-200 flex-shrink-0 flex-col md:sticky md:top-0 md:h-[calc(100vh-100px)]">
                 <div className="p-4 border-b border-slate-200 flex-shrink-0 space-y-3">
                     <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                        Сотрудники
+                        {t("report.employees")}
                     </h3>
                     <div className="relative">
                         <Input
                             type="text"
-                            placeholder="Поиск сотрудников..."
+                            placeholder={t("report.searchPlaceholder")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="h-9 text-sm pr-8"
@@ -552,8 +545,8 @@ const EmployeeReport = () => {
                     ) : employees.length === 0 ? (
                         <div className="text-center py-4 text-slate-400 text-sm">
                             {searchQuery
-                                ? "Сотрудники не найдены"
-                                : "Нет сотрудников"}
+                                ? t("report.notFound")
+                                : t("report.empty")}
                         </div>
                     ) : (
                         employees.map((employee) => {
@@ -616,10 +609,10 @@ const EmployeeReport = () => {
                 {/* Mobile: employee selector — combobox with search */}
                 <div className="md:hidden flex-shrink-0">
                     <SearchableCombobox
-                        label="Сотрудник"
-                        placeholder="Выберите сотрудника"
-                        searchPlaceholder="Поиск сотрудников..."
-                        emptyMessage="Сотрудники не найдены"
+                        label={t("report.employee")}
+                        placeholder={t("report.selectEmployee")}
+                        searchPlaceholder={t("report.searchPlaceholder")}
+                        emptyMessage={t("report.notFound")}
                         value={id || ""}
                         onChange={(value) =>
                             value && navigate(`/users/report/${value}`)
@@ -638,7 +631,7 @@ const EmployeeReport = () => {
                         <div className="flex flex-col items-center gap-4">
                             <div className="w-7 h-7 rounded-full border-2 border-slate-200 border-t-blue-500 animate-spin" />
                             <p className="text-slate-500 text-sm">
-                                Загрузка данных...
+                                {t("common.loadingData")}
                             </p>
                         </div>
                     </div>
@@ -649,13 +642,13 @@ const EmployeeReport = () => {
                             onClick={() => navigate("/users")}
                             variant="outline"
                         >
-                            Вернуться к списку
+                            {t("common.returnToList")}
                         </Button>
                     </div>
                 ) : !reportData ? (
                     <div className="flex-1 flex justify-center items-center">
                         <p className="text-slate-500 text-lg">
-                            Нет данных для отображения
+                            {t("common.noData")}
                         </p>
                     </div>
                 ) : reportData &&
@@ -682,11 +675,10 @@ const EmployeeReport = () => {
                                         </svg>
                                     </div>
                                     <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                                        Нет данных за выбранный период
+                                        {t("report.noPeriodData")}
                                     </h3>
                                     <p className="text-slate-500 mb-6">
-                                        За выбранный месяц нет данных о
-                                        посещаемости
+                                        {t("report.noPeriodDataSub")}
                                     </p>
                                     <div className="flex gap-4">
                                         <Button
@@ -702,14 +694,14 @@ const EmployeeReport = () => {
                                             }}
                                             className="rounded-xl"
                                         >
-                                            Текущий месяц
+                                            {t("report.currentMonth")}
                                         </Button>
                                         <Link to="/users">
                                             <Button
                                                 variant="outline"
                                                 className="rounded-xl"
                                             >
-                                                Назад к списку
+                                                {t("common.backToList")}
                                             </Button>
                                         </Link>
                                     </div>
@@ -743,7 +735,7 @@ const EmployeeReport = () => {
                             showTrigger={false}
                             open={salaryExcelModalOpen}
                             onOpenChange={setSalaryExcelModalOpen}
-                            title="Скачать Excel (зарплата)"
+                            title={t("report.excelTitle")}
                             showFooter={false}
                             size="md"
                         >
@@ -751,12 +743,12 @@ const EmployeeReport = () => {
                                 {/* Область выгрузки */}
                                 <div className="flex flex-col gap-2">
                                     <label className="text-sm font-medium text-slate-700">
-                                        Область
+                                        {t("report.scope")}
                                     </label>
                                     <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
                                         {[
-                                            { key: "self" as const, label: "Этот сотрудник" },
-                                            { key: "all" as const, label: "Все сотрудники" },
+                                            { key: "self" as const, label: t("report.scopeSelf") },
+                                            { key: "all" as const, label: t("report.scopeAll") },
                                         ].map((opt) => (
                                             <button
                                                 key={opt.key}
@@ -783,7 +775,7 @@ const EmployeeReport = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="flex flex-col gap-2">
                                         <label className="text-sm font-medium text-slate-700">
-                                            Год
+                                            {t("report.yearLabel")}
                                         </label>
                                         <Select
                                             value={String(salaryExcelYear)}
@@ -794,7 +786,7 @@ const EmployeeReport = () => {
                                             }
                                         >
                                             <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Выберите год" />
+                                                <SelectValue placeholder={t("report.yearPlaceholder")} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {[2025, 2026, 2027, 2028, 2029, 2030].map(
@@ -812,14 +804,14 @@ const EmployeeReport = () => {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <label className="text-sm font-medium text-slate-700">
-                                            Месяц
+                                            {t("report.monthLabel")}
                                         </label>
                                         <Select
                                             value={salaryExcelMonth}
                                             onValueChange={setSalaryExcelMonth}
                                         >
                                             <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Выберите месяц" />
+                                                <SelectValue placeholder={t("report.monthPlaceholder")} />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {MONTHS_PAYROLL.map((m) => (
@@ -827,7 +819,7 @@ const EmployeeReport = () => {
                                                         key={m.value}
                                                         value={m.value}
                                                     >
-                                                        {m.name}
+                                                        {t(m.labelKey)}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -843,7 +835,7 @@ const EmployeeReport = () => {
                                         disabled={salaryExcelDownloading}
                                         className="rounded-xl"
                                     >
-                                        Отмена
+                                        {t("common.cancel")}
                                     </Button>
                                     <Button
                                         onClick={handleDownloadPayrollExcel}
@@ -860,8 +852,8 @@ const EmployeeReport = () => {
                                             <Download className="w-4 h-4 mr-2" />
                                         )}
                                         {salaryExcelDownloading
-                                            ? "Загрузка..."
-                                            : "Скачать"}
+                                            ? t("report.downloading")
+                                            : t("report.download")}
                                     </Button>
                                 </div>
                             </div>
@@ -875,7 +867,7 @@ const EmployeeReport = () => {
                                 <div className="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-5">
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                                            Отработано
+                                            {t("report.worked")}
                                         </span>
                                         <span className="text-xl font-bold tabular-nums text-slate-900">
                                             {fmtHM(reportData.statistics.total_worked_minutes)}
@@ -900,14 +892,14 @@ const EmployeeReport = () => {
                                 {/* Дни по статусам */}
                                 <div className="grid grid-cols-3 gap-y-3 px-4 py-3 sm:grid-cols-4 lg:grid-cols-8 md:px-5">
                                     {[
-                                        { label: "Всего",        value: reportData.statistics.total_days,                    dot: "bg-slate-300" },
-                                        { label: "Полных",       value: reportData.statistics.complete_days,                 dot: "bg-emerald-500" },
-                                        { label: "Частичных",    value: reportData.statistics.partial_days,                  dot: "bg-amber-400" },
-                                        { label: "Отсутствий",   value: reportData.statistics.absent_days,                   dot: "bg-rose-400" },
-                                        { label: "Вовремя",      value: reportData.statistics.on_time_days,                  dot: "bg-emerald-500" },
-                                        { label: "Опозданий",    value: reportData.statistics.late_days,                     dot: "bg-amber-400" },
-                                        { label: "Ранний уход",  value: reportData.statistics.early_leave_days,              dot: "bg-orange-400" },
-                                        { label: "Переработок",  value: reportData.statistics.overtime_days,                 dot: "bg-emerald-500" },
+                                        { label: t("report.stat.total"),      value: reportData.statistics.total_days,       dot: "bg-slate-300" },
+                                        { label: t("report.stat.complete"),   value: reportData.statistics.complete_days,    dot: "bg-emerald-500" },
+                                        { label: t("report.stat.partial"),    value: reportData.statistics.partial_days,     dot: "bg-amber-400" },
+                                        { label: t("report.stat.absent"),     value: reportData.statistics.absent_days,      dot: "bg-rose-400" },
+                                        { label: t("report.stat.onTime"),     value: reportData.statistics.on_time_days,     dot: "bg-emerald-500" },
+                                        { label: t("report.stat.late"),       value: reportData.statistics.late_days,        dot: "bg-amber-400" },
+                                        { label: t("report.stat.earlyLeave"), value: reportData.statistics.early_leave_days, dot: "bg-orange-400" },
+                                        { label: t("report.stat.overtime"),   value: reportData.statistics.overtime_days,    dot: "bg-emerald-500" },
                                     ].map((s) => (
                                         <div key={s.label} className="min-w-0">
                                             <p className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
@@ -924,16 +916,16 @@ const EmployeeReport = () => {
                                 {/* Итоги по минутам */}
                                 <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 px-4 py-2.5 text-[11px] md:px-5">
                                     {[
-                                        { label: "Опоздания",     main: fmtHM(reportData.statistics.total_late_minutes),        sub: reportData.statistics.total_late_penalty_minutes > 0 ? `штраф ${reportData.statistics.total_late_penalty_minutes}м` : null, subTone: "text-rose-500" },
-                                        { label: "Ранний уход",   main: fmtHM(reportData.statistics.total_early_leave_minutes),  sub: null, subTone: "" },
-                                        { label: "Переработка",   main: fmtHM(reportData.statistics.total_overtime_minutes),     sub: null, subTone: "" },
-                                        { label: "Перерывы",      main: fmtHM(reportData.statistics.total_break_minutes),        sub: null, subTone: "" },
-                                        { label: "Ранний приход", main: fmtHM(reportData.statistics.total_early_arrival_minutes ?? 0), sub: reportData.statistics.early_arrival_days ? `${reportData.statistics.early_arrival_days} дн.` : null, subTone: "text-slate-400" },
-                                    ].map((t) => (
-                                        <span key={t.label} className="inline-flex items-baseline gap-1.5">
-                                            <span className="text-slate-400">{t.label}</span>
-                                            <span className="font-semibold tabular-nums text-slate-700">{t.main}</span>
-                                            {t.sub && <span className={cn("tabular-nums", t.subTone)}>· {t.sub}</span>}
+                                        { label: t("report.totals.late"),         main: fmtHM(reportData.statistics.total_late_minutes),        sub: reportData.statistics.total_late_penalty_minutes > 0 ? t("report.totals.penalty", { count: reportData.statistics.total_late_penalty_minutes }) : null, subTone: "text-rose-500" },
+                                        { label: t("report.totals.earlyLeave"),   main: fmtHM(reportData.statistics.total_early_leave_minutes),  sub: null, subTone: "" },
+                                        { label: t("report.totals.overtime"),     main: fmtHM(reportData.statistics.total_overtime_minutes),     sub: null, subTone: "" },
+                                        { label: t("report.totals.breaks"),       main: fmtHM(reportData.statistics.total_break_minutes),        sub: null, subTone: "" },
+                                        { label: t("report.totals.earlyArrival"), main: fmtHM(reportData.statistics.total_early_arrival_minutes ?? 0), sub: reportData.statistics.early_arrival_days ? t("report.totals.days", { count: reportData.statistics.early_arrival_days }) : null, subTone: "text-slate-400" },
+                                    ].map((row) => (
+                                        <span key={row.label} className="inline-flex items-baseline gap-1.5">
+                                            <span className="text-slate-400">{row.label}</span>
+                                            <span className="font-semibold tabular-nums text-slate-700">{row.main}</span>
+                                            {row.sub && <span className={cn("tabular-nums", row.subTone)}>· {row.sub}</span>}
                                         </span>
                                     ))}
                                 </div>
@@ -945,15 +937,15 @@ const EmployeeReport = () => {
                                     {/* К выплате */}
                                     <div className="flex shrink-0 flex-col justify-center md:w-56 md:border-r md:border-white/10 md:pr-5">
                                         <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                                            К выплате
+                                            {t("report.toPay")}
                                         </p>
                                         <p className="mt-1 text-3xl font-bold leading-none tabular-nums text-white">
                                             {formatSum(salary?.netSalary)}
-                                            <span className="ml-1.5 text-base font-medium text-slate-400">сум</span>
+                                            <span className="ml-1.5 text-base font-medium text-slate-400">{t("common.sum")}</span>
                                         </p>
                                         {salary && salary.advance > 0 && (
                                             <p className="mt-2 text-[11px] tabular-nums text-slate-400">
-                                                удержан аванс{" "}
+                                                {t("report.advanceDeducted")}{" "}
                                                 <span className="font-semibold text-rose-300">
                                                     −{formatSum(salary.advance)}
                                                 </span>
@@ -965,9 +957,9 @@ const EmployeeReport = () => {
                                     <div className="flex min-w-0 flex-1 flex-col justify-center">
                                         <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
                                             {[
-                                                { label: "Заработано",  value: formatSum(salary?.finalSalary),  sign: "", tone: "text-slate-100" },
-                                                { label: "Переработка", value: formatSum(salary?.overtimeSalary), sign: "+", tone: "text-emerald-300", hideZero: true, raw: salary?.overtimeSalary },
-                                                { label: "Штраф",       value: formatSum(salary?.penalty),        sign: "−", tone: "text-rose-300",    hideZero: true, raw: salary?.penalty },
+                                                { label: t("report.earned"),   value: formatSum(salary?.finalSalary),   sign: "", tone: "text-slate-100" },
+                                                { label: t("report.overtime"), value: formatSum(salary?.overtimeSalary), sign: "+", tone: "text-emerald-300", hideZero: true, raw: salary?.overtimeSalary },
+                                                { label: t("report.penalty"),  value: formatSum(salary?.penalty),        sign: "−", tone: "text-rose-300",    hideZero: true, raw: salary?.penalty },
                                             ].map((c) =>
                                                 c.hideZero && !c.raw ? null : (
                                                     <div key={c.label} className="rounded-lg bg-white/5 px-3 py-1.5">
@@ -980,7 +972,7 @@ const EmployeeReport = () => {
                                             )}
                                             <span className="px-0.5 text-slate-500">=</span>
                                             <div className="rounded-lg bg-white/10 px-3 py-1.5">
-                                                <p className="text-[10px] uppercase tracking-wide text-slate-300">Итого начислено</p>
+                                                <p className="text-[10px] uppercase tracking-wide text-slate-300">{t("report.totalAccrued")}</p>
                                                 <p className="text-sm font-semibold tabular-nums text-white">
                                                     {formatSum(salary?.totalSalary)}
                                                 </p>
@@ -990,20 +982,20 @@ const EmployeeReport = () => {
                                         {/* Оклад / ставки */}
                                         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-white/10 pt-3 text-[11px]">
                                             <span className="inline-flex items-baseline gap-1.5">
-                                                <span className="text-slate-500">Оклад</span>
+                                                <span className="text-slate-500">{t("report.salary")}</span>
                                                 <span className="font-semibold tabular-nums text-slate-200">
                                                     {formatSum(reportData.statistics.salary_amount)}
                                                 </span>
                                                 <span className="text-slate-500">· {reportData.statistics.salary_type_name}</span>
                                             </span>
                                             <span className="inline-flex items-baseline gap-1.5">
-                                                <span className="text-slate-500">Ставка/час</span>
+                                                <span className="text-slate-500">{t("report.ratePerHour")}</span>
                                                 <span className="font-semibold tabular-nums text-slate-200">
                                                     {formatSum(reportData.statistics.hourly_rate)}
                                                 </span>
                                             </span>
                                             <span className="inline-flex items-baseline gap-1.5">
-                                                <span className="text-slate-500">Ставка/мин</span>
+                                                <span className="text-slate-500">{t("report.ratePerMin")}</span>
                                                 <span className="font-semibold tabular-nums text-slate-200">
                                                     {formatSum(reportData.statistics.minute_rate)}
                                                 </span>
@@ -1020,7 +1012,7 @@ const EmployeeReport = () => {
                             <Card className="bg-white rounded-xl md:rounded-xl border border-slate-200/80 shadow-sm lg:col-span-2 min-w-0">
                                 <CardHeader className="px-4 md:px-6 py-3 md:py-6">
                                     <CardTitle className="text-base md:text-lg font-semibold text-slate-900">
-                                        Календарь посещаемости
+                                        {t("report.attendanceCalendar")}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
@@ -1198,7 +1190,7 @@ const EmployeeReport = () => {
                             <Card className="bg-white rounded-xl md:rounded-xl border border-slate-200/80 shadow-sm min-w-0">
                                 <CardHeader className="px-4 md:px-6 py-3 md:py-6">
                                     <CardTitle className="text-base md:text-lg font-semibold text-slate-900">
-                                        Детали дня
+                                        {t("report.dayDetails")}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="px-4 md:px-6 pb-4 md:pb-6">
@@ -1208,10 +1200,10 @@ const EmployeeReport = () => {
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-semibold text-slate-900">
-                                                        {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}
+                                                        {formatDayMonth(new Date(selectedDayData.day_date + "T00:00:00"))}
                                                     </p>
                                                     <p className="text-[11px] capitalize text-slate-400">
-                                                        {new Date(selectedDayData.day_date + "T00:00:00").toLocaleDateString("ru-RU", { weekday: "long" })}
+                                                        {formatWeekday(new Date(selectedDayData.day_date + "T00:00:00"))}
                                                     </p>
                                                 </div>
                                                 <span className={cn(
@@ -1219,7 +1211,7 @@ const EmployeeReport = () => {
                                                     getDayTone(selectedDayData).badge,
                                                 )}>
                                                     <span className={cn("h-1.5 w-1.5 rounded-full", getDayTone(selectedDayData).dot)} />
-                                                    {getDayTone(selectedDayData).label}
+                                                    {t(getDayTone(selectedDayData).labelKey)}
                                                 </span>
                                             </div>
 
@@ -1235,12 +1227,12 @@ const EmployeeReport = () => {
                                             {/* График смены */}
                                             {selectedDayData.start_time && selectedDayData.end_time && (
                                                 <p className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-slate-400">
-                                                    <span>График</span>
+                                                    <span>{t("report.schedule")}</span>
                                                     <span className="font-semibold tabular-nums text-slate-600">
                                                         {selectedDayData.start_time.slice(0, 5)}–{selectedDayData.end_time.slice(0, 5)}
                                                     </span>
                                                     {selectedDayData.late_tolerance_minutes != null && (
-                                                        <span>· допуск {selectedDayData.late_tolerance_minutes} мин</span>
+                                                        <span>· {t("report.tolerance", { count: selectedDayData.late_tolerance_minutes })}</span>
                                                     )}
                                                 </p>
                                             )}
@@ -1248,7 +1240,7 @@ const EmployeeReport = () => {
                                             {/* Вход / выход */}
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div className="rounded-lg border border-slate-100 px-3 py-2">
-                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Вход</p>
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("report.checkIn")}</p>
                                                     <p className="text-sm font-semibold tabular-nums text-slate-800">
                                                         {selectedDayData.first_in
                                                             ? new Date(selectedDayData.first_in).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
@@ -1256,7 +1248,7 @@ const EmployeeReport = () => {
                                                     </p>
                                                 </div>
                                                 <div className="rounded-lg border border-slate-100 px-3 py-2">
-                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Выход</p>
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("report.checkOut")}</p>
                                                     <p className="text-sm font-semibold tabular-nums text-slate-800">
                                                         {selectedDayData.last_out
                                                             ? new Date(selectedDayData.last_out).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
@@ -1268,13 +1260,13 @@ const EmployeeReport = () => {
                                             {/* Отработано / план */}
                                             <div className="grid grid-cols-2 gap-2">
                                                 <div className="rounded-lg border border-slate-100 px-3 py-2">
-                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">Отработано</p>
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("report.worked")}</p>
                                                     <p className="text-sm font-bold tabular-nums text-dark-blue-600">
                                                         {selectedDayData.worked_time_formatted}
                                                     </p>
                                                 </div>
                                                 <div className="rounded-lg border border-slate-100 px-3 py-2">
-                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">План смены</p>
+                                                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">{t("report.shiftPlan")}</p>
                                                     <p className="text-sm font-bold tabular-nums text-slate-600">
                                                         {selectedDayData.shift_time_formatted}
                                                     </p>
@@ -1284,11 +1276,11 @@ const EmployeeReport = () => {
                                             {/* Отклонения — цвет только в точке-индикаторе */}
                                             {(() => {
                                                 const rows = [
-                                                    selectedDayData.late_minutes > 0 && { key: "late", dot: "bg-amber-400", label: "Опоздание", value: formatTime(selectedDayData.late_minutes), extra: selectedDayData.late_minutes_penalty > 0 ? `штраф ${formatTime(selectedDayData.late_minutes_penalty)}` : null },
-                                                    selectedDayData.early_leave_minutes > 0 && { key: "early", dot: "bg-orange-400", label: "Ранний уход", value: formatTime(selectedDayData.early_leave_minutes), extra: null },
-                                                    selectedDayData.overtime_minutes > 0 && { key: "over", dot: "bg-emerald-500", label: "Переработка", value: formatTime(selectedDayData.overtime_minutes), extra: null },
-                                                    (selectedDayData.early_arrival_minutes ?? 0) > 0 && { key: "earlyarr", dot: "bg-sky-400", label: "Ранний приход", value: formatTime(selectedDayData.early_arrival_minutes ?? 0), extra: null },
-                                                    (selectedDayData.break_minutes ?? 0) > 0 && { key: "break", dot: "bg-slate-400", label: "Перерывы", value: formatTime(selectedDayData.break_minutes ?? 0), extra: (selectedDayData.intervals_count ?? 0) > 0 ? `${selectedDayData.intervals_count} инт.` : null },
+                                                    selectedDayData.late_minutes > 0 && { key: "late", dot: "bg-amber-400", label: t("report.detail.late"), value: formatTime(selectedDayData.late_minutes), extra: selectedDayData.late_minutes_penalty > 0 ? t("report.detail.penalty", { value: formatTime(selectedDayData.late_minutes_penalty) }) : null },
+                                                    selectedDayData.early_leave_minutes > 0 && { key: "early", dot: "bg-orange-400", label: t("report.detail.earlyLeave"), value: formatTime(selectedDayData.early_leave_minutes), extra: null },
+                                                    selectedDayData.overtime_minutes > 0 && { key: "over", dot: "bg-emerald-500", label: t("report.detail.overtime"), value: formatTime(selectedDayData.overtime_minutes), extra: null },
+                                                    (selectedDayData.early_arrival_minutes ?? 0) > 0 && { key: "earlyarr", dot: "bg-sky-400", label: t("report.detail.earlyArrival"), value: formatTime(selectedDayData.early_arrival_minutes ?? 0), extra: null },
+                                                    (selectedDayData.break_minutes ?? 0) > 0 && { key: "break", dot: "bg-slate-400", label: t("report.detail.breaks"), value: formatTime(selectedDayData.break_minutes ?? 0), extra: (selectedDayData.intervals_count ?? 0) > 0 ? t("report.detail.intervals", { count: selectedDayData.intervals_count }) : null },
                                                 ].filter(Boolean) as { key: string; dot: string; label: string; value: string; extra: string | null }[];
 
                                                 if (rows.length === 0) return null;
@@ -1317,7 +1309,7 @@ const EmployeeReport = () => {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                 </svg>
                                             </div>
-                                            <p className="text-[13px] text-slate-400">Выберите день в календаре</p>
+                                            <p className="text-[13px] text-slate-400">{t("report.selectDay")}</p>
                                         </div>
                                     )}
                                 </CardContent>

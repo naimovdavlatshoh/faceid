@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
 import { IoMdAdd } from "react-icons/io";
+import { useTranslation, Trans } from "react-i18next";
 import { GetDataSimple, PostSimple, DeleteFaceIdUser } from "@/services/data";
 
 // API response types
@@ -92,6 +93,7 @@ const getCurrentObjectNotificationAccess = (): boolean => {
 };
 
 const Users = () => {
+    const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -130,7 +132,7 @@ const Users = () => {
             setTotalPages(data.pages);
         } catch (error) {
             console.error("Error fetching users:", error);
-            toast.error("Ошибка загрузки сотрудников");
+            toast.error(t("users.loadError"));
         }
     };
 
@@ -151,7 +153,7 @@ const Users = () => {
             setTotalPages(1);
         } catch (error) {
             console.error("Error searching users:", error);
-            toast.error("Ошибка поиска сотрудников");
+            toast.error(t("users.searchError"));
         } finally {
             setIsSearching(false);
         }
@@ -214,7 +216,7 @@ const Users = () => {
 
             const code = response?.access_code ?? response?.data?.access_code;
             if (!code) {
-                toast.error("Не удалось получить код доступа");
+                toast.error(t("users.accessCodeFail"));
                 return;
             }
 
@@ -224,10 +226,10 @@ const Users = () => {
             setIsCodeOpen(true);
         } catch (error: any) {
             console.error("Error getting access code:", error);
-            toast.error("Ошибка получения кода", {
+            toast.error(t("users.accessCodeError"), {
                 description:
                     error?.response?.data?.message ||
-                    "Не удалось сгенерировать код доступа",
+                    t("users.accessCodeGenFail"),
                 duration: 3000,
             });
         } finally {
@@ -239,10 +241,10 @@ const Users = () => {
         try {
             await navigator.clipboard.writeText(accessCode);
             setCopied(true);
-            toast.success("Код скопирован");
+            toast.success(t("users.codeCopied"));
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            toast.error("Не удалось скопировать");
+            toast.error(t("users.copyFail"));
         }
     };
 
@@ -252,8 +254,8 @@ const Users = () => {
         try {
             setIsDeleting(true);
             await DeleteFaceIdUser(userToDelete.id);
-            toast.success("Сотрудник удалён", {
-                description: `${userToDelete.name} успешно удалён.`,
+            toast.success(t("users.deleted"), {
+                description: t("users.deletedDesc", { name: userToDelete.name }),
                 duration: 2500,
             });
             if (searchQuery.length >= 3) {
@@ -266,10 +268,10 @@ const Users = () => {
             );
         } catch (error: any) {
             console.error("Error deleting user:", error);
-            toast.error("Ошибка удаления", {
+            toast.error(t("users.deleteError"), {
                 description:
                     error?.response?.data?.message ||
-                    "Не удалось удалить сотрудника",
+                    t("users.deleteFail"),
                 duration: 3000,
             });
         } finally {
@@ -302,19 +304,19 @@ const Users = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
-                            Все сотрудники
+                            {t("users.title")}
                         </h1>
                     </div>
                     <Link to="/users/create" className="flex-shrink-0">
                         <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-[13px] rounded-lg">
-                            <IoMdAdd className="w-3 h-3" /> Добавить
+                            <IoMdAdd className="w-3 h-3" /> {t("common.add")}
                         </Button>
                     </Link>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Сотрудники", isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.employees"), isActive: true },
                     ]}
                 />
             </div>
@@ -324,7 +326,7 @@ const Users = () => {
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full min-w-0">
                             <SearchInput
-                                placeholder="Поиск сотрудников..."
+                                placeholder={t("users.searchPlaceholder")}
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                             />
@@ -346,22 +348,22 @@ const Users = () => {
                                     />
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Сотрудник
+                                    {t("users.colEmployee")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Зарплата
+                                    {t("users.colSalary")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Смена
+                                    {t("users.colShift")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Тип зарплаты
+                                    {t("users.colSalaryType")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Дата создания
+                                    {t("common.createdAt")}
                                 </TableHead>
                                 <TableHead className="text-right text-slate-500 ">
-                                    Действия
+                                    {t("common.actions")}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -375,7 +377,7 @@ const Users = () => {
                                         <div className="flex items-center justify-center space-x-2">
                                             <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
                                             <span className="text-slate-500">
-                                                Поиск...
+                                                {t("common.search")}
                                             </span>
                                         </div>
                                     </TableCell>
@@ -387,8 +389,8 @@ const Users = () => {
                                         className="text-center py-8 text-slate-500"
                                     >
                                         {searchQuery
-                                            ? "Сотрудники не найдены"
-                                            : "Нет сотрудников"}
+                                            ? t("users.notFound")
+                                            : t("users.empty")}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -436,7 +438,7 @@ const Users = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-slate-600 ">
-                                            {user.salary.toLocaleString()} сум
+                                            {user.salary.toLocaleString()} {t("common.sum")}
                                         </TableCell>
                                         <TableCell className="text-gray-600">
                                             {user.shift_name || "—"}
@@ -475,8 +477,8 @@ const Users = () => {
                                                             <span>
                                                                 {codeLoadingId ===
                                                                 user.faceid_user_id
-                                                                    ? "Генерация..."
-                                                                    : "Код доступа"}
+                                                                    ? t("users.generating")
+                                                                    : t("users.accessCode")}
                                                             </span>
                                                         </DropdownMenuItem>
                                                     )}
@@ -490,7 +492,7 @@ const Users = () => {
                                                         }
                                                     >
                                                         <CiTrash className="w-4 h-4" />
-                                                        <span>Удалить</span>
+                                                        <span>{t("common.delete")}</span>
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -504,7 +506,7 @@ const Users = () => {
                 <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
                         <label htmlFor="" className="text-slate-500 text-sm">
-                            Строк на странице:
+                            {t("common.rowsPerPage")}
                         </label>
                         <Select
                             value={itemsPerPage.toString()}
@@ -534,9 +536,9 @@ const Users = () => {
                 showTrigger={false}
                 open={isDeleteOpen}
                 onOpenChange={setIsDeleteOpen}
-                title="Подтверждение удаления"
-                confirmText={isDeleting ? "Удаление..." : "Удалить"}
-                cancelText="Отмена"
+                title={t("common.confirmDeleteTitle")}
+                confirmText={isDeleting ? t("common.deleting") : t("common.delete")}
+                cancelText={t("common.cancel")}
                 confirmBg="bg-red-500"
                 confirmBgHover="bg-red-500/70"
                 onConfirm={handleConfirmDelete}
@@ -550,25 +552,25 @@ const Users = () => {
                             onClick={handleCancelDelete}
                             disabled={isDeleting}
                         >
-                            Отмена
+                            {t("common.cancel")}
                         </Button>
                         <Button
                             onClick={handleConfirmDelete}
                             disabled={isDeleting}
                             className="bg-red-500 hover:bg-red-500/70 text-white"
                         >
-                            {isDeleting ? "Удаление..." : "Удалить"}
+                            {isDeleting ? t("common.deleting") : t("common.delete")}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-2">
                     <p className="text-sm text-slate-600 ">
-                        Вы уверены, что хотите удалить сотрудника{" "}
-                        <span className="font-semibold text-gray-900 ">
-                            {userToDelete?.name}
-                        </span>
-                        ? Это действие нельзя отменить.
+                        <Trans
+                            i18nKey="users.deleteConfirm"
+                            values={{ name: userToDelete?.name }}
+                            components={{ 1: <span className="font-semibold text-gray-900 " /> }}
+                        />
                     </p>
                 </div>
             </CustomModal>
@@ -578,7 +580,7 @@ const Users = () => {
                 showTrigger={false}
                 open={isCodeOpen}
                 onOpenChange={setIsCodeOpen}
-                title="Код доступа"
+                title={t("users.accessCodeTitle")}
                 size="md"
                 showCloseButton={true}
                 footerContent={
@@ -587,7 +589,7 @@ const Users = () => {
                             variant="outline"
                             onClick={() => setIsCodeOpen(false)}
                         >
-                            Закрыть
+                            {t("common.close")}
                         </Button>
                         <Button
                             onClick={handleCopyCode}
@@ -598,18 +600,18 @@ const Users = () => {
                             ) : (
                                 <FiCopy className="w-4 h-4" />
                             )}
-                            {copied ? "Скопировано" : "Копировать"}
+                            {copied ? t("common.copied") : t("common.copy")}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-4">
                     <p className="text-sm text-gray-600">
-                        Код доступа для сотрудника{" "}
-                        <span className="font-semibold text-gray-900">
-                            {codeUserName}
-                        </span>
-                        . Передайте его сотруднику для входа в Telegram-бот.
+                        <Trans
+                            i18nKey="users.accessCodeDesc"
+                            values={{ name: codeUserName }}
+                            components={{ 1: <span className="font-semibold text-gray-900" /> }}
+                        />
                     </p>
                     <div className="flex items-center justify-center">
                         <span className="text-2xl font-bold tracking-[0.3em] text-gray-900 bg-slate-100 rounded-xl px-6 py-4 select-all">
@@ -617,8 +619,7 @@ const Users = () => {
                         </span>
                     </div>
                     <p className="text-[11px] text-slate-400 text-center">
-                        Код одноразовый — после привязки он станет
-                        недействительным.
+                        {t("users.accessCodeHint")}
                     </p>
                 </div>
             </CustomModal>

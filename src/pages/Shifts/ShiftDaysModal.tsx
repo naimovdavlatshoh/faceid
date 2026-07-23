@@ -13,16 +13,10 @@ import { ProgressAuto } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { GetDataSimple, PostDataTokenJson } from "@/services/data";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-const DAY_NAMES = [
-    "Понедельник",
-    "Вторник",
-    "Среда",
-    "Четверг",
-    "Пятница",
-    "Суббота",
-    "Воскресенье",
-];
+// 7 элементов недели (1..7) — подписи берутся из словаря days.full
+const DAY_NAMES = ["1", "2", "3", "4", "5", "6", "7"];
 
 interface DaySchedule {
     day_of_week: number;
@@ -73,14 +67,16 @@ const ShiftDaysModal = ({
     isOpen,
     onClose,
     shiftId,
-    shiftName = "Смена",
+    shiftName,
 }: Props) => {
+    const { t } = useTranslation();
+    const resolvedShiftName = shiftName || t("nav.shifts");
     const [days, setDays] = useState<DaySchedule[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
     const [hasShiftTimes, setHasShiftTimes] = useState(false);
     const [shiftType, setShiftType] = useState<0 | 1>(0);
-    const [shiftTypeName, setShiftTypeName] = useState<string>("Стандартная смена");
+    const [shiftTypeName, setShiftTypeName] = useState<string>(t("shifts.standardShift"));
     const [standardStart, setStandardStart] = useState<string>("00:00");
     const [standardEnd, setStandardEnd] = useState<string>("00:00");
     const navigate = useNavigate();
@@ -118,7 +114,7 @@ const ShiftDaysModal = ({
                 );
                 if (std) {
                     setShiftType(1);
-                    setShiftTypeName(std.shift_type_name || "Стандартная смена");
+                    setShiftTypeName(std.shift_type_name || t("shifts.standardShift"));
                     setStandardStart(std.start_time.substring(0, 5));
                     setStandardEnd(std.end_time.substring(0, 5));
                 } else {
@@ -157,7 +153,7 @@ const ShiftDaysModal = ({
             }
         } catch (error) {
             console.error("Error fetching shift schedule:", error);
-            toast.error("Ошибка загрузки расписания смены");
+            toast.error(t("shifts.loadScheduleError"));
             initializeDefaultDays();
         } finally {
             setLoading(false);
@@ -191,10 +187,10 @@ const ShiftDaysModal = ({
             );
             if (invalidDays.length > 0) {
                 const invalidDayNames = invalidDays
-                    .map((day) => DAY_NAMES[day.day_of_week - 1])
+                    .map((day) => t(`days.full.${day.day_of_week}`))
                     .join(", ");
                 toast.error(
-                    `Пожалуйста, укажите время для всех рабочих дней: ${invalidDayNames}`
+                    t("shifts.specifyWorkingTime", { names: invalidDayNames })
                 );
                 return;
             }
@@ -202,11 +198,11 @@ const ShiftDaysModal = ({
                 shift_id: shiftId,
                 items: days,
             });
-            toast.success("Расписание смен успешно сохранено!");
+            toast.success(t("shifts.scheduleSaved"));
             onClose();
         } catch (error: any) {
             console.error(error.response?.data?.error);
-            toast.error("Ошибка сохранения расписания");
+            toast.error(t("shifts.scheduleSaveError"));
         } finally {
             setIsSubmitting(false);
         }
@@ -216,7 +212,7 @@ const ShiftDaysModal = ({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
-                    <DialogTitle>Расписание: {shiftName}</DialogTitle>
+                    <DialogTitle>{t("shifts.scheduleTitle", { name: resolvedShiftName })}</DialogTitle>
                 </DialogHeader>
 
                 {loading ? (
@@ -237,7 +233,7 @@ const ShiftDaysModal = ({
                                     {shiftTypeName}
                                 </h3>
                                 <p className="text-sm mt-1">
-                                    Каждый день:{" "}
+                                    {t("shifts.everyDay")}{" "}
                                     <span className="inline-flex items-center gap-2">
                                         <span className="rounded-xl bg-white  px-3 py-1 font-mono text-sm">
                                             {standardStart}
@@ -251,23 +247,23 @@ const ShiftDaysModal = ({
                             </div>
                         ) : (
                             <CardContent className="space-y-3 px-0">
-                                {DAY_NAMES.map((dayName, index) => (
+                                {DAY_NAMES.map((_, index) => (
                                     <div
                                         key={index}
                                         className="flex items-center justify-between py-3 px-2 p-4 rounded-2xl border border-maintx bg-mainbg/10 "
                                     >
                                         <Label className="text-sm font-medium">
-                                            {dayName}
+                                            {t(`days.full.${index + 1}`)}
                                         </Label>
 
                                         {hasShiftTimes ? (
                                             <span className="text-md text-gray-700  whitespace-nowrap">
-                                                от
+                                                {t("shifts.from")}
                                                 <span className="mx-1 rounded-md bg-white px-2 py-1 font-mono text-md">
                                                     {days[index]?.start_time ||
                                                         "--:--"}
                                                 </span>
-                                                до
+                                                {t("shifts.to")}
                                                 <span className="ml-1 rounded-md bg-white  px-2 py-1 font-mono text-md">
                                                     {days[index]?.end_time ||
                                                         "--:--"}
@@ -323,7 +319,7 @@ const ShiftDaysModal = ({
                                     disabled={isSubmitting}
                                     className="bg-maintx hover:bg-maintx/80 rounded-xl text-white px-6"
                                 >
-                                    {isSubmitting ? "Сохранение..." : "Создать"}
+                                    {isSubmitting ? t("common.saving") : t("common.create")}
                                 </Button>
                             </div>
                         )}
@@ -337,7 +333,7 @@ const ShiftDaysModal = ({
                         className="rounded-xl"
                         onClick={onClose}
                     >
-                        Отмена
+                        {t("common.cancel")}
                     </Button>
                     <Button
                         type="button"
@@ -348,12 +344,12 @@ const ShiftDaysModal = ({
                             onClose();
                             navigate(
                                 `/shifts/days/${shiftId}/${encodeURIComponent(
-                                    shiftName || ""
+                                    resolvedShiftName || ""
                                 )}`
                             );
                         }}
                     >
-                        Редактировать
+                        {t("common.edit")}
                     </Button>
                 </div>
             </DialogContent>

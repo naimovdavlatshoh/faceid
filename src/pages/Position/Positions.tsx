@@ -42,6 +42,7 @@ import { GetDataSimple, PostDataTokenJson, PostSimple } from "@/services/data";
 import AddPositionModal from "./AddPositionModal";
 import UpdatePositionModal from "./UpdatePositionModal";
 import { GrEdit } from "react-icons/gr";
+import { useTranslation, Trans } from "react-i18next";
 
 // API response types
 interface ApiPosition {
@@ -60,6 +61,7 @@ interface ApiResponse {
 }
 
 const Positions = () => {
+    const { t } = useTranslation();
     const [currentPage, setCurrentPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -89,7 +91,7 @@ const Positions = () => {
             setTotalPages(data?.pages);
         } catch (error) {
             console.error("Error fetching positions:", error);
-            toast.error("Ошибка загрузки должностей");
+            toast.error(t("positions.loadError"));
         }
     };
 
@@ -112,7 +114,7 @@ const Positions = () => {
         } catch (error: any) {
             console.error("Error searching positions:", error);
             toast.error(
-                error?.response?.data?.message || "Ошибка поиска должностей"
+                error?.response?.data?.message || t("positions.searchError")
             );
         } finally {
             setIsSearching(false);
@@ -185,14 +187,14 @@ const Positions = () => {
                     `api/staff/position/delete/${positionToDelete.id}`,
                     {}
                 );
-                toast.success("Должность удалена", {
-                    description: `${positionToDelete.name} успешно удалена.`,
+                toast.success(t("positions.deleted"), {
+                    description: t("positions.deletedDesc", { name: positionToDelete.name }),
                     duration: 2500,
                 });
                 fetchPositions(currentPage, itemsPerPage);
             } catch (error) {
                 console.error("Error deleting position:", error);
-                toast.error("Ошибка удаления должности");
+                toast.error(t("positions.deleteError"));
             }
         }
         setIsDeleteOpen(false);
@@ -239,20 +241,20 @@ const Positions = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <h1 className="text-xl md:text-2xl font-semibold text-slate-900 truncate">
-                            Все должности
+                            {t("positions.title")}
                         </h1>
                     </div>
                     <Button
                         onClick={handleAddPosition}
                         className="w-full sm:w-auto bg-black text-white duration-300 hover:bg-black/70 rounded-xl"
                     >
-                        <IoMdAdd className="w-3 h-3" /> Добавить
+                        <IoMdAdd className="w-3 h-3" /> {t("common.add")}
                     </Button>
                 </div>
                 <CustomBreadcrumb
                     items={[
-                        { label: "Панель управления", href: "/" },
-                        { label: "Должности", isActive: true },
+                        { label: t("common.controlPanel"), href: "/" },
+                        { label: t("nav.positions"), isActive: true },
                     ]}
                 />
             </div>
@@ -262,7 +264,7 @@ const Positions = () => {
                     <div className="flex flex-col space-y-4">
                         <div className="flex justify-start w-full min-w-0">
                             <SearchInput
-                                placeholder="Поиск должностей..."
+                                placeholder={t("positions.searchPlaceholder")}
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                             />
@@ -284,13 +286,13 @@ const Positions = () => {
                                     />
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Должность
+                                    {t("positions.colPosition")}
                                 </TableHead>
                                 <TableHead className="text-slate-500 ">
-                                    Дата создания
+                                    {t("common.createdAt")}
                                 </TableHead>
                                 <TableHead className="text-right text-slate-500 ">
-                                    Действия
+                                    {t("common.actions")}
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -304,7 +306,7 @@ const Positions = () => {
                                         <div className="flex items-center justify-center space-x-2">
                                             <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
                                             <span className="text-slate-500">
-                                                Поиск...
+                                                {t("common.search")}
                                             </span>
                                         </div>
                                     </TableCell>
@@ -316,8 +318,8 @@ const Positions = () => {
                                         className="text-center py-8 text-slate-500"
                                     >
                                         {searchQuery
-                                            ? "Должности не найдены"
-                                            : "Нет должностей"}
+                                            ? t("positions.notFound")
+                                            : t("positions.empty")}
                                     </TableCell>
                                 </TableRow>
                             ) : (
@@ -377,7 +379,7 @@ const Positions = () => {
                                                     >
                                                         <GrEdit className="w-4 h-4" />{" "}
                                                         <span>
-                                                            Редактировать
+                                                            {t("common.edit")}
                                                         </span>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
@@ -392,7 +394,7 @@ const Positions = () => {
                                                         }
                                                     >
                                                         <CiTrash className="w-4 h-4" />
-                                                        <span>Удалить</span>
+                                                        <span>{t("common.delete")}</span>
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -406,7 +408,7 @@ const Positions = () => {
                 <CardFooter className="flex flex-col gap-3 sm:flex-row justify-between items-stretch sm:items-center border-t border-slate-200 pt-4 px-4 md:px-6 pb-4">
                     <div className="flex items-center gap-2">
                         <label htmlFor="" className="text-slate-500 text-sm whitespace-nowrap">
-                            Строк на странице:
+                            {t("common.rowsPerPage")}
                         </label>
                         <Select
                             value={itemsPerPage.toString()}
@@ -435,9 +437,9 @@ const Positions = () => {
                 showTrigger={false}
                 open={isDeleteOpen}
                 onOpenChange={setIsDeleteOpen}
-                title="Подтверждение удаления"
-                confirmText="Удалить"
-                cancelText="Отмена"
+                title={t("common.confirmDeleteTitle")}
+                confirmText={t("common.delete")}
+                cancelText={t("common.cancel")}
                 confirmBg="bg-red-500"
                 confirmBgHover="bg-red-500/70"
                 onConfirm={handleConfirmDelete}
@@ -447,11 +449,11 @@ const Positions = () => {
             >
                 <div className="space-y-2">
                     <p className="text-sm text-slate-600 ">
-                        Вы уверены, что хотите удалить должность{" "}
-                        <span className="font-semibold text-slate-900">
-                            {positionToDelete?.name}
-                        </span>
-                        ? Это действие нельзя отменить.
+                        <Trans
+                            i18nKey="positions.deleteConfirm"
+                            values={{ name: positionToDelete?.name }}
+                            components={{ 1: <span className="font-semibold text-slate-900" /> }}
+                        />
                     </p>
                 </div>
             </CustomModal>
