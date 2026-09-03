@@ -65,9 +65,10 @@ export const PostData = async (url: string, data: any) => {
 };
 
 export const PostDataToken = async (url: string, data: any) => {
+    // Content-Type НЕ ставим вручную: для FormData браузер сам добавит
+    // "multipart/form-data; boundary=...", без которого бэкенд не распарсит тело.
     const response = await axios.post(BASE_URL + url, data, {
         headers: {
-            "Content-Type": "multipart/formData",
             ...withAuthHeaders(),
         },
     });

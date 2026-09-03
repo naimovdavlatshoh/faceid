@@ -143,10 +143,10 @@ Payments, Products, Attendance, `DeleteFaceIdUser`, и весь блок `SuperA
 
 ## 6. Открытые вопросы / аномалии
 
-- **`PostDataToken`** (`services/data.ts`) вручную ставит заголовок
-  `Content-Type: "multipart/formData"` (нестандартное написание, без boundary).
-  Обычно для `FormData` заголовок должен ставить браузер сам. Работает в проде —
-  но это потенциально хрупкое место; **не менять без запроса**.
+- **`PostDataToken`** (`services/data.ts`) больше **не** ставит `Content-Type`
+  вручную — заголовок с `boundary` формирует браузер автоматически для `FormData`
+  (см. журнал 2026-09-03). Ранее жёстко заданный `multipart/formData` без boundary
+  ломал парсинг тела на бэкенде (400 Bad Request на загрузке фото).
 - **Клиентское сжатие фото** пока только в `Users/Account.tsx`
   (`prepareFaceImage`). В `CreateUser`/`EditUser` и `UploadProductImage`
   (`services/data.ts`) сжатия нет — при необходимости вынести в общий util.
@@ -173,6 +173,7 @@ Payments, Products, Attendance, `DeleteFaceIdUser`, и весь блок `SuperA
 
 | Дата | Что и зачем | Файлы |
 |---|---|---|
+| 2026-09-03 | **Фикс 400 Bad Request при загрузке фото сотрудника.** В `PostDataToken` был жёстко задан `Content-Type: "multipart/formData"` — без `boundary`, из-за чего бэкенд не мог распарсить multipart-тело и `$_FILES['image']` был пустым → 400. Убрали ручной заголовок: для `FormData` браузер сам ставит `multipart/form-data; boundary=...`. Затрагивает обе загрузки (`Account.tsx` — фото сотрудника, `UploadProductImage`). См. §6. | `src/services/data.ts` |
 | 2026-07-23 | **Локализация кабинета клиента (RU + узбекская латиница)** на `react-i18next`. Добавлены зависимости `i18next` + `react-i18next`. Инфраструктура: `src/i18n/index.ts` (init, языки `ru`/`uz`, fallback `ru`, чтение/запись `localStorage["lang"]`), `locales/ru.ts` + `locales/uz.ts` (uz типизирован `Resources = typeof ru`), `dateFormat.ts` (даты словами по языку), `components/LanguageSwitcher.tsx` (глобус RU/UZ в `Navbar`). Все хардкод-строки кабинета вынесены в `t(...)` (страницы Auth/Dashboard/Users/Shifts/Position/Advances + модалки + `layout/Sidebar,Navbar` + `components/ui/searchable-combobox`). Числовые даты в таблицах и `services/data.ts` (только комментарии) не трогали. Проверено сборкой (`tsc && vite build`) и в браузере (переключение RU↔UZ на логине). `/admin` **не** локализован (по решению заказчика). См. §5 (i18n) и §6. | `src/i18n/*`, `src/components/LanguageSwitcher.tsx`, `src/main.tsx`, `src/layout/{Navbar,Sidebar}.tsx`, `src/components/ui/searchable-combobox.tsx`, `src/pages/{Auth/Login,Dashboard,Users/*,Shifts/*,Position/*,Advances/*}`, `package.json` |
 | 2026-07-10 | **Клиентское сжатие фото сотрудника** перед загрузкой (разгрузка бэкенда / memory_limit PHP). Добавлена модульная функция `prepareFaceImage`: `createImageBitmap` → даунскейл до 720px по длинной стороне → canvas с белым фоном → подбор качества JPEG 0.9→0.7 до ≤200 КБ → `File("face.jpg", image/jpeg)`. Добавлена защита памяти вкладки: при разрешении > 40 Мпикс — ранний throw (иначе большой исходник может уронить вкладку). В `handleAvatarChange`: лимит исходника 3 МБ → **20 МБ**, сжатие в отдельном try/catch (при ошибке toast + return), в FormData и превью идёт сжатый файл. Подсказка под аватаром обновлена. Эндпоинты не менялись (`uploadimage`/`updateimage`, поле `image`). | `src/pages/Users/Account.tsx` |
 | 2026-07-10 | Создана карта фронтенд-проекта (правило 8): стек, роли/localStorage, структура, слой API, договорённости, аномалии. | `skill/PROJECT.md` |
