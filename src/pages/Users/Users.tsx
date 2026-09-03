@@ -32,14 +32,20 @@ import CustomBreadcrumb from "@/components/ui/custom-breadcrumb";
 import { useEffect, useState, useRef } from "react";
 import { CiTrash } from "react-icons/ci";
 import { HiDotsVertical } from "react-icons/hi";
-import { FiKey, FiCopy, FiCheck } from "react-icons/fi";
+import { FiKey, FiCopy, FiCheck, FiArchive, FiRotateCcw } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
 import { IoMdAdd } from "react-icons/io";
 import { useTranslation, Trans } from "react-i18next";
-import { GetDataSimple, PostSimple, DeleteFaceIdUser } from "@/services/data";
+import {
+    GetDataSimple,
+    PostSimple,
+    DeleteFaceIdUser,
+    ArchiveFaceIdUser,
+    RestoreFaceIdUser,
+} from "@/services/data";
 
 // API response types
 interface ApiUser {
@@ -110,6 +116,18 @@ const Users = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const searchTimeoutRef = useRef<number | null>(null);
 
+    // Фильтр архива: 0 — активные, 1 — только архивные
+    const [isArchive, setIsArchive] = useState<0 | 1>(0);
+
+    // Состояние модалки архивации/восстановления
+    const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
+    const [archiveAction, setArchiveAction] = useState<{
+        id: number;
+        name: string;
+        type: "archive" | "restore";
+    } | null>(null);
+
     // Доступ к выдаче кода — вычисляем один раз при монтировании.
     const [hasNotificationAccess] = useState<boolean>(
         getCurrentObjectNotificationAccess
@@ -122,10 +140,14 @@ const Users = () => {
     const [codeUserName, setCodeUserName] = useState<string>("");
     const [copied, setCopied] = useState(false);
 
-    const fetchUsers = async (page: number = 1, limit: number = 10) => {
+    const fetchUsers = async (
+        page: number = 1,
+        limit: number = 10,
+        archive: 0 | 1 = isArchive
+    ) => {
         try {
             const data: ApiResponse = await GetDataSimple(
-                `api/faceid/users/list?page=${page}&limit=${limit}&object_id=1`
+                `api/faceid/users/list?is_archive=${archive}&page=${page}&limit=${limit}&object_id=1`
             );
 
             setUsers(data.result);
@@ -171,6 +193,15 @@ const Users = () => {
         setItemsPerPage(newLimit);
         setCurrentPage(1);
         fetchUsers(1, newLimit);
+    };
+
+    const handleTabChange = (archive: 0 | 1) => {
+        if (archive === isArchive) return;
+        setIsArchive(archive);
+        setCurrentPage(1);
+        setSearchQuery("");
+        setSelectedUsers([]);
+        fetchUsers(1, itemsPerPage, archive);
     };
 
     const handleSearchChange = (value: string) => {
@@ -286,6 +317,63 @@ const Users = () => {
         setUserToDelete(null);
     };
 
+    const openArchiveModal = (
+        user: { id: number; name: string },
+        type: "archive" | "restore"
+    ) => {
+        setArchiveAction({ id: user.id, name: user.name, type });
+        setIsArchiveOpen(true);
+    };
+
+    const handleConfirmArchive = async () => {
+        if (!archiveAction) return;
+
+        const { id, name, type } = archiveAction;
+        try {
+            setIsArchiving(true);
+            if (type === "archive") {
+                await ArchiveFaceIdUser(id);
+                toast.success(t("users.archived"), {
+                    description: name,
+                    duration: 2500,
+                });
+            } else {
+                await RestoreFaceIdUser(id);
+                toast.success(t("users.restored"), {
+                    description: name,
+                    duration: 2500,
+                });
+            }
+            await fetchUsers(currentPage, itemsPerPage);
+            setSelectedUsers((prev) => prev.filter((sid) => sid !== id));
+        } catch (error: any) {
+            console.error(`Error ${type} user:`, error);
+            toast.error(
+                type === "archive"
+                    ? t("users.archiveError")
+                    : t("users.restoreError"),
+                {
+                    description:
+                        error?.response?.data?.error ||
+                        error?.response?.data?.message ||
+                        (type === "archive"
+                            ? t("users.archiveFail")
+                            : t("users.restoreFail")),
+                    duration: 3000,
+                }
+            );
+        } finally {
+            setIsArchiving(false);
+            setIsArchiveOpen(false);
+            setArchiveAction(null);
+        }
+    };
+
+    const handleCancelArchive = () => {
+        setIsArchiveOpen(false);
+        setArchiveAction(null);
+    };
+
     useEffect(() => {
         fetchUsers(currentPage, itemsPerPage);
     }, []);
@@ -324,13 +412,37 @@ const Users = () => {
             <Card className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <CardHeader className="pb-4 px-4 md:px-6">
                     <div className="flex flex-col space-y-4">
-                        <div className="flex justify-start w-full min-w-0">
-                            <SearchInput
-                                placeholder={t("users.searchPlaceholder")}
-                                value={searchQuery}
-                                onChange={handleSearchChange}
-                            />
+                        <div className="inline-flex w-fit rounded-lg bg-slate-100 p-1">
+                            <button
+                                onClick={() => handleTabChange(0)}
+                                className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+                                    isArchive === 0
+                                        ? "bg-white text-slate-900 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700"
+                                }`}
+                            >
+                                {t("users.tabActive")}
+                            </button>
+                            <button
+                                onClick={() => handleTabChange(1)}
+                                className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-colors ${
+                                    isArchive === 1
+                                        ? "bg-white text-slate-900 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700"
+                                }`}
+                            >
+                                {t("users.tabArchive")}
+                            </button>
                         </div>
+                        {isArchive === 0 && (
+                            <div className="flex justify-start w-full min-w-0">
+                                <SearchInput
+                                    placeholder={t("users.searchPlaceholder")}
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                />
+                            </div>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="p-0 overflow-x-auto overflow-y-visible scrollbar-hide">
@@ -482,6 +594,39 @@ const Users = () => {
                                                             </span>
                                                         </DropdownMenuItem>
                                                     )}
+                                                    {isArchive === 0 ? (
+                                                        <DropdownMenuItem
+                                                            className="flex items-center gap-2"
+                                                            onClick={() =>
+                                                                openArchiveModal(
+                                                                    {
+                                                                        id: user.faceid_user_id,
+                                                                        name: user.name,
+                                                                    },
+                                                                    "archive"
+                                                                )
+                                                            }
+                                                        >
+                                                            <FiArchive className="w-4 h-4" />
+                                                            <span>{t("users.archive")}</span>
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem
+                                                            className="flex items-center gap-2"
+                                                            onClick={() =>
+                                                                openArchiveModal(
+                                                                    {
+                                                                        id: user.faceid_user_id,
+                                                                        name: user.name,
+                                                                    },
+                                                                    "restore"
+                                                                )
+                                                            }
+                                                        >
+                                                            <FiRotateCcw className="w-4 h-4" />
+                                                            <span>{t("users.restore")}</span>
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuItem
                                                         className="flex items-center gap-2 text-red-600 hover:text-red-600"
                                                         onClick={() =>
@@ -620,6 +765,62 @@ const Users = () => {
                     </div>
                     <p className="text-[11px] text-slate-400 text-center">
                         {t("users.accessCodeHint")}
+                    </p>
+                </div>
+            </CustomModal>
+
+            {/* Archive / Restore Confirmation Modal */}
+            <CustomModal
+                showTrigger={false}
+                open={isArchiveOpen}
+                onOpenChange={setIsArchiveOpen}
+                title={
+                    archiveAction?.type === "restore"
+                        ? t("users.restoreTitle")
+                        : t("users.archiveTitle")
+                }
+                size="md"
+                showCloseButton={false}
+                footerContent={
+                    <div className="flex gap-2 justify-end w-full">
+                        <Button
+                            variant="outline"
+                            onClick={handleCancelArchive}
+                            disabled={isArchiving}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button
+                            onClick={handleConfirmArchive}
+                            disabled={isArchiving}
+                            className={
+                                archiveAction?.type === "restore"
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                    : "bg-amber-500 hover:bg-amber-600 text-white"
+                            }
+                        >
+                            {isArchiving
+                                ? archiveAction?.type === "restore"
+                                    ? t("users.restoring")
+                                    : t("users.archiving")
+                                : archiveAction?.type === "restore"
+                                  ? t("users.restore")
+                                  : t("users.archive")}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-2">
+                    <p className="text-sm text-slate-600 ">
+                        <Trans
+                            i18nKey={
+                                archiveAction?.type === "restore"
+                                    ? "users.restoreConfirm"
+                                    : "users.archiveConfirm"
+                            }
+                            values={{ name: archiveAction?.name }}
+                            components={{ 1: <span className="font-semibold text-gray-900 " /> }}
+                        />
                     </p>
                 </div>
             </CustomModal>

@@ -277,6 +277,27 @@ export const DeleteFaceIdUser = async (userId: number) => {
     return response;
 };
 
+// Удаление фото лица сотрудника: снимает лицо с терминалов Hikvision (ISUP),
+// из БД и физические файлы. Тело не нужно (объект берётся из JWT).
+export const DeleteFaceImage = async (userId: number) => {
+    const response = await PostSimple(`api/faceid/user/deleteimage/${userId}`, {});
+    return response;
+};
+
+// Архивация сотрудника: снимает лицо с устройств (фото в системе сохраняется),
+// помечает архивным. Пропадает из активного списка/посещаемости. Тело не нужно.
+export const ArchiveFaceIdUser = async (userId: number) => {
+    const response = await PostSimple(`api/faceid/user/archive/${userId}`, {});
+    return response;
+};
+
+// Восстановление из архива: заливает сохранённое фото обратно на устройства
+// и возвращает сотрудника в активные. Тело не нужно.
+export const RestoreFaceIdUser = async (userId: number) => {
+    const response = await PostSimple(`api/faceid/user/restore/${userId}`, {});
+    return response;
+};
+
 export const DownloadAttendanceExcel = async (month: string) => {
     const token = getToken();
     const response = await axios.get(

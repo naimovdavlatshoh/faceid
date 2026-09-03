@@ -29,6 +29,7 @@ import {
     PostDataTokenJson,
     PostSimple,
     DeleteFaceIdUser,
+    DeleteFaceImage,
 } from "@/services/data";
 import CustomModal from "@/components/ui/custom-modal";
 import { toast } from "sonner";
@@ -108,6 +109,8 @@ const Account = () => {
     const [dayOffItemsRaw, setDayOffItemsRaw] = useState<any[]>([]);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeleteImageOpen, setIsDeleteImageOpen] = useState(false);
+    const [isDeletingImage, setIsDeletingImage] = useState(false);
 
     const [positionItems, setPositionItems] = useState<any[]>([]);
     const [isPositionSearching, setIsPositionSearching] = useState(false);
@@ -456,6 +459,28 @@ const Account = () => {
         setIsDeleteOpen(false);
     };
 
+    const handleConfirmDeleteImage = async () => {
+        if (!id) return;
+
+        try {
+            setIsDeletingImage(true);
+            await DeleteFaceImage(parseInt(id));
+            setAvatarSrc("/avatar-1.webp");
+            setHasExistingImage(false);
+            toast.success(t("account.photoDeleted"));
+            setIsDeleteImageOpen(false);
+        } catch (error: any) {
+            console.error("Error deleting face image:", error);
+            toast.error(
+                error?.response?.data?.error ||
+                    error?.response?.data?.message ||
+                    t("account.photoDeleteFail"),
+            );
+        } finally {
+            setIsDeletingImage(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -538,6 +563,15 @@ const Account = () => {
                                         Активный пользователь
                                     </Label>
                                 </div> */}
+                                <button
+                                    onClick={() => setIsDeleteImageOpen(true)}
+                                    disabled={isUploading || isDeletingImage}
+                                    className="mt-4 w-3/4 rounded-xl border border-red-200 bg-white text-red-600 py-3 font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isDeletingImage
+                                        ? t("account.deletingPhoto")
+                                        : t("account.deletePhoto")}
+                                </button>
                                 <button
                                     onClick={() => setIsDeleteOpen(true)}
                                     disabled={isDeleting}
@@ -1081,6 +1115,56 @@ const Account = () => {
                     <p className="text-sm text-slate-600 ">
                         <Trans
                             i18nKey="account.deleteConfirm"
+                            values={{ name: formData.fullName }}
+                            components={{ 1: <span className="font-semibold text-slate-900 " /> }}
+                        />
+                    </p>
+                </div>
+            </CustomModal>
+
+            {/* Delete Face Image Confirmation Modal */}
+            <CustomModal
+                showTrigger={false}
+                open={isDeleteImageOpen}
+                onOpenChange={setIsDeleteImageOpen}
+                title={t("account.deletePhotoTitle")}
+                confirmText={
+                    isDeletingImage
+                        ? t("account.deletingPhoto")
+                        : t("common.delete")
+                }
+                cancelText={t("common.cancel")}
+                confirmBg="bg-red-500"
+                confirmBgHover="bg-red-500/70"
+                onConfirm={handleConfirmDeleteImage}
+                onCancel={() => setIsDeleteImageOpen(false)}
+                size="md"
+                showCloseButton={false}
+                footerContent={
+                    <div className="flex gap-2 justify-end w-full">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsDeleteImageOpen(false)}
+                            disabled={isDeletingImage}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button
+                            onClick={handleConfirmDeleteImage}
+                            disabled={isDeletingImage}
+                            className="bg-red-500 hover:bg-red-500/70 text-white"
+                        >
+                            {isDeletingImage
+                                ? t("account.deletingPhoto")
+                                : t("common.delete")}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-2">
+                    <p className="text-sm text-slate-600 ">
+                        <Trans
+                            i18nKey="account.deletePhotoConfirm"
                             values={{ name: formData.fullName }}
                             components={{ 1: <span className="font-semibold text-slate-900 " /> }}
                         />
