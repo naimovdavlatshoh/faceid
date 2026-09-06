@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { SiAnalogue } from "react-icons/si";
-import { FaUserFriends, FaUserCog, FaWallet } from "react-icons/fa";
+import { FaUserFriends, FaUserCog, FaWallet, FaTelegramPlane } from "react-icons/fa";
 import { IoTimer } from "react-icons/io5";
 import { MdBarChart } from "react-icons/md";
 
@@ -18,6 +18,7 @@ const navigation = [
     { key: "nav.shifts",         href: "/shifts",      icon: IoTimer       },
     { key: "nav.positions",      href: "/positions",   icon: FaUserCog     },
     { key: "nav.advances",       href: "/advances",    icon: FaWallet      },
+    { key: "nav.telegram",       href: "/telegram",    icon: FaTelegramPlane },
 ];
 
 const Sidebar = ({ className, onClose }: SidebarProps) => {

@@ -298,6 +298,24 @@ export const RestoreFaceIdUser = async (userId: number) => {
     return response;
 };
 
+// Самопривязка Telegram менеджером (общий notify-бот). object_id/user_id — из JWT.
+// Создать одноразовый код привязки (живёт 15 минут). Тело не нужно.
+export const CreateTelegramBindCode = async () => {
+    const response = await PostSimple("api/telegram/bind-code", {});
+    return response.data;
+};
+
+// Список Telegram-аккаунтов, привязанных к активному объекту (+ limit/used).
+export const GetTelegramAccounts = async () => {
+    return await GetDataSimple("api/telegram/accounts");
+};
+
+// Отвязать аккаунт по id из списка (не telegram_id). Тело не нужно.
+export const UnbindTelegramAccount = async (id: number) => {
+    const response = await PostSimple(`api/telegram/unbind/${id}`, {});
+    return response.data;
+};
+
 export const DownloadAttendanceExcel = async (month: string) => {
     const token = getToken();
     const response = await axios.get(
@@ -413,6 +431,20 @@ export const DeleteAdvance = async (id: number) =>
 export const SuperAdminGetDashboard = async () =>
     GetDataSimple("superadmin/dashboard");
 
+// Server health (CPU/RAM/диск/load, история, бэкапы, ошибки PHP). Данные собирает
+// cron раз в 5 мин; эндпоинты только читают. decimal-поля приходят строками.
+export const SuperAdminGetServerOverview = async () =>
+    GetDataSimple("superadmin/server/overview");
+
+export const SuperAdminGetServerMetrics = async (range: "day" | "week" = "day") =>
+    GetDataSimple(`superadmin/server/metrics?range=${range}`);
+
+export const SuperAdminGetServerBackups = async () =>
+    GetDataSimple("superadmin/server/backups");
+
+export const SuperAdminGetServerPhpErrors = async (lines = 50) =>
+    GetDataSimple(`superadmin/server/php-errors?lines=${lines}`);
+
 // Objects
 export const SuperAdminGetObjects = async () =>
     GetDataSimple("superadmin/objects");
@@ -428,6 +460,18 @@ export const SuperAdminUpdateObject = async (id: number, data: Record<string, un
 
 export const SuperAdminDeleteObject = async (id: number) =>
     DeleteData(`superadmin/objects/${id}`);
+
+// Лимит Telegram-аккаунтов на объект (самопривязка менеджеров). Дефолт 2, мин 1.
+export const SuperAdminGetObjectTelegramLimit = async (objectId: number) =>
+    GetDataSimple(`superadmin/object-telegram/limit/${objectId}`);
+
+export const SuperAdminUpdateObjectTelegramLimit = async (
+    objectId: number,
+    telegram_limit: number
+) =>
+    PostDataTokenJson(`superadmin/object-telegram/limit/${objectId}`, {
+        telegram_limit,
+    });
 
 // Users
 export const SuperAdminGetUsers = async (page = 1, limit = 20) =>
@@ -481,6 +525,21 @@ export const SuperAdminUpdateTerminal = async (id: number, data: Record<string, 
 
 export const SuperAdminDeleteTerminal = async (id: number) =>
     DeleteData(`superadmin/terminals/${id}`);
+
+// Перезаливка сотрудника на терминал (суперадмин, object_id передаётся явно).
+// Сервер сам создаёт пользователя на устройстве и заливает сохранённое фото.
+// Тело не нужно. Ответ: { status: "ok"|"skipped"|"error", message, ... }.
+export const SuperAdminUploadUserToTerminal = async (
+    objectId: number,
+    terminalId: number,
+    userId: number
+) => {
+    const response = await PostSimple(
+        `superadmin/object/${objectId}/terminal/${terminalId}/upload-user/${userId}`,
+        {}
+    );
+    return response.data;
+};
 
 // Object-Users bindings
 export const SuperAdminGetObjectUsers = async (objectId?: number) => {

@@ -6,9 +6,10 @@ import {
     MdPeople,
     MdDevices,
     MdLink,
+    MdSync,
 } from "react-icons/md";
 import { FaUserTie, FaTelegram } from "react-icons/fa";
-import { LogOut, ScanFace, Eye } from "lucide-react";
+import { LogOut, ScanFace, Eye, Activity } from "lucide-react";
 
 interface AdminSidebarProps {
     className?: string;
@@ -21,9 +22,11 @@ const navigation = [
     { name: "Пользователи", href: "/admin/users",          icon: MdPeople    },
     { name: "Сотрудники",   href: "/admin/employees",      icon: FaUserTie   },
     { name: "Терминалы",    href: "/admin/terminals",      icon: MdDevices   },
+    { name: "Заливка на терминал", href: "/admin/terminal-upload", icon: MdSync },
     { name: "Привязки",     href: "/admin/object-users",   icon: MdLink      },
     { name: "Telegram",     href: "/admin/object-telegram",icon: FaTelegram  },
     { name: "Детекции",    href: "/admin/detections",     icon: Eye         },
+    { name: "Сервер",       href: "/admin/server",         icon: Activity    },
 ];
 
 const AdminSidebar = ({ className, onClose }: AdminSidebarProps) => {

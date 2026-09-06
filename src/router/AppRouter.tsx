@@ -12,6 +12,7 @@ import Login from "../pages/Auth/Login";
 import Account from "@/pages/Users/Account";
 import EmployeeReport from "@/pages/Users/EmployeeReport";
 import Advances from "@/pages/Advances/Advances";
+import TelegramNotifications from "@/pages/Telegram/TelegramNotifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
@@ -22,6 +23,8 @@ import AdminTerminals from "@/pages/Admin/AdminTerminals";
 import AdminObjectUsers from "@/pages/Admin/AdminObjectUsers";
 import AdminObjectTelegram from "@/pages/Admin/AdminObjectTelegram";
 import AdminDetections from "@/pages/Admin/AdminDetections";
+import AdminTerminalUpload from "@/pages/Admin/AdminTerminalUpload";
+import AdminServerHealth from "@/pages/Admin/AdminServerHealth";
 
 const router = createBrowserRouter([
     {
@@ -51,6 +54,10 @@ const router = createBrowserRouter([
             {
                 path: "advances",
                 element: <Advances />,
+            },
+            {
+                path: "telegram",
+                element: <TelegramNotifications />,
             },
             {
                 path: "shifts",
@@ -111,6 +118,10 @@ const router = createBrowserRouter([
                 element: <AdminTerminals />,
             },
             {
+                path: "terminal-upload",
+                element: <AdminTerminalUpload />,
+            },
+            {
                 path: "object-users",
                 element: <AdminObjectUsers />,
             },
@@ -121,6 +132,10 @@ const router = createBrowserRouter([
             {
                 path: "detections",
                 element: <AdminDetections />,
+            },
+            {
+                path: "server",
+                element: <AdminServerHealth />,
             },
         ],
     },

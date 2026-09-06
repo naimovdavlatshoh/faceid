@@ -5,6 +5,8 @@ import {
     SuperAdminUpdateObject,
     SuperAdminDeleteObject,
     SuperAdminGetDashboard,
+    SuperAdminGetObjectTelegramLimit,
+    SuperAdminUpdateObjectTelegramLimit,
 } from "@/services/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -111,6 +113,10 @@ const AdminObjects = () => {
     const [editId, setEditId] = useState<string | null>(null);
     const [form, setForm] = useState<FormData>(emptyForm);
     const [saving, setSaving] = useState(false);
+    // Telegram-лимит объекта (отдельный эндпоинт, не входит в модель объекта)
+    const [telegramLimit, setTelegramLimit] = useState("");
+    const [initialLimit, setInitialLimit] = useState<number | null>(null);
+    const [limitLoading, setLimitLoading] = useState(false);
 
     const load = () => {
         setLoading(true);
@@ -139,11 +145,26 @@ const AdminObjects = () => {
     const openCreate = () => {
         setEditId(null);
         setForm(emptyForm);
+        setTelegramLimit("");
+        setInitialLimit(null);
         setOpen(true);
     };
 
     const openEdit = (obj: ObjectItem) => {
         setEditId(obj.id);
+        // Telegram-лимит грузим отдельным запросом; при сбое оставляем поле пустым,
+        // чтобы не блокировать редактирование самого объекта.
+        setTelegramLimit("");
+        setInitialLimit(null);
+        setLimitLoading(true);
+        SuperAdminGetObjectTelegramLimit(Number(obj.id))
+            .then((res) => {
+                const lim = res?.telegram_limit;
+                setTelegramLimit(lim != null ? String(lim) : "");
+                setInitialLimit(lim != null ? Number(lim) : null);
+            })
+            .catch(() => {})
+            .finally(() => setLimitLoading(false));
         setForm({
             object_name: obj.object_name,
             object_address: obj.object_address ?? "",
@@ -169,10 +190,28 @@ const AdminObjects = () => {
             toast.error("Название объекта обязательно");
             return;
         }
+        // Отправляем лимит только в режиме редактирования и только если поле
+        // заполнено (пустое = запрос лимита не удался/не трогаем) и значение
+        // изменилось. Валидация как на бэке: целое ≥ 1.
+        let newLimit: number | null = null;
+        if (editId && telegramLimit.trim() !== "") {
+            const parsed = Number(telegramLimit);
+            if (!Number.isInteger(parsed) || parsed < 1) {
+                toast.error("Лимит Telegram: целое число не меньше 1");
+                return;
+            }
+            if (parsed !== initialLimit) newLimit = parsed;
+        }
         setSaving(true);
         try {
             if (editId) {
                 await SuperAdminUpdateObject(Number(editId), form);
+                if (newLimit !== null) {
+                    await SuperAdminUpdateObjectTelegramLimit(
+                        Number(editId),
+                        newLimit
+                    );
+                }
                 toast.success("Объект обновлён");
             } else {
                 await SuperAdminCreateObject(form);
@@ -481,6 +520,23 @@ const AdminObjects = () => {
                                 onChange={(v) => setField("is_parent_notification", v)}
                             />
                         </div>
+                        {editId && (
+                            <div>
+                                <Label>Лимит Telegram-аккаунтов</Label>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    value={telegramLimit}
+                                    onChange={(e) => setTelegramLimit(e.target.value)}
+                                    className="mt-1"
+                                    placeholder={limitLoading ? "Загрузка..." : "2"}
+                                    disabled={limitLoading}
+                                />
+                                <p className="text-[11px] text-slate-400 mt-1">
+                                    Сколько Telegram-аккаунтов менеджер может привязать к объекту (мин. 1, по умолчанию 2).
+                                </p>
+                            </div>
+                        )}
                         <div className="flex gap-3 pt-2">
                             <Button variant="outline" className="flex-1 rounded-lg" onClick={() => setOpen(false)}>
                                 Отмена
