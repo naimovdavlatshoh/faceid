@@ -445,6 +445,26 @@ export const SuperAdminGetServerBackups = async () =>
 export const SuperAdminGetServerPhpErrors = async (lines = 50) =>
     GetDataSimple(`superadmin/server/php-errors?lines=${lines}`);
 
+// Топ-5 процессов по CPU и по RAM (снэпшот cron, available:false пока не собран)
+export const SuperAdminGetServerTopProcesses = async () =>
+    GetDataSimple("superadmin/server/top-processes");
+
+// Активные MySQL-запросы (processlist) + хвост slow query log
+export const SuperAdminGetServerMysqlHealth = async () =>
+    GetDataSimple("superadmin/server/mysql-health");
+
+// Статус пула php-fpm (available:false, если не настроен FPM_STATUS_URL)
+export const SuperAdminGetServerFpmStatus = async () =>
+    GetDataSimple("superadmin/server/fpm-status");
+
+// Попытки входа за окно в часах (брутфорс-детекция)
+export const SuperAdminGetServerAuthAttempts = async (hours = 24) =>
+    GetDataSimple(`superadmin/server/auth-attempts?hours=${hours}`);
+
+// Топ маршрутов/IP из nginx access.log за день (пусто, если не настроен NGINX_ACCESS_LOG)
+export const SuperAdminGetServerNginxStats = async (day?: string) =>
+    GetDataSimple(`superadmin/server/nginx-stats${day ? `?day=${day}` : ""}`);
+
 // Objects
 export const SuperAdminGetObjects = async () =>
     GetDataSimple("superadmin/objects");
